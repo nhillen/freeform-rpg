@@ -23,8 +23,8 @@ pip install -e .
 # For development (includes pytest)
 pip install -e ".[dev]"
 
-# Set your API key
-export ANTHROPIC_API_KEY="your-key-here"
+# Set up your API key (interactive)
+python3 -m src.cli.main login
 ```
 
 ## Quick Start
@@ -40,7 +40,42 @@ python3 -m src.cli.main new-game --scenario dead_drop
 python3 -m src.cli.main play
 ```
 
+## Authentication
+
+The engine requires an Anthropic API key to run. You can set this up in two ways:
+
+### Interactive Login (Recommended)
+```bash
+python3 -m src.cli.main login
+```
+
+This will:
+1. Prompt you for your API key
+2. Validate it against the Anthropic API
+3. Store it securely in `~/.config/freeform-rpg/config.json`
+
+### Environment Variable
+Alternatively, set the `ANTHROPIC_API_KEY` environment variable:
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+The environment variable takes precedence over the stored config.
+
+### Logout
+To remove your stored API key:
+```bash
+python3 -m src.cli.main logout
+```
+
 ## CLI Commands
+
+### Authentication
+
+| Command | Description |
+|---------|-------------|
+| `login` | Interactive API key setup |
+| `logout` | Remove stored API key |
 
 ### Database & Game Setup
 
@@ -239,10 +274,14 @@ Make sure you've installed the package:
 pip install -e .
 ```
 
-### "ANTHROPIC_API_KEY not set"
-Export your API key:
+### "No API key found" or authentication errors
+Run the login command:
 ```bash
-export ANTHROPIC_API_KEY="your-key-here"
+python3 -m src.cli.main login
+```
+Or set the environment variable:
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
 ### Database Errors

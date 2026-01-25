@@ -15,9 +15,13 @@ import json
 import sys
 from pathlib import Path
 
+from src.config import (
+    get_api_key, interactive_login, check_auth_or_prompt,
+    clear_api_key, get_config_path
+)
 from src.core.orchestrator import Orchestrator, run_turn
 from src.db.state_store import StateStore
-from src.llm.gateway import MockGateway
+from src.llm.gateway import MockGateway, ClaudeGateway
 from src.llm.prompt_registry import PromptRegistry
 from src.setup import SetupPipeline, ScenarioLoader, load_template, list_templates
 from src.eval.replay import format_replay_report, rerun_turns
@@ -34,6 +38,18 @@ def init_db(args):
     store = StateStore(args.db)
     store.ensure_schema()
     print(f"Initialized database at {args.db}")
+
+
+def login_cmd(args):
+    """Interactive login to set up API key."""
+    success = interactive_login()
+    sys.exit(0 if success else 1)
+
+
+def logout_cmd(args):
+    """Remove stored API key."""
+    clear_api_key()
+    print(f"Logged out. API key removed from {get_config_path()}")
 
 
 def new_game(args):
@@ -102,8 +118,23 @@ def run_turn_cmd(args):
         print("Run 'new-game' first to create a campaign.")
         sys.exit(1)
 
+    # Check for API key
+    api_key = check_auth_or_prompt()
+    if not api_key:
+        print("\n  Cannot run turn without an API key.")
+        print("  Run 'login' to set one up, or set ANTHROPIC_API_KEY environment variable.")
+        sys.exit(1)
+
+    # Setup LLM gateway
+    prompts_dir = Path(__file__).parent.parent / "prompts"
+    prompt_registry = PromptRegistry(prompts_dir)
+    gateway = ClaudeGateway(api_key=api_key)
+
     prompt_versions = _load_json(args.prompt_versions)
-    result = run_turn(store, args.campaign, args.input, prompt_versions)
+    result = run_turn(
+        store, args.campaign, args.input, prompt_versions,
+        llm_gateway=gateway, prompt_registry=prompt_registry
+    )
 
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
@@ -125,10 +156,17 @@ def play_cmd(args):
         print("Run 'new-game' first to create a campaign.")
         sys.exit(1)
 
-    # Setup orchestrator
+    # Check for API key
+    api_key = check_auth_or_prompt()
+    if not api_key:
+        print("\n  Cannot play without an API key.")
+        print("  Run 'login' to set one up, or set ANTHROPIC_API_KEY environment variable.")
+        sys.exit(1)
+
+    # Setup orchestrator with real LLM
     prompts_dir = Path(__file__).parent.parent / "prompts"
     prompt_registry = PromptRegistry(prompts_dir)
-    gateway = MockGateway()  # Use mock for now
+    gateway = ClaudeGateway(api_key=api_key)
 
     orchestrator = Orchestrator(
         state_store=store,
@@ -473,6 +511,14 @@ def build_parser():
     )
 
     sub = parser.add_subparsers(dest="command", required=True)
+
+    # login
+    login_parser = sub.add_parser("login", help="Set up API key")
+    login_parser.set_defaults(func=login_cmd)
+
+    # logout
+    logout_parser = sub.add_parser("logout", help="Remove stored API key")
+    logout_parser.set_defaults(func=logout_cmd)
 
     # init-db
     init_db_parser = sub.add_parser("init-db", help="Initialize the SQLite schema")
