@@ -8,6 +8,368 @@ This is the foundation that sets the tone for everything else. We need an archit
 
 ---
 
+## Three Concerns: Calibration + System + Content
+
+| Concern | What It Covers | Examples |
+|---------|----------------|----------|
+| **Calibration** | Tone, themes, risk tolerance, content boundaries | "Gritty and morally gray, with themes of identity and corporate control" |
+| **System** | Mechanics, clocks, rolls, costs, consequences | "Position/Effect from Blades, 2d6 rolls" |
+| **Content** | Characters, NPCs, locations, case structure | "Viktor is a fixer who owes you a favor" |
+
+All three get established in Session Zero. Calibration informs both System and Content choices.
+
+---
+
+## The Calibration Problem
+
+Before we can create a character or populate a world, we need to establish:
+- **What kind of story are we telling?** (tone, themes)
+- **How dangerous is this world?** (risk, lethality)
+- **What's off the table?** (content boundaries, safety)
+- **How much agency does the player have?** (railroading vs sandbox)
+
+This is the "Same Page Tool" problem from tabletop RPGs—if GM and player have different expectations, the experience fails regardless of system or content quality.
+
+---
+
+## Calibration Framework
+
+### 1. Tone Spectrum
+
+Define where the game sits on key tone axes:
+
+```yaml
+tone_calibration:
+  # How realistic are consequences?
+  gritty_vs_cinematic:
+    value: 0.7  # 0=full cinematic, 1=full gritty
+    description: "Mostly realistic with occasional action-movie moments"
+
+  # Emotional register
+  dark_vs_light:
+    value: 0.6  # 0=campy/comedic, 1=grimdark
+    description: "Serious with dark moments, but not nihilistic"
+
+  # Moral landscape
+  moral_complexity:
+    value: 0.8  # 0=clear good/evil, 1=everyone's flawed
+    description: "Few pure villains or heroes; most choices have costs"
+
+  # Story pacing
+  slow_burn_vs_action:
+    value: 0.5  # 0=constant action, 1=methodical investigation
+    description: "Balanced between tense investigation and bursts of danger"
+```
+
+**Why This Matters for Pipeline:**
+- **Narrator** uses tone to calibrate prose style
+- **Planner** uses tone to decide pacing of beats
+- **Resolver** uses tone to determine consequence severity
+
+### 2. Theme Selection
+
+Themes are the "what is this story about?" layer—not plot, but meaning.
+
+```yaml
+themes:
+  primary:
+    - "Identity in a synthetic age"
+    - "The cost of survival"
+  secondary:
+    - "Corporate power vs individual agency"
+    - "Trust and betrayal"
+  avoid:
+    - "Redemption through violence"  # Player doesn't want this arc
+
+  theme_questions:
+    # Each theme suggests questions the story will explore
+    "Identity in a synthetic age":
+      - "What makes you 'you' if your body/mind can be modified?"
+      - "How much can you change and still be the same person?"
+    "The cost of survival":
+      - "What lines will you cross to stay alive?"
+      - "When does survival become complicity?"
+```
+
+**Why This Matters for Pipeline:**
+- **Planner** can weave thematic questions into situations
+- **Context Builder** includes relevant themes when building packets
+- **Narrator** can reinforce themes through descriptions and NPC dialogue
+
+### 3. Risk & Lethality Settings
+
+How dangerous is the world to the player character?
+
+```yaml
+risk_settings:
+  # How deadly is combat/danger?
+  lethality:
+    level: "moderate"  # low, moderate, high, brutal
+    description: "Death is possible but requires multiple bad decisions or terrible luck"
+    mechanics:
+      harm_threshold_for_death: 4
+      recovery_between_scenes: true
+
+  # How forgiving are mistakes?
+  failure_mode:
+    level: "consequential"  # forgiving, consequential, punishing
+    description: "Failures change the situation but rarely end the game"
+    mechanics:
+      reroll_allowed: false
+      partial_success_common: true
+
+  # How much can go permanently wrong?
+  permanence:
+    level: "meaningful"  # soft, meaningful, hard
+    description: "Lost resources, burned bridges, and injuries persist"
+    mechanics:
+      relationships_can_end: true
+      resources_dont_reset: true
+      wounds_require_treatment: true
+
+  # Safety valve
+  player_protection:
+    plot_armor: "thin"  # none, thin, thick
+    description: "No guaranteed safety, but world responds to player caution"
+    mechanics:
+      retreat_always_possible: true
+      warning_signs_before_lethal: true
+```
+
+**Risk Presets:**
+
+| Preset | Description | Best For |
+|--------|-------------|----------|
+| **Pulp Adventure** | Low lethality, forgiving failures, soft permanence | Action-focused, heroic stories |
+| **Noir Standard** | Moderate lethality, consequential failures, meaningful permanence | Our default—tense but fair |
+| **Hard Boiled** | High lethality, punishing failures, hard permanence | Dark, desperate stories |
+| **One Bad Day** | Brutal lethality, punishing failures, hard permanence | Horror, tragedy, short campaigns |
+
+### 4. Content Boundaries (Lines & Veils)
+
+Borrowed from tabletop safety tools:
+
+```yaml
+content_boundaries:
+  # Hard limits - never included
+  lines:
+    - "Sexual violence"
+    - "Harm to children"
+    - "Real-world hate symbols"
+
+  # Soft limits - fade to black, don't detail
+  veils:
+    - "Graphic torture"
+    - "Animal harm"
+    - "Detailed addiction/withdrawal"
+
+  # Explicitly included (player wants these themes)
+  explore:
+    - "Violence and its consequences"
+    - "Moral ambiguity"
+    - "Loss and grief"
+    - "Body horror (cybernetic)"
+```
+
+**Why This Matters for Pipeline:**
+- **Narrator** must respect lines (hard stop) and veils (fade to black)
+- **Planner** avoids scenarios that would require crossing lines
+- **NPC generation** avoids creating characters designed to cross lines
+
+### 5. Agency & Structure Settings
+
+How much does the player control vs follow a designed experience?
+
+```yaml
+agency_settings:
+  # How directed is the experience?
+  structure:
+    level: "guided"  # sandbox, guided, linear
+    description: "Clear main thread with freedom in approach"
+
+  # How much can player reshape the world?
+  world_plasticity:
+    level: "responsive"  # fixed, responsive, malleable
+    description: "World reacts to player but has its own momentum"
+
+  # How proactive are threats?
+  world_agency:
+    level: "active"  # passive, active, aggressive
+    description: "NPCs and factions pursue their goals whether player engages or not"
+
+  # Clarification style
+  ambiguity_handling:
+    style: "interpret"  # clarify, interpret, both
+    description: "GM interprets reasonable intent rather than asking for specifics"
+```
+
+---
+
+## Calibration Questions (Player-Facing)
+
+Present these to the player during setup:
+
+### Tone Questions
+
+1. **"When your character gets into a fight, what happens?"**
+   - A) Action movie—dive through windows, dramatic last-second escapes
+   - B) Realistic—violence is ugly, consequences are serious
+   - C) Somewhere in between
+
+2. **"When things get dark, how dark?"**
+   - A) Keep it relatively light—tension but not trauma
+   - B) Willing to explore uncomfortable territory
+   - C) Full noir—cynicism, betrayal, loss
+
+3. **"What's the moral landscape?"**
+   - A) Clear heroes and villains
+   - B) Mostly gray—everyone has reasons
+   - C) Pitch black—no one's clean, including you
+
+### Risk Questions
+
+4. **"How afraid should you be of dying?"**
+   - A) Not really—this is about the story, not survival
+   - B) Real danger, but fair—bad luck or bad decisions can kill
+   - C) Very afraid—death waits around every corner
+
+5. **"When you fail, what happens?"**
+   - A) Complications—new problems, not dead ends
+   - B) Consequences—doors close, situations worsen
+   - C) Punishment—resources lost, relationships burned
+
+### Theme Questions
+
+6. **"What is this story about? (pick 2-3)"**
+   - Identity and what makes you 'you'
+   - The cost of survival in a broken system
+   - Power—who has it, who doesn't, what you do with it
+   - Trust, loyalty, and betrayal
+   - The line between human and machine
+   - Redemption or its impossibility
+   - (Write in your own)
+
+7. **"What should this story NOT be about?"**
+   - (Let player explicitly exclude themes)
+
+### Agency Questions
+
+8. **"How much do you want to be guided?"**
+   - A) Give me a clear mission and let me solve it my way
+   - B) Give me a situation and let me decide what matters
+   - C) Give me a world and let me find my own story
+
+---
+
+## Calibration Configuration Format
+
+```yaml
+# calibration/noir_standard.yaml
+id: noir_standard
+name: "Noir Standard"
+description: "Classic cyberpunk noir—gritty, morally gray, consequential"
+
+tone:
+  gritty_vs_cinematic: 0.7
+  dark_vs_light: 0.6
+  moral_complexity: 0.8
+  slow_burn_vs_action: 0.5
+
+themes:
+  primary:
+    - "identity_synthetic"
+    - "cost_of_survival"
+  secondary:
+    - "corporate_vs_individual"
+
+risk:
+  lethality: "moderate"
+  failure_mode: "consequential"
+  permanence: "meaningful"
+  plot_armor: "thin"
+
+boundaries:
+  lines:
+    - "sexual_violence"
+    - "child_harm"
+  veils:
+    - "graphic_torture"
+
+agency:
+  structure: "guided"
+  world_plasticity: "responsive"
+  world_agency: "active"
+  ambiguity_handling: "interpret"
+```
+
+---
+
+## How Calibration Flows to Pipeline
+
+```
+Calibration Settings
+        ↓
+┌───────┴───────┐
+│               │
+↓               ↓
+System Config   Content Generation
+(clocks,        (NPC tone, scene
+ consequences)   descriptions)
+        │               │
+        └───────┬───────┘
+                ↓
+         Turn Pipeline
+         (Narrator style,
+          Planner choices,
+          Resolver severity)
+```
+
+### Specific Integration Points
+
+| Stage | Uses Calibration For |
+|-------|---------------------|
+| **Context Builder** | Includes `tone` and `themes` in every packet |
+| **Interpreter** | Calibrates "reasonable action" based on genre expectations |
+| **Validator** | Adjusts harshness of constraint enforcement based on `risk` |
+| **Planner** | Weights beats toward thematic resonance, adjusts pacing |
+| **Resolver** | Scales consequence severity based on `lethality` settings |
+| **Narrator** | Adapts prose style to `tone`, respects `boundaries` |
+
+### Example: Resolver Using Risk Settings
+
+```python
+def determine_consequence_severity(
+    action_result: str,
+    risk_settings: RiskSettings,
+    context: dict
+) -> ConsequenceSeverity:
+
+    base_severity = calculate_base_severity(action_result)
+
+    # Adjust based on lethality
+    if risk_settings.lethality == "low":
+        # Cap harm, favor complications over damage
+        base_severity = min(base_severity, 2)
+        prefer_consequence_types = ["complication", "lost_opportunity"]
+    elif risk_settings.lethality == "brutal":
+        # Increase severity, harm more likely
+        base_severity = min(base_severity + 1, 4)
+        prefer_consequence_types = ["harm", "worse_position"]
+
+    # Adjust based on permanence
+    if risk_settings.permanence == "soft":
+        # Favor recoverable consequences
+        exclude_permanent = True
+
+    return ConsequenceSeverity(
+        level=base_severity,
+        preferred_types=prefer_consequence_types,
+        allow_permanent=not exclude_permanent
+    )
+```
+
+---
+
 ## Two Concerns: Content + System
 
 | Concern | What It Covers | Examples |
@@ -523,8 +885,32 @@ Template provides structure + constraints, AI fills details, player customizes.
 
 ## Recommended Architecture: Setup Pipeline
 
-### Phase 0: System Selection
-**Input:** System ID or player preferences
+### Phase 0: Calibration
+**Input:** Player answers to calibration questions (or preset selection)
+**Output:** Calibration settings loaded into config
+
+```python
+def calibrate_game(player_responses: dict) -> CalibrationSettings:
+    # Option A: Player answered calibration questions
+    if player_responses:
+        return CalibrationSettings.from_responses(player_responses)
+
+    # Option B: Player selected a preset
+    preset_id = player_responses.get("preset", "noir_standard")
+    return CalibrationSettings.from_preset(preset_id)
+
+# Store calibration for all pipeline stages
+config.set_calibration(calibration)
+```
+
+The calibration phase must come first because it affects:
+- Which game systems are appropriate (brutal games need different mechanics)
+- How NPCs are generated (tone affects characterization)
+- What content to avoid (lines and veils)
+- How the narrator writes (prose style)
+
+### Phase 1: System Selection
+**Input:** System ID or player preferences + calibration context
 **Output:** Loaded game system module
 
 ```python
@@ -547,7 +933,7 @@ The system is loaded first because it affects:
 - What questions to ask in character creation
 - How costs/consequences work throughout play
 
-### Phase 1: Scenario Selection
+### Phase 2: Scenario Selection
 **Input:** Template ID or player preferences
 **Output:** Loaded scenario skeleton
 
@@ -562,23 +948,90 @@ class ScenarioTemplate:
     revelation_structure: List[RevelationSkeleton]  # What can be discovered
 ```
 
-### Phase 2: Character Creation
-**Input:** Player answers to character questions
+### Phase 3: Character Creation
+**Input:** Player answers to character questions + calibration context
 **Output:** Player character entity + initial relationships
 
-**Key Questions (5-7):**
-1. What's your name and what do you do? (identity)
-2. What's one thing you're really good at? (capability)
-3. What's your biggest vulnerability or weakness? (vulnerability)
-4. Who's someone you trust? (relationship seed)
-5. Who's someone you owe or who's after you? (tension seed)
-6. What do you want more than anything? (motivation)
-7. What line won't you cross? (moral boundary)
+Character creation is deeply informed by calibration:
+- **Tone** affects how character flaws manifest
+- **Themes** suggest what questions the character embodies
+- **Risk settings** determine how vulnerable the character starts
+- **Moral complexity** shapes the "line they won't cross" question
 
-**AI Task:** Generate full character entity from sparse answers, maintaining consistency.
+**Core Character Questions (7):**
 
-### Phase 3: NPC Population
-**Input:** Character details + NPC role skeletons
+1. **Identity**: "What's your name and what do you do?"
+   - Establishes role in the world (fixer, investigator, runner, etc.)
+   - AI uses this + genre rules to flesh out background
+
+2. **Capability**: "What's one thing you're really good at?"
+   - Defines mechanical strength
+   - Creates player expectation of competence
+
+3. **Vulnerability**: "What's your biggest weakness or liability?"
+   - Creates dramatic tension hooks
+   - Gives Planner material for complications
+   - Calibration: In high-lethality games, this might be exploited hard
+
+4. **Trusted Ally**: "Who's someone you trust, and why?"
+   - Seeds a positive NPC relationship
+   - Creates something to protect/lose
+   - AI generates this NPC in Phase 4
+
+5. **Tension Source**: "Who's someone you owe, or who's hunting you?"
+   - Seeds a problematic NPC relationship
+   - Creates built-in proactive threat
+   - AI generates this NPC in Phase 4
+
+6. **Motivation**: "What do you want more than anything?"
+   - Drives character decisions
+   - Connects to themes (e.g., "identity" theme + "want to remember who I was")
+
+7. **Moral Line**: "What line won't you cross, no matter what?"
+   - Creates dramatic tension when pressed against line
+   - Calibration: In morally complex settings, this WILL be tested
+
+**Optional Deep Questions (based on themes):**
+
+If theme is "Identity":
+- "What's one thing about yourself you're not sure is real?"
+- "If you could change one thing about who you are, what would it be?"
+
+If theme is "Trust/Betrayal":
+- "Who betrayed you, and have you forgiven them?"
+- "What secret are you keeping from someone who trusts you?"
+
+If theme is "Cost of Survival":
+- "What did you sacrifice to get where you are?"
+- "Who did you leave behind?"
+
+**Character Generation Flow:**
+
+```
+Player Answers (sparse)
+        ↓
+   + Calibration Context
+        ↓
+   + Genre Rules
+        ↓
+    AI Generation
+        ↓
+Full Character Entity:
+  - Name, aliases
+  - Background (2-3 sentences)
+  - Current situation
+  - Skills/capabilities
+  - Weaknesses/vulnerabilities
+  - Personality traits
+  - Appearance
+  - Starting inventory
+  - Memory anchors (core facts)
+```
+
+**AI Task:** Generate full character entity from sparse answers, maintaining consistency with calibration and genre.
+
+### Phase 4: NPC Population
+**Input:** Character details + NPC role skeletons + calibration (tone/boundaries)
 **Output:** Fully realized NPCs with agendas
 
 For each NPC role in template:
@@ -590,8 +1043,8 @@ For each NPC role in template:
 
 **AI Task:** Create coherent NPCs that connect to character's stated relationships.
 
-### Phase 4: Case Structure Generation
-**Input:** Revelation structure + populated NPCs + locations
+### Phase 5: Case Structure Generation
+**Input:** Revelation structure + populated NPCs + locations + themes
 **Output:** Clue distribution, node connections
 
 1. Assign each revelation to 3+ nodes (Three Clue Rule)
@@ -602,8 +1055,8 @@ For each NPC role in template:
 
 **AI Task:** Ensure redundancy, avoid chokepoints, create interesting paths.
 
-### Phase 5: State Initialization
-**Input:** All generated content
+### Phase 6: State Initialization
+**Input:** All generated content + calibration + system
 **Output:** Populated database tables
 
 ```python
@@ -634,7 +1087,7 @@ def initialize_game_state(scenario, character, npcs, case):
         db.insert_relationship(rel)
 ```
 
-### Phase 6: Validation & Confirmation
+### Phase 7: Validation & Confirmation
 **Input:** Complete initial state
 **Output:** Approved state or revision requests
 
@@ -666,37 +1119,58 @@ class SetupPipeline:
 
     def run_setup(
         self,
+        calibration_responses: dict,
         system_id: str,
         template_id: str,
         player_responses: dict
     ) -> SetupResult:
-        # Phase 0: Load game system
-        system = self.load_system(system_id)
+        # Phase 0: Calibration (tone, themes, risk, boundaries)
+        calibration = self.calibrate(calibration_responses)
+        self.db.store_calibration(calibration)
+
+        # Phase 1: Load game system (informed by calibration)
+        system = self.load_system(system_id, calibration)
         self.db.store_system_config(system)
 
-        # Phase 1: Load template
+        # Phase 2: Load template
         template = self.load_template(template_id)
 
-        # Phase 2: Create character
-        character = self.create_character(template, player_responses, system)
+        # Phase 3: Create character (uses calibration for tone)
+        character = self.create_character(
+            template, player_responses, system, calibration
+        )
 
-        # Phase 3: Populate NPCs
-        npcs = self.populate_npcs(template, character)
+        # Phase 4: Populate NPCs (uses calibration for tone, boundaries)
+        npcs = self.populate_npcs(template, character, calibration)
 
-        # Phase 4: Generate case structure
-        case = self.generate_case(template, character, npcs)
+        # Phase 5: Generate case structure (weaves in themes)
+        case = self.generate_case(template, character, npcs, calibration.themes)
 
-        # Phase 5: Initialize state (uses system for clocks, costs)
-        self.initialize_state(system, template, character, npcs, case)
+        # Phase 6: Initialize state
+        self.initialize_state(system, calibration, template, character, npcs, case)
 
-        # Phase 6: Validate
+        # Phase 7: Validate
         issues = self.validate_state()
 
         return SetupResult(
+            calibration=calibration,
             system=system,
             character=character,
             summary=self.generate_summary(),
             issues=issues
+        )
+
+    def calibrate(self, responses: dict) -> CalibrationSettings:
+        """Process calibration questions into settings"""
+        if responses.get("preset"):
+            return CalibrationSettings.from_preset(responses["preset"])
+
+        return CalibrationSettings(
+            tone=ToneSettings.from_responses(responses),
+            themes=ThemeSettings.from_responses(responses),
+            risk=RiskSettings.from_responses(responses),
+            boundaries=BoundarySettings.from_responses(responses),
+            agency=AgencySettings.from_responses(responses)
         )
 
     def load_system(self, system_id: str) -> GameSystem:
