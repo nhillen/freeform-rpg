@@ -2,7 +2,24 @@
 
 ## The Problem
 
-Our turn-by-turn pipeline assumes a well-structured initial state exists:
+Our turn-by-turn pipeline assumes a well-structured initial state exists AND that the mechanical system (clocks, rolls, costs, consequences) is defined. Session Zero must establish both **content** (characters, NPCs, case) and **mechanics** (what system governs play).
+
+This is the foundation that sets the tone for everything else. We need an architecture with good hooks for iteration—we don't need every detail today, but we need the right structure to evolve.
+
+---
+
+## Two Concerns: Content + System
+
+| Concern | What It Covers | Examples |
+|---------|----------------|----------|
+| **Content** | Characters, NPCs, locations, case structure | "Viktor is a fixer who owes you a favor" |
+| **System** | Mechanics, clocks, rolls, costs, consequences | "Position/Effect from Blades, 2d6 rolls" |
+
+Both get established in Session Zero. Both should be modular and swappable.
+
+---
+
+## The Problem (Content)
 - Player character with identity, skills, relationships
 - NPCs with agendas, knowledge, relationships
 - Locations with descriptions, connections, inhabitants
@@ -16,7 +33,347 @@ This document designs the "Setup Pipeline" that runs before the first turn.
 
 ---
 
-## What Session Zero Must Establish
+## Game System Architecture
+
+### Why This Matters
+
+The PRD mentions "clocks" and "soft checks" but doesn't define HOW they work. We could:
+- Invent our own system (risky, untested)
+- Adopt an existing system like Blades in the Dark (proven, but might not fit)
+- Create a flexible layer that can be configured per game (best for iteration)
+
+**Recommended:** Create a **Game System Module** that defines mechanics, loaded at Session Zero, referenced by pipeline stages.
+
+### Game System as a Module
+
+```python
+# src/systems/base.py
+
+class GameSystem:
+    """Base class for game mechanical systems"""
+
+    def get_clocks(self) -> List[ClockDefinition]:
+        """What clocks exist and what they mean"""
+        raise NotImplementedError
+
+    def get_roll_system(self) -> RollSystem:
+        """How dice/randomness works"""
+        raise NotImplementedError
+
+    def get_action_costs(self) -> CostTable:
+        """What actions cost what resources"""
+        raise NotImplementedError
+
+    def get_consequence_types(self) -> List[ConsequenceType]:
+        """What can go wrong and how bad"""
+        raise NotImplementedError
+
+    def get_position_effect(self) -> Optional[PositionEffectSystem]:
+        """If using Position/Effect (Blades-style)"""
+        return None
+
+    def get_genre_rules(self) -> GenreContext:
+        """What's possible/normal in this world"""
+        raise NotImplementedError
+```
+
+### Example: Blades-Inspired System
+
+```python
+# src/systems/blades_noir.py
+
+class BladesNoirSystem(GameSystem):
+
+    def get_clocks(self):
+        return [
+            ClockDefinition(
+                name="heat",
+                description="Law enforcement attention",
+                segments=8,
+                triggers={
+                    4: "Cops start asking questions",
+                    6: "Active investigation",
+                    8: "Raid imminent"
+                }
+            ),
+            ClockDefinition(
+                name="time",
+                description="Hours until deadline",
+                segments=12,
+                triggers={
+                    6: "Halfway - pressure mounts",
+                    10: "Running out of time",
+                    12: "Deadline passes - consequences"
+                }
+            ),
+            # ... harm, cred, rep
+        ]
+
+    def get_roll_system(self):
+        return RollSystem(
+            dice="2d6",
+            bands={
+                "1-6": "failure",
+                "7-9": "mixed_success",
+                "10-12": "full_success"
+            },
+            when_to_roll="risky actions with uncertain outcomes"
+        )
+
+    def get_consequence_types(self):
+        return [
+            ConsequenceType("reduced_effect", "Action works, but less than hoped"),
+            ConsequenceType("complication", "New problem emerges"),
+            ConsequenceType("lost_opportunity", "Chance is gone"),
+            ConsequenceType("worse_position", "Situation escalates"),
+            ConsequenceType("harm", "Physical/mental damage", levels=4),
+        ]
+
+    def get_position_effect(self):
+        return PositionEffectSystem(
+            positions=["controlled", "risky", "desperate"],
+            effects=["limited", "standard", "great"],
+            default=("risky", "standard")
+        )
+```
+
+### Example: Lighter System (No Position/Effect)
+
+```python
+# src/systems/simple_noir.py
+
+class SimpleNoirSystem(GameSystem):
+
+    def get_clocks(self):
+        # Fewer, simpler clocks
+        return [
+            ClockDefinition(name="trouble", segments=6, ...),
+            ClockDefinition(name="time", segments=8, ...),
+        ]
+
+    def get_roll_system(self):
+        return RollSystem(
+            dice="d20",
+            bands={
+                "1-7": "failure",
+                "8-14": "mixed",
+                "15-20": "success"
+            }
+        )
+
+    def get_position_effect(self):
+        return None  # Not using this mechanic
+```
+
+### System Loaded at Session Zero
+
+```python
+def run_setup(template_id: str, system_id: str, player_responses: dict):
+    # Load the game system
+    system = load_game_system(system_id)
+
+    # Store it for pipeline stages to reference
+    config.set_game_system(system)
+
+    # Initialize clocks based on system definitions
+    for clock_def in system.get_clocks():
+        db.insert_clock(
+            name=clock_def.name,
+            value=clock_def.starting_value,
+            max=clock_def.segments,
+            triggers=clock_def.triggers
+        )
+
+    # Store genre rules for context injection
+    db.insert_genre_context(system.get_genre_rules())
+
+    # ... continue with content setup
+```
+
+### Pipeline Stages Reference System
+
+```python
+# src/core/validator.py
+
+class Validator:
+    def validate(self, interpreter_output, state):
+        system = config.get_game_system()
+
+        # Use system's cost table
+        costs = system.get_action_costs()
+        action_cost = costs.lookup(interpreter_output.action_type)
+
+        # Use system's position/effect if available
+        if system.get_position_effect():
+            position = self.assess_position(interpreter_output, state)
+            # ...
+
+# src/core/resolver.py
+
+class Resolver:
+    def resolve(self, state, validator_output, planner_output):
+        system = config.get_game_system()
+
+        # Use system's roll mechanics
+        if self.needs_roll(validator_output):
+            roll_system = system.get_roll_system()
+            result = roll_system.roll()
+            outcome = roll_system.interpret(result)
+
+        # Apply consequences from system's consequence types
+        if outcome == "mixed_success":
+            consequence = self.pick_consequence(system.get_consequence_types())
+```
+
+### Configuration File Format
+
+```yaml
+# systems/blades_noir.yaml
+id: blades_noir
+name: "Blades-Inspired Cyberpunk Noir"
+description: "Position/Effect mechanics with progress clocks"
+
+clocks:
+  - name: heat
+    segments: 8
+    starting_value: 1
+    description: "Law enforcement and faction attention"
+    triggers:
+      4: "Cops start asking questions in the district"
+      6: "Active investigation opened"
+      8: "Task force mobilized, raid imminent"
+
+  - name: time
+    segments: 12
+    starting_value: 8
+    description: "Hours until case deadline"
+    countdown: true  # decrements rather than increments
+    triggers:
+      4: "Dawn approaches, options narrowing"
+      2: "Final hours, desperation"
+      0: "Deadline passed"
+
+  - name: harm
+    segments: 4
+    starting_value: 0
+    description: "Physical and mental damage"
+    levels:
+      1: "Lesser (bruised, shaken)"
+      2: "Moderate (bleeding, rattled)"
+      3: "Severe (broken, traumatized)"
+      4: "Fatal/Incapacitated"
+
+  - name: cred
+    type: resource  # not a clock, just a number
+    starting_value: 500
+    description: "Street currency and favors"
+
+  - name: rep
+    segments: 5
+    starting_value: 2
+    description: "Reputation in the underworld"
+    bidirectional: true  # can go up or down
+
+rolls:
+  dice: "2d6"
+  bands:
+    failure: [2, 6]
+    mixed: [7, 9]
+    success: [10, 12]
+  critical: 12
+  when_to_roll: "When outcome is uncertain and stakes exist"
+
+position_effect:
+  enabled: true
+  positions:
+    controlled:
+      description: "You have advantage, can withdraw safely"
+      failure_consequence: "You don't get what you want, but no worse"
+    risky:
+      description: "Standard situation, could go either way"
+      failure_consequence: "You suffer a consequence"
+    desperate:
+      description: "Serious danger, high stakes"
+      failure_consequence: "Serious consequence, situation worsens"
+  effects:
+    limited: "Partial progress, 1-2 ticks on clock"
+    standard: "Expected progress, 2-3 ticks"
+    great: "Exceptional progress, 4-5 ticks"
+  trading: true  # can trade position for effect
+
+consequences:
+  - type: reduced_effect
+    description: "Action works but less effectively than hoped"
+  - type: complication
+    description: "New problem emerges (heat +1, alarm triggered, etc.)"
+  - type: lost_opportunity
+    description: "The chance is gone, approach is burned"
+  - type: worse_position
+    description: "Situation escalates to more dangerous"
+  - type: harm
+    description: "Physical or mental damage"
+    uses_harm_clock: true
+
+action_costs:
+  # Default costs for action categories
+  violence:
+    heat: 1
+    description: "Violence attracts attention"
+  social:
+    time: 1
+    description: "Talking takes time"
+  investigation:
+    time: 1
+    description: "Research takes time"
+  travel:
+    time: 1
+    description: "Moving around takes time"
+  crime:
+    heat: 2
+    description: "Illegal acts are risky"
+
+genre_rules:
+  setting: "Cyberpunk noir"
+  technology: "Near-future, cybernetics common, AR/VR ubiquitous"
+  society: "Megacorp dominated, vast inequality, street-level survival"
+  tone: "Morally ambiguous, fatalistic, neon-lit shadows"
+  themes:
+    - "Technology as tool and trap"
+    - "Corporate power vs individual agency"
+    - "Identity in a synthetic age"
+  what_works:
+    - "Street smarts and connections"
+    - "Information as currency"
+    - "Creative use of technology"
+  what_doesnt:
+    - "Frontal assaults on corps"
+    - "Trusting authorities"
+    - "Clean solutions"
+```
+
+### Hooks for Iteration
+
+The system module approach gives us:
+
+1. **Swap systems easily** — Try Blades-style, then simpler, compare
+2. **A/B test mechanics** — Run same scenario with different roll systems
+3. **Tune without code changes** — Edit YAML, reload
+4. **Mix and match** — Use Blades clocks but simpler consequences
+5. **Add mechanics incrementally** — Start minimal, add Position/Effect later
+
+### What Needs Definition (Can Iterate Later)
+
+| Component | v0 Approach | Can Evolve To |
+|-----------|-------------|---------------|
+| **Clocks** | 5 simple clocks, linear triggers | Faction clocks, racing clocks, complex triggers |
+| **Rolls** | 2d6 bands | Position/Effect, advantage/disadvantage, modifiers |
+| **Costs** | Fixed per action type | Situational costs, negotiable costs |
+| **Consequences** | Basic list | Resistance mechanics, lasting effects |
+| **Genre Rules** | Static text | Dynamic adaptation based on play |
+
+---
+
+## What Session Zero Must Establish (Content)
 
 Based on traditional RPG best practices and our v0 scope:
 
@@ -166,6 +523,30 @@ Template provides structure + constraints, AI fills details, player customizes.
 
 ## Recommended Architecture: Setup Pipeline
 
+### Phase 0: System Selection
+**Input:** System ID or player preferences
+**Output:** Loaded game system module
+
+```python
+# Either explicit selection
+system = load_game_system("blades_noir")
+
+# Or inferred from scenario template
+system = scenario.default_system
+
+# Or player chooses
+system = prompt_system_choice([
+    ("blades_noir", "Blades-style with Position/Effect"),
+    ("simple_noir", "Simpler mechanics, faster play"),
+    ("freeform", "Minimal mechanics, narrative focus")
+])
+```
+
+The system is loaded first because it affects:
+- What clocks get initialized
+- What questions to ask in character creation
+- How costs/consequences work throughout play
+
 ### Phase 1: Scenario Selection
 **Input:** Template ID or player preferences
 **Output:** Loaded scenario skeleton
@@ -283,12 +664,21 @@ class SetupPipeline:
         self.db = state_store
         self.prompts = prompt_registry
 
-    def run_setup(self, template_id: str, player_responses: dict) -> SetupResult:
+    def run_setup(
+        self,
+        system_id: str,
+        template_id: str,
+        player_responses: dict
+    ) -> SetupResult:
+        # Phase 0: Load game system
+        system = self.load_system(system_id)
+        self.db.store_system_config(system)
+
         # Phase 1: Load template
         template = self.load_template(template_id)
 
         # Phase 2: Create character
-        character = self.create_character(template, player_responses)
+        character = self.create_character(template, player_responses, system)
 
         # Phase 3: Populate NPCs
         npcs = self.populate_npcs(template, character)
@@ -296,17 +686,23 @@ class SetupPipeline:
         # Phase 4: Generate case structure
         case = self.generate_case(template, character, npcs)
 
-        # Phase 5: Initialize state
-        self.initialize_state(template, character, npcs, case)
+        # Phase 5: Initialize state (uses system for clocks, costs)
+        self.initialize_state(system, template, character, npcs, case)
 
         # Phase 6: Validate
         issues = self.validate_state()
 
         return SetupResult(
+            system=system,
             character=character,
             summary=self.generate_summary(),
             issues=issues
         )
+
+    def load_system(self, system_id: str) -> GameSystem:
+        """Load game system from YAML config"""
+        config_path = f"systems/{system_id}.yaml"
+        return GameSystem.from_yaml(config_path)
 ```
 
 ---
@@ -502,6 +898,7 @@ Setup Pipeline → State Store ← Turn Pipeline
 
 ## Open Questions
 
+### Content Questions
 1. **How interactive should NPC generation be?**
    - Show player each NPC for approval?
    - Or just key NPCs (fixer, main antagonist)?
@@ -509,13 +906,85 @@ Setup Pipeline → State Store ← Turn Pipeline
 2. **Should player choose scenario template or just preferences?**
    - "Play Dead Drop" vs "I want a noir mystery"
 
-3. **How to handle replay/restart?**
+3. **Procedural vs authored content ratio?**
+   - More authored = higher quality, less variety
+   - More procedural = more variety, risk of incoherence
+
+### System Questions
+4. **Should players choose/customize game system?**
+   - Pick from presets vs adjust individual mechanics?
+   - How much complexity to expose?
+
+5. **How to handle mid-game system adjustments?**
+   - Player finds clocks too punishing
+   - Can we tune without breaking state?
+
+6. **Pre-built systems vs custom?**
+   - Start with Blades-inspired, PbtA-inspired, Fate-inspired?
+   - Or build our own minimal system?
+
+### Infrastructure Questions
+7. **How to handle replay/restart?**
    - Reset to post-setup state?
    - Re-run setup with same/different choices?
 
-4. **Multiple characters?**
+8. **Multiple characters?**
    - v0 is single player, but architecture should allow future multi-PC
 
-5. **Procedural vs authored content ratio?**
-   - More authored = higher quality, less variety
-   - More procedural = more variety, risk of incoherence
+---
+
+## Summary: Hooks for Iteration
+
+The key architectural decisions that enable iteration:
+
+### 1. System as Data, Not Code
+Game mechanics defined in YAML, not hardcoded. Change rules by editing config.
+
+```
+systems/
+  blades_noir.yaml      # Full Blades-style
+  simple_noir.yaml      # Minimal mechanics
+  freeform.yaml         # Almost no mechanics
+  experimental_v2.yaml  # Testing new ideas
+```
+
+### 2. System Loaded at Setup, Referenced Throughout
+Pipeline stages don't hardcode mechanics—they ask the system module.
+
+```python
+# Resolver doesn't know how rolls work—it asks
+roll_system = config.get_game_system().get_roll_system()
+result = roll_system.roll_and_interpret()
+```
+
+### 3. Clear Boundaries Between Concerns
+- **System** = mechanics (clocks, rolls, costs)
+- **Template** = structure (locations, NPC roles, case shape)
+- **Content** = specifics (this character, this NPC, this clue)
+
+Each can be swapped independently.
+
+### 4. Progressive Complexity
+Start with minimal system, add mechanics as needed:
+
+| Phase | What's Active |
+|-------|---------------|
+| v0.1 | Simple clocks, no rolls, fixed costs |
+| v0.2 | Add 2d6 rolls for risky actions |
+| v0.3 | Add Position/Effect layer |
+| v0.4 | Add resistance/stress mechanics |
+| v1.0 | Full Blades-style or custom evolved |
+
+### 5. A/B Testing Built In
+```python
+# Run same scenario with different systems
+result_a = run_game(system="blades_noir", template="dead_drop")
+result_b = run_game(system="simple_noir", template="dead_drop")
+compare_metrics(result_a, result_b)
+```
+
+This architecture means we can:
+- Start simple and add complexity based on what works
+- Test different mechanical approaches empirically
+- Let the player experience guide system design
+- Never be locked into a system that doesn't fit
