@@ -1,0 +1,605 @@
+Node-Based Scenario Design – Part 1: The Plotted Approach May 27th, 2010
+Most published adventures are designed around a structure that looks like this:
+
+
+
+You start at the beginning (Blue), proceed through a series of linear scenes (Yellow), and eventually reach the end (Red).
+
+Occasionally you may see someone get fancy and throw a pseudo-option into things:
+
+
+
+But you’re still looking at an essentially linear path. Although the exact form of this linear path may vary depending on the adventure in question, ultimately this form of design is the plotted approach: A happens, then B happens, and then C happens.
+
+The primary advantage of the plotted approach is its simplicity. It’s both easy to understand and easy to control. On the one hand, when you’re preparing the adventure it’s like putting together a scheduled to-do list or laying out the plot for a short story. While you’re running the adventure, on the other hand, you always know exactly where you are and exactly where you’re supposed to be going.
+
+But the plotted approach has two major flaws:
+
+First, it lacks flexibility. Every arrow on the plotted flow-chart is a chokepoint: If the players don’t follow that arrow (because they don’t want to or because they don’t realize they’re supposed to), then the adventure is going to grind to a painful halt.
+
+The risk of this painful train wreck (or the necessity of railroading your players) can be mitigated by means of the Three Clue Rule. But when the Three Clue Rule is applied in a plotted structure, you run the risk of over-kill: Every yellow dot will contain three clues all pointing towards the next dot. If the players miss or misinterpret a couple of the clues, that’s fine. But if they find all of the clues in a smaller scene, they may feel as if you’re trying to spoon-feed them. (Which, ironically, may cause them to rebel against your best laid plans.)
+
+Second, because it lacks flexibility, the plotted approach is inimical to meaningful player choice. In order for the plotted adventure to work, the PCs must follow the arrows. Choices which don’t follow the arrows will break the game.
+
+This is why I say Don’t Prep Plots, Prep Situations.
+
+Node-Based Scenario Design – Part 2: Choose Your Own Adventure May 28th, 2010
+Go to Part 1
+
+Of course, it’s all well and good to say, “Prep Situations.” But one of the reasons people prefer the plotted approach is that it provides a meaningful structure: It tells you where you’re going and it gives you a way to get there.
+
+Without that kind of structure, it’s really easy for a gaming session to derail. It’s certainly not impossible to simply turn the PCs loose, roll with the punches, and end up somewhere interesting. Similarly, it’s quite possible to jump in a car, drive aimlessly for a few hours, and have a really exciting time of it.
+
+But it’s often useful to have a map of the territory.
+
+This line of thought, however, often leads to a false dilemma. The logic goes something like this:
+
+(1) I want my players to have meaningful choice.
+(2) I need to have a structure for my adventure.
+(3) Therefore, I need to prepare for each choice the players might make.
+
+And the result is an exponentially expanding adventure path:
+
+Node-Based Scenario Design - Exponentiall Expanding Adventure Path
+
+The problem with this design should be self-evident: You’re preparing 5 times as much material to supply the same amount of playing time. And most of the material you’re preparing will never be seen by the players.
+
+In some ways, of course, this is an extreme example. You could simplify your task by collapsing some of these forks into each other:
+
+Node-Based Scenario Design - Collapsed Forks
+
+But even here you’re designing eight steps worth of material in order to provide three steps of actual play. You’re still specifically designing material that you know will never be used.
+
+And in other ways it’s actually not that extreme at all: The original example assumes that there are only two potential choices at any given point on the path. In reality, it’s quite possible for there to be three or four or even more – and each additional choice adds a whole new series of contingencies that you need to account for.
+
+Ultimately, this sort of “Choose Your Own Adventure” prep is a dead end: No matter how much you try to predict ahead of time, your players will still find options you never considered — forcing you back into the position of artificially constraining their choices to keep your prep intact and leaving you with the exact same problem you were trying to solve in the first place. And even if that wasn’t true, you’re still burdening yourself with an overwrought preparation process filled with unnecessary work.
+
+The solution to this problem is node-based scenario design. And the root of that solution lies in the inversion of the Three Clue Rule.
+
+Node-Based Scenario Design – Part 3: Inverting the Three Clue Rule May 31st, 2010
+Go to Part 1
+
+The Three Clue Rule states:
+
+For any conclusion you want the PCs to make, include at least three clues.
+
+The underlying theory behind the rule is that having three distinct options provides sufficient redundancy to create a robust scenario: Even if the PCs miss the first clue and misinterpret the second, the third clue provides a final safety net to keep the scenario on track.
+
+This logic, however, also leads us to the inversion of the Three Clue Rule:
+
+If the PCs have access to ANY three clues, they will reach at least ONE conclusion.
+
+In other words, if you need the PCs to reach three conclusions (A, B, and C) and the PCs have access to three clues (each of which would theoretically allow them to reach one of those conclusions) then it is very likely that they will, in fact, reach at least one of those conclusions.
+
+And understanding this inversion of the Three Clue Rule allows us to embrace the full flexibility of node-based design. Here’s a simple example:
+
+
+Node-Based Scenario Design - Basic Node Design
+
+The scenario starts in the blue node, which contains three clues – one pointing to node A, one to node B, and one to node C. Following the inverse of the Three Clue Rule, we therefore know that the PCs will be able to conclude that they need to go to at least one of these nodes.
+
+Let’s assume they go to node A. Node A contains two additional clues – one pointing to node B and the other pointing to node C.
+
+At this point the PCs have had access to 5 different clues. One of these has successfully led them to node A and can now be discarded. But this leaves them with four clues (two pointing to node B and two pointing to node C), and the inverse of the Three Clue Rule once again shows us that they have more than enough information to proceed on.
+
+Let’s assume they now go to node C. Here they find clues to nodes A and B. They now have access to a total of seven clues. Four of these clues now point to nodes they have already visited, but that still leaves them with three clues pointing to node B. The Three Clue Rule itself shows that they now have access to enough information to finish the scenario.
+
+(Note that we’re only talking about clue access here. That doesn’t mean that they’re guaranteed to find or correctly interpret every single clue. In fact, we’re assuming that they don’t.)
+
+Now, compare this node-based design to a comparable plotted approach:
+
+Node-Based Scenario Design - Plotted Approach With Clues
+
+Note that the plotted approach can also be broken down into distinct nodes. And in terms of preparation, the plotted approach requires the exact same resources: Four nodes and nine clues. But the non-plotted design is richer, more flexible, and leaves the PCs in the driver’s seat. In other words, even in the simplest examples, node-based design allows you to get more mileage out of the same amount of work.
+
+Of course, this entire discussion has been rather dry and technical. So let’s put some flesh on these bones.
+
+Node-Based Scenario Design – Part 4: Sample Scenario June 2nd, 2010
+Go to Part 1
+
+Node-Based Scenario Design - Basic Node Structure
+
+The PCs are playing agents in the Las Vegas branch of CTU. This mini-scenario begins when they receive an inter-agency intelligence report that a monitoring program established on a known terrorist operation’s bank account information has recorded payments being made on a storage unit in Las Vegas. The PCs have been authorized to execute a search warrant on the storage unit.
+
+The scenario starts at the North Las Vegas Self-Storage on Lake Mead Boulevard (the BLUE NODE).
+
+Node-Based Scenario Design - North Las Vegas Self-Storage
+
+The storage space itself is stacked high with empty cardboard boxes. Anyone walking past the storage space when the door was open would see a bunch of boxes labeled “LIVING ROOM”, “DISHES”, and the like – but it’s all just for a show. There’s a large gap towards the back where several boxes have recently been removed: Something was being stored here and now it’s gone.
+
+CLUE 1: Checking the rental records reveals that Yassif Mansoor signed the lease on the storage space. The address given on the lease agreement is a fake, but a routine database search turns up a Yassif Mansoor living in the Broadstone Indigo apartment complex on Azure Avenue (NODE A).
+
+CLUE 2: The storage space contains a bellboy uniform belonging to the Bellagio hotel and casino (NODE B).
+
+CLUE 3: There is also a disposable cell phone in the storage space. Checking the call log reveals several calls being placed to a number that can be traced to Officer Frank Nasser (NODE C).
+
+ANCILLARY CLUE: Two detonation caps can be found behind the metal track of the storage space door. (They rolled back there and were lost.)
+
+NODE A: YASSIF MANSOOR’S APARTMENT
+
+Node-Based Scenario Design - Yassif Mansoor's Apartment
+
+Yassif Mansoor isn’t at his apartment, but there are eight terrorists hanging out. Four of them play cards in the living room; two are watching TV in one of the bedrooms; and two more are on the balcony smoking.
+
+Node-Based Scenario Design - Apartment Floorplan
+
+CLUE 1: A large metal trash can in the storage closet off the balcony contains the charcoaled remnants of a massive amount of documentary evidence (Mansoor was covering his tracks). Sifting through the ashes reveals a few partially preserved scraps of paper, including part of a Radio Shack shipping manifest including an order number. Tracking the order reveals several pieces of electronic equipment that could be useful in building bombs. More importantly, it also gives them a credit card number and one of the fake names Mansoor was using. If they track recent activity on the credit card, they’ll find that it was used to rent a room at the Bellagio (NODE B).
+
+CLUE 2: If the PCs can get one of the terrorists to crack under questioning, they can tell them that Yassif Mansoor was at the apartment yesterday with a cop named Nasser (NODE C).
+
+ANCILLARY CLUE: There are six suicide-bomb vests stored in the walk-in closet. After the big bomb went off at the Bellagio, these suicide bombers were going to deliver a second wave of terror throughout Vegas. (These bombers, however, do not know the actual target of the big bomb. That information was sequestered.)
+
+NODE B: THE BELLAGIO
+
+Node-Based Scenario Design - The Bellagio
+
+If the PCs tracked Mansoor’s credit card activity, then they know exactly which suite he’s rented at the Bellagio. If they only know that something might be happening at the Bellagio then the room can be tracked down in a number of ways: Bomb-sniffing dogs; questioning the staff; surveillance; room-by-room canvassing; reviewing security tapes; and so forth.
+
+Node-Based Scenario Design - Hotel Room
+
+Mansoor and six nervous, heavily armed terrorists are waiting in the suite with the Big Bomb (which they snuck into the room on luggage trolleys using bellboy uniforms).
+
+CLUE 1: Yassif Mansoor probably won’t break under questioning, but merely identifying him should allow the PCs to track down his home address (NODE A).
+
+CLUE 2: Sewn into the lining of Mansoor’s jacket is a small packet of microfilm. These contain records indicating that Frank Nasser of the Las Vegas police department is guilty of embezzling from a fund used for undercover drug buys. Mansoor was using these records to blackmail Nasser. (NODE C)
+
+NODE C: FRANK NASSER
+
+Having been blackmailed by Mansoor, Nasser has been helping the terrorist in a number of different ways. (The C4 for the suicide bombers, for example, was taken from a police lock-up Nasser was responsible for. And Nasser intimidated a beat cop into dropping a speeding ticket issued on one of Mansoor’s men.)
+
+CLUE 1: Nasser is more likely to crack under questioning than Mansoor (particularly if the PCs reveal that they have hard evidence of any of his wrong-doing). But he’s also aware of the consequences: If he can, he’ll try to cut a deal before answering their questions.
+
+CLUE 2: Nasser can also be placed under surveillance. He will check in at both the Bellagio and Mansoor’s apartment before the bombings occur.
+
+
+Node-Based Scenario Design – Part 5: Plot vs. Node June 4th, 2010
+Go to Part 1
+
+As I noted before, the plotted approach gives control to the designer of the scenario by taking that control away from the players.
+
+For example, if we were to re-design our Las Vegas CTU scenario using the plotted approach, we could carefully control the flow of events:
+
+Node-Based Scenario Design - Plotted Approach
+
+Evidence at the self-storage facility (BLUE NODE) leads the PCs to Yassif Mansoor’s apartment (NODE A) where they have a frenzied gun-fight with the suicide bombers. But Mansoor is missing and there’s evidence of an even bigger bomb somewhere in Vegas! Their only hope is to track down the corrupt cop Frank Nasser (NODE C) and force him to break under questioning. But will they reach the Bellagio in time (NODE B)?
+
+This is obviously an effective way for the scenario to play out: Everything builds naturally up to a satisfying confrontation with the Bad Guy and his Big Bomb. The argument can certainly be made that you would want to enforce this linearity to make sure that the PCs don’t take out Mansoor and the Big Bomb half-way through the scenario and end up with a massive anti-climax.
+
+But in making that argument, I think we’re overlooking some equally viable alternatives.
+
+For example: Following evidence at the self-storage facility the PCs head to the Bellagio. There they capture the internationally infamous terrorist Yassif Mansoor and disarm the Big Bomb. It looks like they’ve wrapped everything up, but then they discover the truth: There are more bombs! The Bellagio bombing was only the tip of the iceberg, and even from behind bars Mansoor is about to turn the Las Vegas Strip into a Boulevard of Terror!
+
+(And in a more reactive scenario, you might even introduce the possibility of the undiscovered Nasser somehow freeing Mansoor from his cell.)
+
+My point here is that when you create individually interesting nodes, you’ll generally find that those nodes can be shuffled into virtually any order and still end up with an interesting result. The PCs might even decide to split up and pursue two leads at the same time (in true CTU style).
+
+As a GM I find these types of scenarios more interesting to run because I’m also being shocked and surprised at how the events play out at the gaming table. And as a player I find them more interesting because I’m being allowed to make meaningful choices.
+
+Of course, the argument can be made that there’s no “meaningful choice” here because there are three nodes in the scenario and the PCs are going to visit all three nodes no matter what they do. In the big picture, the exact order in which they visit those nodes isn’t meaningful.
+
+Or is it?
+
+Even in this small, simple scenario, the choices the PCs make can have a significant impact on how events play out. If they go to the Bellagio after they’ve identified exactly which room Yassif Mansoor is in, for example, they’ll have a much easier time of confronting the terrorists without tipping them off. If they have to perform a major search operation on the hotel, on the other hand, the terrorists may have laid a trap for them; Mansoor might have a chance to escape; or there might have been time to make a phone call and warn the terrorists back at the apartment.
+
+And in more complex scenarios, of course, there will be more meaningful contexts for choices to be made within. For example, something as simple as adding a timeline to our sample scenario can make a big difference: If CIA communication intercepts indicate a high threat of a terrorist attack in Vegas timed for 6:00 pm, then PCs standing in the storage facility with multiple leads to pursue suddenly have a tough choice to make. Do they go to the Bellagio because it’s a high-profile target despite the fact they aren’t sure exactly what they should be looking for there? Do they go to Mansoor’s apartment in the hope that they can find out more information about the Bellagio attack? Do they split up and pursue both leads in tandem? Do they call in the Vegas police to evacuate the Bellagio while they pursue the apartment lead? (Is that even a safe option if they have evidence pointing to a mole inside the department?)
+
+Furthermore, when an individual scenario is placed within the context of a larger campaign it allows the choices made within that scenario to have a wider impact. For example, if they tip off Mansoor and allow him to escape by rushing their investigation, it means that he can return as a future antagonist. Similarly, if they don’t find or follow the leads to Nasser, the continued presence of a terrorist-compromised mole in the Las Vegas police force can create ongoing problems for their investigations.
+
+(And if the Bellagio gets blown up there will obviously be a long-lasting impact on the campaign.)
+
+On a more basic level, in my opinion, the fact that the players are being offered the driver’s seat is meaningful in its own right. Even if the choice doesn’t have any lasting impact on the final conclusion of “good guys win, bad guys lose”, the fact that the players were the ones who decided how the good guys were going to win is important. If for no other reason than that, in my experience, it’s more fun for everybody involved. And more memorable.
+
+Node-Based Scenario Design – Part 6: Alternative Node Design June 7th, 2010
+Go to Part 1
+
+On the other hand, there is something to be said for the Big Conclusion. There are plenty of scenarios that don’t lend themselves to a shuffling between nodes of equal importance: Sometimes Dr. No’s laboratory is intrinsically more important than Strangeways’ library. And the Architect’s inner sanctum requires the Keymaker.
+
+So let’s talk about some alternative node structures.
+
+CONCLUSIONS
+
+Node-Based Scenario Design - Conclusions
+
+In this design, each node in the second layer contains a third clue that points to the concluding node D. The function should be fairly self-explanatory: The PCs can chart their own course through nodes A, B, and C while being gently funneled towards the big conclusion located at node D.
+
+(Note: They aren’t being railroaded to D. Rather, D is the place they want to be and the other nodes allow them to figure out how to get there.)
+
+One potential “problem” with this structure is that it allows the PCs to potentially bypass content: They could easily go to node A, find the clue for node D, and finish the adventure without ever visiting nodes B or C.
+
+Although this reintroduces the possibility for creating unused content, I put the word “problem” in quotes here because in many ways this is actually desireable: When the PCs make the choice to avoid something (either because they don’t want to face it or because they don’t want to invest the resources) and figure out a way to bypass it or make do without it, that’s almost always the fodder for an interesting moment at the gaming table in my experience. Nor is that content “wasted” — it is still serving a purpose (although its role in the game may now be out of proportion with the amount of work you spent prepping it).
+
+Therefore, it can also be valuable to incentivize the funneling nodes in order to encourage the PCs to explore them. In designing these incentives you can use a mixture of carrots and sticks: For example, the clue in node A might be a map of node D (useful for planning tactical assaults). The clue in node B might be a snitch who can tell them about a secret entrance that doesn’t appear on the map (another carrot). And node C might include a squad of goons who will reinforce node D if they aren’t mopped up ahead of time (a stick).
+
+(That last example also shows how you can create multi-purpose content. It now becomes a question of how you use the goon squad content you prepped rather than whether you’ll use it.)
+
+FUNNELS
+
+The basic structuring principles of the conclusion can be expanded into the general purpose utility of funneling:
+
+Node-Based Scenario Design - Funnels
+
+Each layer in this design (A, B, C and E, F, G) constitutes a free-form environment for investigation or exploration which gradually leads towards the funnel point (D or H) which contains the seeds leading them to the next free-form environment.
+
+I generally find this structure useful for campaigns where an escalation of stakes or opposition is desirable. For example, the PCs might start out investigating local drug dealers (A, B, C) in an effort to find out who’s supplying drugs to the neighborhood. When they identify the local distributor (D), his contacts lead them into a wider investigation of city-wide gangs (E, F, G). Investigating the gangs takes them to the Tyrell crime family (H), and mopping up the crime family gets them tapped for a national Mafia task force (another layer of free-form investigation), culminating in the discovery that the Mafia are actually being secretly run by the Illuminati (another funnel point).
+
+(The Illuminati, of course, are being run by alien reptoids. The reptoids by Celestials. And the Celestials by the sentient network of blackholes at the center of our galaxy. The blackhole consciousness, meanwhile, has suffered a schizoid bifurcation due to an incursion by the Andromedan Alliance…. wait, where was I?)
+
+In particular, I find this structure well-suited for D&D campaigns. You don’t want 1st-level characters suddenly “skipping ahead” to the mind flayers, so you can use the “chokepoints” or “gateways” of the funnel structure to move them from one power level to the next. And if they hit a gateway that’s too tough for them right now, that’s OK: They’ll simply be forced to back off, gather their resources (level up), and come back when they’re ready.
+
+Another advantage of the funnel structure is that, in terms of prep, it gives you manageable chunks to work on: Since the PCs can’t proceed to the next layer until they reach the funnel point, you only need to prep the current “layer” of the campaign.
+
+LAYER CAKES
+
+Node-Based Scenarios Designs - Layer Cakes
+
+A layer cake design achieves the same general sense of progression that a funnel design gives you, but allows you to use a lighter and looser touch in structuring the scenario.
+
+The most basic structure of the layer cake is that each node in a particular “layer” gives you clues that lead to other nodes on the same layer, but also gives you one clue pointing to a node on the second layer. Although a full exploration of the first layer won’t give the PCs three clues to any single node on the second layer, they will have access to three clues pointing to a node on the second level. Therefore, the Inverted Three Clue Rule means that the players will probably get to at least one node on the second layer. And from there they can begin collecting additional second layer clues.
+
+Whereas PCs in a funnel design are unlikely to backup past the last funnel point (once they reach node E they generally won’t go back to node C since it has nothing to offer them), in a layer cake design such inter-layer movement is common.
+
+Layer cakes have a slightly larger design profile than funnels, but allow the GM to clearly curtail the scope of their prep work (you only need to prep through the next layer) while allowing the PCs to move through a more realistic environment. You’ll often find the underlying structure of the layer cake arising naturally out of the game world.
+
+Node-Based Scenario Design – Part 7: More Alternative Node Designs June 9th, 2010
+Go to Part 1
+
+LARGE LAYERS
+
+In case it hasn’t been clear, I’ve been using three-node layers in these examples because it’s a convenient number for showing structure. But there’s nothing magical about the number. Each “layer” in the previous examples constitutes an interlinked environment (either literal or metaphorical) for exploration or investigation, and you can make these environments as large as you’d like.
+
+As long as each node has a minimum of three clues in it and a minimum of three clues pointing to it, the Three Clue Rule and its inversion will be naturally satisfied and guarantee you a sufficiently robust flow through the layer. But as you increase the number of nodes, you also open the possibility for varying clue density: Particularly dense clue locations could have six or ten clues all pointing in different directions.
+
+Obviously, however, the larger each layer is, the more prep work it requires.
+
+DEAD ENDS
+
+Dead ends in a plotted mystery structure are generally disasters. They mean that the PCs have taken a wrong-turn or failed to draw the right conclusions and now the train is going to crash into a wall: There should be a clue here for them to follow, but they’re not seeing it, so there’s nowhere to go, and the whole adventure is going to fall apart.
+
+But handled properly in a node-based structure, dead ends aren’t a problem: This lead may not have panned out, but the PCs will still have other clues to follow.
+
+Node-Based Scenario Design - Dead Ends
+
+In this example, node E is a dead end. Clues at nodes B and C suggest that it should be checked out, but there’s nothing to be found there. Maybe the clues were just wrong; or the bad guys have already cleared out; or it looked like a good idea but it didn’t pan out into usable information; or it’s a trap deliberately laid to catch the PCs off-guard. The possibilities are pretty much limitless.
+
+The trick to implementing a dead end is to think of clues pointing to the dead end as “bonus clues”. They don’t count towards the maxim that each node needs to include three different clues. (Otherwise you risk creating paths through the scenario that could result in the PCs being left with less than three clues. Which may not be disastrous, but, according to the Inverse Three Clue Rule, might be.)
+
+On the other hand, as you can see, you also don’t need to include three clues leading to a dead end: It’s a dead end, so if the PCs don’t see it there’s nothing to worry about.
+
+Of course, if you include less than three clues pointing to the dead end then you’re increasing the chances that you’re prepping content that will never be seen. But this also means that the discovery of the dead end might constitute a special reward: Extra treasure or lost lore or a special weapon attuned to their enemy.
+
+Which leads to a broader point: Dead ends may be logistical blind alleys, but that doesn’t mean they should be boring or meaningless. Quite the opposite, in fact.
+
+In the same vein as dead ends, you can also use “clue light” locations. (In other words, locations with less than three clues in them.) Structurally such locations generally work like dead ends, by which I mean that clues pointing to clue light locations need to be “bonus clues” to make sure that the structure remains robust.
+
+The exception to this guideline is that you can generally have a number of two-clue locations equal to the number of clues accessible in a starting node. (For example, in the layer cake structure diagram you have three nodes in the bottom layer with only two clues each because the starting node contains three clues. If there wasn’t a starting node with three clues in it, the same structure would have potential problems.)
+
+LOOPS
+
+Node-Based Scenario Design - Loops
+
+In this simple loop structure all four nodes contain three clues pointing to the other three nodes. The advantage of this simple structure is that the PCs can enter the scenario at any point and navigate it completely.
+
+Obviously, this is only useful if the PCs have multiple ways to engage the material. In a published product this might be a matter of giving the GM several adventure hooks which can be used (each giving a unique approach to the adventure). In a personal campaign, clues for nodes A, B, C, and D might be scattered around a hexcrawl: Whatever clues the PCs find or pursue first will still lead them into this chunk of content and allow them to explore it completely.
+
+Node-Based Scenario Design – Part 8: Freeform Design in the Cloud June 11th, 2010
+Go to Part 1
+
+Everything we’ve been discussing here are basic, systematic designs. But there’s no reason you need to be symmetrical. Maybe node A has two clues pointing to node B while node C is clue-happy for node A.
+
+Node-Based Scenario Design - Asymmetrical Nodes
+
+On a larger scale, you’ll probably find yourself mashing together lop-sided conglomerations of disparate structures.
+
+For example, a good-sized chunk of my current campaign is based around a general layer cake approach: An interconnected web of criminal organizations allow the PCs to generally make their way up the “chain of command”. But this layer cake naturally funnels towards various sub-conclusions, and I’ve also included loops designed to carry the PCs back to points prior to the various funnels.
+
+That approach may seem jargon-filled, but it’s really just a matter of embracing the fundamentally flexible principles of node-based design, strewing clues liberally, and spot-checking to avoid problem areas.
+
+Looking over my notes for this campaign, I’ve come to think of this as the “cloud”: Dozens of nodes all containing clues and linked to by clues. Even if we discount all the different ways in which the PCs can approach each of these nodes, the complex relationships which emerge from the node structure make literally hundreds of potential outcomes possible.
+
+But I didn’t have to think about that emergent complexity as I was designing the campaign-scale scenario: All I needed to do was design the criminal organization, break it into node-sized chunks, and then lay down the clues necessary to navigate to and from each node.
+
+As I write this, my players are about mid-way through this section of the campaign. It’s been filled with countless surprises for all of us, and these surprises lead me to a final point regarding the strengths of node-based design: It’s flexible in play.
+
+Because each node is, effectively, a modular chunk of material, it becomes very easy to rearrange the nodes on-the-fly. For example, when the PCs raided an enemy compound and wiped out half of their personnel before being forced to pull back, it was very easy for me to look around, grab a different node full of bad guys, and plug them in as reinforcements.
+
+In other words, it was as easy for me to call in the reinforcements as it was for the NPCs to pick up the phone. Node-based design gives you, by default, the scenario-based toolkit I talked about in “Don’t Prep Plots”. And the underlying structural function of that node hadn’t changed: The NPCs still had the same clues to provide that they’d been designed to provide at their previous location.
+
+
+Node-Based Scenario Design – Part 9: Types of Nodes June 14th, 2010
+Go to Part 1
+
+Up to this point I’ve been fairly vague about exactly what I mean by a “node”. This is largely because there isn’t really a hard-and-fast definition of the term.
+
+In generic terms, you can think of each node as a “point of interest”. It’s the place (either literally or metaphorically) where something interesting can happen and (in most cases) information about other interesting things can be found.
+
+In my experience, nodes are most useful when they’re modular and self-contained. I think of each node as a tool that I can pick up and use to solve a problem. Sometimes the appropriate node is self-evident. (“The PCs are canvassing for information on recent gang activity. And I have a Gather Information table about recent gang activity. Done.”) Sometimes a choice of tool needs to be made. (“The PCs have pissed off Mr. Tyrell. Does he send a goon squad or an assassin?”) But when I look at an adventure, I tend to break it down into discrete, useful chunks.
+
+Chunks that become too large or complex are generally more useful if broken into several smaller nodes. Chunks that are too small or fiddly are generally more useful if grouped together into larger nodes. The “sweet spot” is about identifying the most utilitarian middle-ground.
+
+(To take an extreme example: “All the forestland in the Kingdom of Numbia” is probably too large for a single node. On the other hand, 86,213 separate nodes each labeled “a tree in the Forest of Arden” are almost certainly too fiddly. Is the appropriate node the “Forest of Arden”? Or is it twelve different nodes each depicting a different location in the Forest of Arden? I don’t know. It depends on how you’re using the Forest of Arden.)
+
+Let’s get more specific. Here are the sorts of things I think of as “nodes”:
+
+LOCATIONS: A place that the PCs can physically go. If you think of a clue as being anything that “tells you where to go next”, telling the PCs about a specific place that they’re supposed to go is the most literal interpretation of the concept. Once PCs arrive at the location, they’ll generally find more clues by searching the place.
+
+PEOPLE: A specific individual that the PCs should pay attention to. It may be someone they’ve already met or it may be someone they’ll have to track down. PCs will generally get clues from people by either observing them or interrogating them.
+
+ORGANIZATIONS: Organizations can often be thought of as a collection of locations and people (see Nodes Within Nodes, below), but it’s not unusual for a particular organization to come collectively within the PCs’ sights. Organizations can be both formal and informal; acknowledged and unacknowledged.
+
+EVENTS: Something that happens at a specific time and (generally) a specific place. Although PCs will often be tasked with preventing a particular event from happening, when events are used as nodes (i.e., something from which clues can be gathered), it’s actually more typical for the PCs to actually attend the event. (On the other hand, learning about the plans for an event may lead the PCs to the location it’s supposed to be held; the organization responsible for holding it; or the people attending it.)
+
+ACTIVITY: Something that the PCs are supposed to do. If the PCs are supposed to learn about a cult’s plan to perform a binding ritual, that’s an event. But if the PCs are supposed to perform a magical binding ritual, then that’s an activity. The clues pointing to an activity may tell the PCs exactly what they’re supposed to be doing; or they may tell the PCs that they need to do something; or both.
+
+NODES WITHIN NODES
+
+In other words, at its most basic level a node is a person, a place, or a thing.
+
+As suggested above, however, nodes can actually be fairly complex in their own right. For example, the entire Temple of Elemental Evil (with hundreds of keyed locations) could be thought of as a single node: Clues from the village of Hommlet and the surrounding countryside lead the PCs there, and then they’re free to explore that node/dungeon in any way that they wish.
+
+Similarly, once the PCs start looking at the Tyrell Corporation they might become aware of CEO James Tyrell, the corporate headquarters, their shipping facility, the server farm they rent, and the annual Christmas party being thrown at Tyrell’s house — all of which can be thought of as “sub-nodes”. Whether all of these “sub-nodes” are immediately apparent to anyone looking at the Tyrell Corporation or if they have to be discovered through their own sub-network of clues is largely a question of design.
+
+In short, you can have nodes within nodes. You can plan your campaign at a macro-level (Tyrell Corporation, Project MK-ALTER, the Chicago Sub-City, and the Kronos Detective Agency), look at how those macro-nodes relate to each other, and then develop each node as a separate node-based structure in its own right. Spread a few clues leading to other macro-nodes within each network of sub-nodes and you can achieve highly complex intrigues from simple, easy-to-use building blocks.
+
+Advanced Node-Based Design – Part 1: Moving Between Nodes October 3rd, 2011
+Advanced Node-Based Design 1
+
+In Node-Based Scenario Design we explored an alternative to the typical plotted approach to scenario design: By designing a situation instead of a plot we create a flexible environment in which the meaningful choices of the players are allowed to flourish. And by organizing the elements of that situation into nodes we retain the clarity of the plotted approach without accepting the limitations of its straitjacket.
+
+Now that we’ve established the basic elements of node-based design, however, I want to explore some of the tips and tricks I’ve learned in working with node-based prep.
+
+Let’s start by taking a closer look at the fundamental structure of node-based design: How do the players move from one node to the next?
+
+Advanced Node-Based Design 2
+
+In discussing basic node-based design I defaulted to clue-based movement because (a) it’s simple; (b) it’s versatile; and (c) it clearly demonstrates just how powerful and flexible the node-based approach can be. It’s also fairly universal in my experience: Whatever other methods I may be using, the clue-based approach is virtually always part of the mix.
+
+But it’s not the only way.
+
+PUSH vs. PULL
+
+Let’s start with a general principle.
+
+In discussing narrative velocity in computer games, Andrew Doull coined the terms “push” and “pull”. I find Doull’s usage of the terminology a little vague, but nonetheless useful as a basic concept: A “pull” happens when the players want to explore, experience, or discover a node. A “push” happens when the players are forced to do these things.
+
+A pull, by its nature, requires that the players have some sort of knowledge about the node which makes it desirable for them. The appeal of the pull can take the form of a reward, an opportunity, or any other form of benefit. In a typical D&D dungeon, the pull is the promise of treasure. In a mystery scenario, the simple promise that “you might find some clues over there” is often more than enough of a pull.
+
+A push can similarly rely on player knowledge (“rob the bank or your girlfriend dies”), but it doesn’t necessarily require it. For example, the PCs can be pushed into an encounter with the assassin hunting them (by way of ambush) without ever being aware that the assassin was coming. In other cases, the PCs’ ignorance may be the entire difference between a push and a pull. For example, they might have loved to seek out the Hidden Citadel of the Golden Empire if they had ever heard about it. But since they didn’t, it was a complete push when they randomly stumbled across it during a hexcrawl.
+
+In practice, the distinction between a push and a pull can be somewhat muddy. This is particularly true once you start layering motivations. (For example, the PCs might be forced to investigate the recent raids by giant war parties when the duke threatens to execute them if they don’t. But once they’re engaged in the investigation, the pursuit of individual clues might still be pulls. And maybe they’d already been pulled by the giant raids because Patric’s father was killed by frost giants.)
+
+It should also be noted that pushes don’t need to be fait accompli. The duke threatening to kill them if they don’t investigate the giant raids is certainly a push, but it doesn’t necessarily mean they don’t have the option to leave the duchy and seek their fortunes elsewhere. (Or assassinate the duke. Or bribe him to leave them alone. Or kidnap his daughter and hold her hostage until he grants them a pardon. Or any number of other things.) In other words, the game world can push at the PCs without the GM railroading them.
+
+Pulls and pushes also don’t have to be limited to character motivations; they can also act on player motivations. If you’ve ever heard your players say “let’s find some orcs to kill so that we can level up”, then you’ve heard the siren call of the metagame pull. But this can also take the simple form of “let’s explore the Eyrie of the Raven Queen ‘cause it sounds like the most fun”.
+
+Whether pushing or pulling or both, a node still needs to overcome a certain “gravity” in order to be explored. For some groups, this gravity is simple apathy. (You need to make the place sound a lot more interesting or threaten them with a lot more consequences before they’ll drag their sorry asses out of the local tavern.) Sometimes it’s the competition with other active pulls and pushes. (“We’d love to deal with the Temple of Deep Chaos, but first we need to make sure the Pactlords can’t breach the Banewarrens.”) Or it might be the known and suspected costs of going to the node. (“The Tomb of Horrors may contain a ton of treasure and that’s a fantastic pull… but it’s still a bloody death trap and I don’t want to go there.”)
+
+Advanced Node-Based Design – Part 2: Node Navigation October 5th, 2011
+Go to Part 1
+
+Let’s turn our attention now to specifics: What are the exact navigation methods that can be used to guide characters into a node?
+
+CLUES: Clues turn each node into a conclusion. When the PCs put the clues together, they’ll tell them where to go, who to look at, and/or what to do.
+
+Clue-based scenarios are often considered fragile, but by using the Three Clue Rule and the Inverted Three Clue Rule you can make them robust.
+
+One pitfall to watch for: In order to reach the next node, the PCs must know both what they’re looking for and how to find it. If you only give the PCs one clue telling them how to reach the Lost City of Shandrala, your scenario will remain fragile even if you include 20 clues telling them the Lost City of Shandrala is interesting and they should totally check it out.
+
+On the other hand, clue-based node navigation conveniently organizes itself into mystery scenarios which provide over-arching push/pull motivations: Once the PCs are interested in unraveling the mystery, all you need to do is put a node on the bread crumb trails and they’ll follow it.
+
+GEOGRAPHY: In other words, the choice of which way to go. The archetypal example is the dungeon, which generally provides a far more robust structure than a clue-based scenario. For example, consider this simple dungeon:
+
+Advanced Node-Design 3
+
+Moving from A to B to C requires no redundancy because the hallway provides a clear and unmistakable geographic connection.
+
+However, geographical structure can occasionally create a sense of false security. For example, consider this very similar dungeon:
+
+Advanced Node-Based Design 4
+
+Now you have a potential problem: If the PCs fail to detect the secret door your adventure can easily go off the rails. (Assuming they need to reach C.)
+
+Hexcrawls can be similarly problematic in that there’s no guarantee that any given piece of content will actually be encountered. (When I was 12 years old I remember pouring over a copy of X1 Isle of Dread and never quite figuring out how the PCs were supposed to “know where to go” in order to find all the keyed encounters.) Properly designed hexcrawls, however, employ a mode of redundancy similar to the Three Clue Rule: They don’t require you to encounter any particular piece of interesting content, but rather spread interesting content liberally so that you are almost certain to encounter at least one piece of interesting content even if you’re just exploring randomly. (This, of course, creates a high degree of extraneous prep. But hexcrawls are meant to be used over and over again, utilizing that extra content over the course of several passes.)
+
+In geographical arrangements, obstacles serve as pushes. For example, if the PCs are in Room A and they want to get to Room C, then Room B is encountered only because it’s an obstacle. The PCs are pushed into encountering Room B because the geography of the dungeon requires it.
+
+TEMPORALLY: The phone call that comes at 2 PM. The goblin attacks on the 18th. The festival that lasts for a fortnight.
+
+Although lots of nodes can include time-sensitive components (“if the PCs arrive after the 14th, the Forzi crime family has cleared out the warehouse”), nodes that are triggered temporally are almost always a push: Something or someone comes looking for the PCs, pushing them into engaging with the node.
+
+(Of course, temporal triggers can also be coincidental – like a red dragon attacking the Ghostly Minstrel when the PCs just happen to be dining there or the sun becoming eclipsed – but those are still pushes.)
+
+Temporal triggers can also have some variability built into them. For example, you might decide that the Forzis hire a hitman to kill one of the PCs on the 16th. That doesn’t necessarily mean that the hitman will immediately find them.
+
+RANDOMLY: Wandering monsters are the classic example of a randomly generated node, but they’re far from the only example. The early Dragonlance modules, for example, coded story events into their random encounter tables. Jeff Rients’ table for carousing mishaps offers a different set of possibilities.
+
+Because of their long association with wandering monster checks, the random triggering of a node is often associated with the random generation of a node. Although both can be useful techniques, when we’re talking about navigating between nodes we’re primarily focusing on the random triggering of a node.
+
+For example, in my current hexcrawl campaign the content of each hex has been fully keyed. But I use a set of mechanics to randomly determine whether or not that content is encountered by a group moving through the hex (i.e., triggering the node).
+
+PROACTIVE NODES: A proactive node comes looking for the PCs. These are often triggered temporally or randomly, but this isn’t necessarily the case.
+
+For example, instead of using random encounters I will often run small complexes in “real time” by splitting the enemy NPCs into small squads. I can then track the actual movement of each squad in response to the actions of the PCs.
+
+One could also easily imagine an “Alert Track”: Every time the PCs do something risky or expose their activities in some way, the alertness level of their opponents rises. The rising alertness level could change the content of some nodes in addition to triggering a variety of proactive nodes.
+
+In reading many published adventures, it’s not unusual for the first node to be entirely proactive. (The classic example being “an NPC wants to hire you for a job”.) But then many adventures will suddenly stop being proactive. Neither of these things need to be true.
+
+It can also be tempting to think of proactive nodes as being a railroading technique. While they certainly can be used in that way, there’s no need for that to be true. Examples entirely free of predetermined GM machinations might include NPCs making counter-intelligence checks to discover the PCs’ identities or the PCs being tracked through the wilderness by enemy forces after they escape from the Dread Lord’s Castle.
+
+In general, proactive nodes are useful for creating a living world in which there are both short-term and long-term reactions to the PCs’ choices.
+
+FOLLOWING A TRAIL: I’m not sure if following a trail from node A to node B constitutes navigating by clue, geography, both, or neither, so I’m including it here as a common sort of special-case hybrid.
+
+A trail, of course, doesn’t have to be limited to following tracks in the mud: Tracing data trails through the ‘net; hacking jumpgate logs; a high-speed car chase. There are lots of options.
+
+PLAYER-INITIATED: In their quest to get from A to C, it’s not unusual for players to invent their own B’s without any particular prompting. Sometimes these can be anticipated (like most Gather Information checks, for example), but in many cases the players will find ways of tackling a problem that you never imagined (like the time my players inadvertently started a shipping company in order to find a missing person).
+
+In the same spirit as permissive clue-finding, it’s almost always a good idea to follow the player’s lead: Your prep should be a safety net, not a straitjacket. (That doesn’t mean all their schemes should prove successful, but when in doubt play it as it lies.)
+
+
+Advanced Node-Based Design – Part 3: Organization October 10th, 2011
+Go to Part 1
+
+One of the challenges a GM faces is in presenting the complex reality of a living world: Players have the luxury of focusing on a single character, but the GM often finds themselves needing to juggle dozens of characters and potentially hundreds of pieces of information.
+
+One of the most important skills for a GM to master, therefore, is better organization.
+
+Take a dungeon, for example. Simple stuff like using a numbered key to describe the dungeon may seem obvious, but take a second to imagine the alternative where that basic level of organization isn’t applied. (And I have, in fact, seen published adventures where it wasn’t applied. It isn’t pretty.)
+
+Now, how could we improve that organization even more? Well, we could start by clearly segregating “information anyone entering the room should immediately know” from “information that can only be gained with further investigation”. (Properly written boxed text is one way of doing that, of course.)
+
+Might it be useful to also distinguish “information characters might notice immediately upon entering the room without taking any particular action”? Probably.
+
+And so forth.
+
+Note that I’m not talking about performing any extra prep work. I’m just talking about organizing your prep work so that it’s easier to use at the table. (I’ve actually found that proper organization can actually reduce the amount of prep you need to do.)
+
+The node-based structure itself, of course, is one way of organizing your prep work. In terms of organizing the actual nodes, though, here are a few tips that I’ve learned—
+
+KEY YOUR NODES: Just like the rooms in a dungeon, it will be easier to reference and use your nodes if you key them. For the most part, I just use numerical codes: Node 1 is First Central Bank. Node 2 is the security guard who didn’t show up for work during the robbery. Node 3 is the stolen car that was used as a get-away vehicle. And so forth.
+
+KEEP A CONNECTION LIST: I’ve talked in the past about the importance that The Masks of Nyarlathotep played in developing the Three Clue Rule and, by extension, node-based scenario design. The concept of a “connection list” is taken directly from that campaign:
+
+Advanced Node-Based Design 5
+
+It shouldn’t take much imagination to see how much easier such a list will be to design and maintain if you’ve specifically keyed your nodes. I discuss this concept at much greater length in Using Revelation Lists.
+
+KNOW YOUR NODE HIERARCHY: At a basic level, you should have some rough sense of how you want the various nodes of the scenario to hook up. (Bearing in mind that (a) your players will probably find all kinds of ways to connect the nodes that you never intended and (b) you don’t really need to pursue some sort of rigid ideal.
+
+And if you’re dealing with a relatively small number of nodes, that’s probably all you need to know. But as the number of nodes begins to grow, you’ll probably find it useful to break them up into more manageable packets: Can you break one large scenario into multiple smaller scenarios?
+
+Those scenarios, of course, can hook into each other. But by breaking them up into distinct packets, I find it’s easier to keep the overall structure of the campaign manageable and comprehensible.
+
+For my games, I typically maintain a document I refer to as the “Adventure Track” which details the macro-level node structure of the campaign. For my Ptolus campaign, I broke the macro-structure into five acts. And then, within each act, I created clusters of related nodes using a simple outline structure.
+
+For example, here’s Act I:
+
+1. The Awakening
+2. The Murderer’s Trail (Ptolus – Adventure #1)
+
+a. Following the Ledger
+b. House of Demassac
+c. Jirraith and the Pale Dogs
+
+3. The Trouble With Goblins (Ptolus – Interlude #1)
+
+a. Complex of Zombies
+b. Laboratory of the Beast
+c. Goblin Caverns of the Ooze Lord
+
+4. Smuggler’s Daughter (Ptolus – Adventure #2)
+
+a. The Slavers’ Enclave
+
+5. End of the Trail (Ptolus – Adventure #3)
+
+a. Swords of Ptolus
+b. Cloud Theater
+
+6. Shilukar’s Lair (Ptolus – Adventure #4)enture #4)
+
+Each line here is a major scenario, with the various scenarios interconnected as nodes. (Some of these individual scenarios are also designed using node-based techniques.) The indented lines are closely associated with the “major nodes” above them. (In other words, I’m using a basic outline structure to conveniently group the content of Act I into convenient conceptual packages. This outline also keys each node: “The Awakening” is Node 1; “Laboratory of the Beast” is Node 3B; and so forth.)
+
+Act II of the campaign is even more complicated, featuring a total of 42 major scenarios. In order to keep the structure of that act manageable, I broke it down into three semi-independent “chunks”, each of which was then organized in a fashion similar to the outline for Act I you see above.
+
+I’ve found this Adventure Track + Connection List method to be very useful for both preparing and running a node-based campaign. But there’s nothing magical about it. You should find the method that works best for you. My general point, however, is that you should strive to achieve a high-level understanding of your node structure – chunking that node structure into larger and more manageable pieces as necessary.
+
+Go to Part 1
+
+Something I touched on lightly when discussing the organization of your nodes was the difficulty of working with large networks of nodes.
+
+This ties into Delta’s “Magic Number Seven”, which I’ve talked about before. To sum it up:
+
+Working memory capacity for most adults is in the range of 7 +/- 2 objects. Short-term memory capacity is also 7 +/- 2 when memorizing strings of random digits.
+Beyond these limits, mental functioning drops off rapidly.
+In other words, we are generally pretty good at holding somewhere between 5 and 9 objects in our mind at a given time. Any more than that and it becomes increasingly difficult (or impossible).
+
+So if you start trying to tackle large networks of nodes, you can quickly reach a point at which you can’t keep the whole network “in your head” at the same time. At this point, the network becomes difficult to design and manage (particularly in real-time at a game table).
+
+Properly organizing your network can make it easier to manage, of course. (The Act I structure I posted, for example, took 15 difficult-to-manage nodes and broke them down into 6 major nodes with a varying number of sub-nodes. I could easily grasp the structure of the 6 major nodes and then “zoom in” to focus on the sub-nodes as necessary.)
+
+But this principle also offers us an opportunity as designers: A quick and easy way to add complexity to a node-based scenario is to simply add a second set of nodes that are largely or entirely disconnected from the first set.
+
+I call this technique the Second Track.
+
+In my experience, it’s particularly easy to run a second track if the tracks use different methods of linking their nodes. For example, you might create a timeline of “backdrop events” combined with a primary network of clue-linked nodes. But this division of methods isn’t strictly necessary.
+
+The reason this works well is that, from your perspective behind the screen, there are just two “chunks” of 4-6 nodes each: Easy to keep track of. Easy to understand. Easy to design. Easy to run.
+
+But for the players – who aren’t privy to that structure – there are 10-12 nodes. This pushes it past the Magic Number Seven and presents them with enough complexity to become enigmatic.
+
+(To put it a different way: The GM can easily handle the reactions of Conspiracy 1 independently from the reactions of Conspiracy 2. Until the players figure out that there are two different conspiracies, however, they can’t even start to unravel what’s happening to them.)
+
+Advanced Node-Based Design – Part 5: The Two Prongs of Mystery Design October 17th, 2011
+Go to Part 1
+
+I’ve often found it useful to think of mystery-based scenarios as having two “prongs”: First, the clues required to figure out what happened or is happening (the concept solve). Second, the clues that take the PCs to another location or event where more clues can be gathered (the scenario solve).
+
+This is somewhat similar, of course, to the concept of the Second Track, but where a second track presents a secondary set of nodes, here I’m talking about using a single node structure containing two sets of clues.
+
+In practice, of course, you’ll often end up with quite a bit of overlap between the two sets of clues: When the players discover that Altair Electronics is somehow involved with the recent string of cyber-jackings, that tells the players something about what’s going on, but it will also point them in the direction of Altair’s corporate headquarters.
+
+On the other hand, of course, there’s also the exception which proves the Three Clue Rule: In certain mystery structures you can actually be certain that the PCs will know about some locations without needing three clues. (Or any clues.) For example, if they’re police officers tracking bank robbers and another bank gets robbed, they’re going to get called to that location.
+
+In such scenarios, of course, you can simply focus on delivering the clues necessary to reveal the mystery. (With three clues per necessary revelation.) But when faced with a more traditional two-prong approach, the important thing to understand is that you can spread the clues necessary to solve the mystery thinly (as long as you include the necessary density of clues to keep PCs moving from node to node). There may be entire nodes where there are no clues for unraveling the deeper mystery – just clues for moving on to the next node (where, hopefully, answers can be found).
+
+How thin can you go? Well, it depends on what effect you’re trying to achieve. If you’ve got a mystery that’s serving as the metaplot of an entire campaign, for example, you may be spreading those clues very thin indeed.
+
+Another option, of course, is to vary the clue density. Nodes that are difficult to find or difficult to exploit (due to armed resistance, for example) might offer more rewards in terms of mystery-solving clues.
+
+Or perhaps the deeper you move into a conspiracy, the more clues you might discover. For example, the early stages of a layer cake node design might have only sparse or enigmatic clues. The deeper you move into the scenario, however, the thicker and more explicit the clues might become.
+
+Conversely, it’s important to remember not to mistake mystery-solving clues for node-transition clues. What I mean is that including a mystery-solving clue in a node doesn’t actually satisfy the Inverted Three Clue Rule: If it isn’t helping you find another node, then it doesn’t count towards the “necessary” quota of clues for keeping the adventure in motion.
+
+
+Advanced Node-Based Design – Part 6: Node-Based Dungeons October 19th, 2011
+Go to Part 1
+
+It’s a fairly typical piece of advice for neophyte GMs that they can design scenarios “just like dungeons”: Replace each room with a location or scene; replace each door with a clue.
+
+The logic behind this approach is fairly clear: Most GMs get started by running dungeon scenarios, most GMs are very successful in running dungeon scenarios, and most GMs find it relatively easy to prep dungeon scenarios.
+
+(The reason for this is the dungeon’s clarity of structure, self-controlled pacing, and robust design. But that’s largely a topic for another day.)
+
+But this analogy is problematic from both directions. First, as we discussed previously, doors or hallways in a dungeon are a robust transition:
+
+Advanced Node-Based Design 3
+
+If you’re standing in a room, the presence of a door or hallway into the next room is generally obvious and its purpose self-evident. Clues, on the other hand, are fragile in isolation: They can be missed, mistaken, or ignored.
+
+Clues also allow for omni-directional relationships. A dungeon room, however, typically can’t have a door to another location on the opposite side of the dungeon. The geography of the dungeon is rigid (and usually reversible). The geography of a mystery can be flexible (and is often one-way).
+
+So, in general, I think – despite its ubiquity – this is actually really bad advice to give to neophyte GMs.
+
+ROBUST STRUCTURES: But there are lessons that can be learned from the analogy.
+
+First, dungeons work because the doors are robust transitions. Ergo, we should try to find equally robust transitions in other scenario structures. The Three Clue Rule, for example, is a way of accomplishing that with a mystery scenario.
+
+Similarly, as we’ve discussed before, it’s possible for the typical robustness of the dungeon geography to mislead us into a false sense of complacency: A mandatory secret door, for example, can create a very fragile dungeon structure. That’s something to be aware of when designing dungeon scenarios.
+
+EPHEMERAL BARRIERS: Consider our simple dungeon example again:
+
+Advanced Node-Based Design 3
+
+Note that the structure of the dungeon essentially “forces” the players to experience area B: If they could pass directly from area A to their goal in area C, they would. In this sense, area B functions as a “barrier” for the PCs.
+
+Most dungeons are filled with such “barrier content” – content experienced only because the PCs are forced to physically move through those areas in order to reach the areas they want to go to.
+
+But as the PCs gain resources to become proactive, the GM can’t just put barriers in their way. This is why high-level dungeons so often fail: The PCs can simply scry, fly, stoneshape, and/or teleport their way past the old geographical or terrain-based barriers the GM was once able to use to force them into experiencing content.
+
+Some think empowering players like this is a bug. I tend to think of it as a feature. But it does mean that if you want your players to take a journey, you’ll need to make each pit stop interesting. Actually, more than interesting: Each pit stop needs to become a center of gravity, capable of drawing the PCs in for a closer look.
+
+This is where applying some of the lessons you’ve learned from node-based scenario design can be usefully applied to your dungeon scenarios: Effective node-based design, after all, is all about creating centers of gravity for your nodes.
+
+In designing your dungeons, look at each room or major area: Is there a way to make the PCs want to go there and experience that content? Or, alternatively, is there a way to make the content proactive so that it will come and seek out the PCs?
+
+CLUE-BASED DUNGEON NAVIGATION: Consider, too, what happens when you bring clue-based navigation into the dungeon.
+
+For example, the players might find a diary indicating that a “silver throne” can be “pushed aside to reveal a staircase”. Such a clue can easily send them to rooms on the opposite side of the complex, leave them looking for more information about the location of silver thrones, or anything inbetween.
+
+In other words, dungeons can be thought of as a collection of nodes (with each room or area being a separate node). Traditionally we default to thinking of the transition between these dungeon nodes as strictly a geographical affair. Occasionally we may also throw in some randomly-triggered content, but even when we do that, we’re still limiting ourselves. There’s no reason we can’t lace a dungeon scenario with other forms of node navigation: Clues, temporally-triggered events, proactive content, trails, and the like.
+
+The result is a richer and more rewarding dungeon scenario that will keep your players engaged in a multitude of ways.
+
+
+

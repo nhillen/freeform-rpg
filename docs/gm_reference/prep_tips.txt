@@ -1,0 +1,26 @@
+Prep Tips for the Beginning DM February 11th, 2013
+Wizard in the Dungeon - Liu Zishan
+
+For a beginning GM, the location-based method of adventure prep is the best way to go: Draw a map. Number the rooms. Key the rooms (i.e., describe what’s in each room).
+
+(1) Start small with a Five Room Dungeon.
+
+(2) After a couple of those, go a little larger. And, when you do, start thinking about Xandering Your Dungeon.
+
+(3) Okay, that’s getting awesome. But this map-and-key thing is a little too static: Monsters are just sitting in their rooms and waiting for the PCs to wander by and hit them over the head. So mix it up by prepping an Adversary Roster that’s independent of the map key and then run the monsters in the complex actively (so that goblins from area 6 might run across the compound and reinforce the goblins at area 1). At this point, it may also be useful to broaden your encounter design to give yourself more flexibility in how you use encounter groups.
+
+At this point you’ve probably run about a dozen adventures and you’re starting to get comfortable as a DM. Awesome. Now you can start exploring non-location-based methods of adventure prep. For some basic priming check out: Three Clue Rule, Node-Based Scenario Design, and Don’t Prep Plots. Or, for another classic alternative, check out Hexcrawls.
+
+And if you’re really ready to jump into the deep end: Game Structures.
+
+HOW TO PREP
+
+Throughout all of this, however, don’t over-prep. I think it’s really important to NOT use published adventures as an example of how to prep: Professional adventure writers are trying to communicate their vision to you. If you’re prepping notes for yourself, however, you can trust your creative instincts in the moment.
+
+For example, it’s not necessary to elaborately work out and write down all of the different tactics that a group of orc fighters might use. You can just jot down “8 orcs” or “8 orcs, they’ll try to kick over the pot of boiling stew to burn the PCs” and then trust yourself to be creative in the moment.
+
+Rule of thumb: Details are overrated (with the proviso that essential details and awesome details should always be jotted down).
+
+Similarly, you don’t need to spend a lot of time customizing every stat block. You can take generic stat blocks out of the Bestiary and make them interesting through context and use and creative description. (The one-eyed orc chietain wearing the steel-plated skull of a wyrmling is pretty awesome. But there’s no reason you can’t just use the stat block for an orc warrior from pg. 222 of the Bestiary.)
+
+Another rule of thumb: If you’re spending more time prepping it than your players spend playing it, you’re probably doing something wrong.

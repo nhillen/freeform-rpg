@@ -1,0 +1,834 @@
+Game Structures April 2nd, 2012
+One of the most overlooked aspects in the design and play of traditional roleplaying games is the underlying game structure. Or, to put it another way, there are two questions which every game designer and GM must ask themselves:
+
+(1) What do the characters do?
+
+(2) How do the players do it?
+
+These questions might seem deceptively simple, but the answers are complex. And getting the right answers is absolutely critical to having a successful gaming session.
+
+Some of you may already be challenging this. “How difficult can it be? The players tell me what their characters are doing and then we resolve it. What could be easier?”
+
+To demonstrate the oversight taking place here, let me give you a quick example of play:
+
+Player: I want to explore the dungeon.
+
+GM: Okay, make a Dungeoneering check.
+
+Player: I succeed.
+
+GM: Okay, you kill a tribe of goblins and emerge with 546 gp in loot.
+
+Is there anything wrong with that? Not necessarily. But it’s certainly a very different game structure than the traditional D&D dungeoncrawl.
+
+And, of course, that example already assumes that the PCs are fantasy heroes who do things like dungeoncrawling. Given the exact same setting and the exact same game system, they could just as easily be monarchs, dragons, farmers, magical researchers, planar travelers, gods, military masterminds, or any of a dozen other things for whom these dungeoncrawling game structures are irrelevant.
+
+BOARD AND CARD GAMES
+
+The reason game structures become an issue for us is because roleplaying games are functionally open-ended: There is an expectation (and a reasonable one) that the players should be able to say “I want my character to do X” and then we’ll be able to figure out if (a) they’re successful and (b) what happens as a result.
+
+Twilight Imperium - Fantasy Flight GamesTraditional board and card games don’t run into this problem because their game structure is rigidly defined and limited by the rules: Each time you take a turn in Monopoly or Chess or Arkham Horror there is a precisely defined sequence of actions for you to take. The complexity of this structure can vary quite a bit – in Candyland you simply follow the instructions in order; in Twilight Imperium your decisions would require an incredibly complicated flowchart to model – but the structure is invariable and comprehensive.
+
+Or, to put it another way, boardgames and card games always have an answer to the questions of “What should I be doing now?” and “What happens next?”
+
+ROLEPLAYING GAMES
+
+Consider a hypothetical scenario in which you drop a group of PCs onto a random street corner. Now, take the same group of PCs and drop them into a random room in a dungeon. Why does one group say “I head through the north door” while the other says “I go looking for the local police station”? Why doesn’t the guy in the dungeon say “I go looking for the treasure” and the guy on the street corner say “I take the street on the left”?
+
+Partly, of course, this is a matter of each group of characters having a different set of immediate goals. But it has a lot more to do with habits that have been casually engrained into us through years of playing RPGs.
+
+Another example: Consider the difference between playing D&D and playing the Wrath of Ashardalon boardgame. Both feature similar mechanics, similar settings, and similar character goals. Why is my D&D group likely to spend time examining the walls and investigating arcane circles while my Wrath of Ashardalon group isn’t? Because the game structure is different.
+
+In addition, as our example of dungeon vs. urban scenarios suggests, roleplaying games will often switch game structures. By contrast, computer games usually don’t swap game structures, choosing instead to unify their gameplay: In Elder Scrolls you use the same interface and commands whether you’re exploring a dungeon, traveling through the wilderness, or shopping in town.
+
+On the other hand, games like Final Fantasy VII give you an overland map for travel. And Elder Scrolls V introduced a “fast travel” system that also changes that structure. Meanwhile, at the other extreme, the engine for the original Bard’s Tale was so limited that the town of Skara Brae was a murderville in which citizens attacked like monsters and the gameplay was almost completely indistinguishable from the dungeon at even the micro-level.
+
+In a similar fashion, when I was twelve years old, I tried to run my earliest wilderness adventures as if they were dungeoncrawls: “Okay, you see some trees. What do you do?” “We go north.” “Okay, you go about a hundred feet. There are still trees. What do you do now?”
+
+Use the wrong game structure and you can end up with a really lousy game.
+
+All of this can be somewhat difficult to discuss because game structures have become invisible partners in our games. They are generally not spoken of. We don’t even really think about them.
+
+Apocalypse World - Vincent D. BakerIn The Elfish Gene, Mark Barrowcliffe writes: “When D&D is played it sounds like a series of questions and answers.” Similarly, in Apocalypse World, D. Vincent Baker says, “Roleplaying is a conversation. You and the other players go back and forth, talking about these fictional characters in their fictional circumstances doing whatever it is that they do. Like any conversation, you take turns, but it’s not like taking turns, right?”
+
+So as we begin looking at game structures in traditional roleplaying games, what we’re really doing is cracking open this conversation at the game table and looking at what makes it tick. And, just like a formal debate, we’re also looking at how we impose rules onto that conversation and what effect those rules have. (Some of those rules are the actual mechanics of the game, but most of them are actually looser and more universally applicable than that.)
+
+With that in mind, let’s start by imagining ourselves sitting at a hypothetical game table. We want to start playing a traditional roleplaying game. What needs to happen?
+
+(1)   A player needs to propose an action for their character.
+
+(2)   The GM needs to adjudicate that action and provide an outcome.
+
+Once that outcome has been determined, this cycle repeats itself. (The player proposes a new action for their character and the GM then adjudicates that action.) This is the fundamental basis for the conversation at the heart of all roleplaying games.
+
+But, as we established at the beginning of this essay, this is not as simple as it looks. Complications arise once we consider two questions:
+
+(1)   What, exactly, is the action being resolved?
+
+(2)   How, exactly, do we resolve that action?
+
+The first question can be largely thought of as conceptually chunking or breaking actions apart. (Is “exploring the dungeon” a single action or is it made up of many different actions?) Sometimes the GM will need to break a proposed action down into smaller actions; sometimes they’ll need to figure out how to get the player to chunk multiple actions together into a meaningful package. Ideally, of course, both player and GM would get on the same page about what type of “chunk” to propose and resolve. (And this is, of course, where shared game structures come into play.)
+
+The second question is often answered by the mechanics of the game, but not always. (And often those mechanics will only provide a partial answer.)
+
+For a relatively simple example at the micro-level, consider a situation in which Elizabeth the Duchess of Canterlocke is providing a formal introduction for her friend, the Duke of Donalberry. But, in reality, the Duke of Donalberry is a fraud and Elizabeth knows this (she’s trying to smuggle him into some formal affair for reasons that aren’t really important). Is this resolved with a Bluff check? If so, is the check made by the duchess or the duke? Or both? Or should the duchess make a Bluff check while the duke makes a Disguise check? If the duchess fails her Bluff check, does that mean the whole fraud has been discovered? Or does it just alert the target that something funny is going on (thus applying a penalty to the duke’s Disguise check)?
+
+There is no “right” answer here. But which structure you choose will have a significant impact on how this scene plays out at the table.
+
+MICRO vs. MACRO
+
+For the sake of convenience, I’m going to conceptually break down my discussion of game structures into two types:
+
+At the micro-level, game structures usually take the form of GM rulings: As in our example of the Duchess of Canterlocke, the PCs propose an action and the GM determines how that action will be resolved. (In some cases this ruling is straightforward – the players want to do X; there is a rule for X; the GM uses the rule – and in other cases it will require greater innovation.)
+
+At the macro-level, game structures become scenario structures. These larger scaffoldings determine how the players move through complex environments (physical, social, conceptual, or otherwise).
+
+For example, imagine a simple scenario concept: “The PCs go to Castle Osterkark and investigate the rumors of cultist activity.”
+
+A GM could choose to use any number of game structures to flesh out this concept: Is it a crawl from room to room? Is there a network of clues that will take the PCs to various locations throughout the castle? Will the PCs seek out particular NPCs and question them? Is there a timeline of events? Some combination of these techniques? Some other technique entirely?
+
+At both the macro- and micro-level, game structures have a significant impact on what happens at the actual game table.
+
+To help us get a better grasp on what scenario structures look like in practice, let’s take a peek at the grand-daddy of them all: The dungeoncrawl.
+
+The most successful scenario structure in the history of roleplaying games is the traditional dungeoncrawl. In fact, I believe that much of D&D’s success rests on the strength of the traditional dungeoncrawl as a scenario structure. (Notably, it is a structure which has proven extremely effective even when translated into other mediums and executed with completely different mechanics.)
+
+Catacombs - Legends & LabyrinthsWhat makes it work?
+
+First, for the player, it provides:
+
+(1) A default goal. Specifically, “find all the treasure”, “kill all the monsters”, or some other variant of “clear the dungeon”. In other words, the structure inherently provides a reason for the player to engage the scenario.
+
+(2) A default action. If a player is standing in a room and there’s nothing interesting to do in the room, then they should pick an exit and go to the next room.
+
+Collectively, these mean that the player always has an answer to the question, “What do I do next?”
+
+Second, for the GM, the dungeoncrawl is:
+
+(1) Easy to prep. In fact, it’s virtually impossible for even a neophyte DM to screw up the design of a dungeoncrawl. What’s he going to do? Forget to draw an exit from the room?
+
+(2) Easy to run. This extends beyond the macro-structure of the dungeoncrawl and begins to depend on the D&D ruleset itself, but, in general, any action proposed by the players within the dungeon will usually have a self-evident method of resolution. The dungeoncrawl also “firewalls” the adventure into discrete chunks (the individual rooms) which can generally be run as small, manageable packets.
+
+Collectively, these mean that even first time DMs can reliably design and run a dungeoncrawl without leaving either (a) their players stymied or (b) themselves confused.
+
+This is huge. Thanks to the dungeoncrawl, D&D can reliably create new DMs in a way that most other RPGs can’t and don’t.
+
+But the dungeoncrawl also has a couple of other key features:
+
+(1) It provides structure, but not a straitjacket. When the players ask themselves, “What do I do now?” the dungeoncrawl provides them with a default answer (“go through an exit”), but doesn’t prohibit them from creating all sorts of other answers for themselves: Fight the goblins. Investigate the arcane runes. Set up a fungal garden. Check for traps. Translate the hieroglyphics. Reverse engineer the construction of dwarven golems. Negotiate with the necromancer. And on and on and on. (It doesn’t even prevent you from leaving the structure entirely: The D&D rules include a multitude of options for bypassing the structure of the dungeon itself.)
+
+(2) Flexibility within the form. The DM can put just about anything into the structure. Each dungeon room – each chunk of content delivered by the scenario structure – is a completely blank canvas.
+
+Having this simple-to-understand, simple-to-design, and simple-to-use scenario structure makes D&D universally accessible in a way that, for example, Transhuman Space isn’t.
+
+Next, let’s shift from the macro-level to the micro-level.
+
+Tied into the success of the dungeoncrawl is the success of traditional combat systems in roleplaying games. Although individual mechanics may vary, virtually all roleplaying games use a basic game structure for combat derived from D&D: Combat is divided into rounds in which everyone gets to take an action (or actions). Usually combat is further defined by an initiative system of some sort, so that you can easily answer the question, “Who goes next?”
+
+If this sounds like the rigid structure of a boardgame or card game, that’s because it is: Derived from tabletop wargames, the average RPG combat system supplies clear-cut answers to the questions of, “What do I do?” and “How do I do it?”
+
+Or, to break it down in a fashion similar to the dungeoncrawl:
+
+Default Goal: Kill (or incapacitate) your opponents.
+
+Default Action: Hit them.
+
+Easy to Prep: Grab a bunch of monsters from the Monster Manual.
+
+Easy to Run: The combat system breaks the action down into a specific sequence and usually provides a fairly comprehensive method of how each action should be resolved.
+
+This is one of the reasons why so many roleplaying games focus so much mechanical attention on combat: No matter how much the players may be floundering, all you have to do is throw a couple of thugs at them and suddenly everyone at the table knows what to do. It’s a comfortable and easy position to default to.
+
+It should also be fairly easy to see the almost perfect mesh between the macro-level structure of the dungeoncrawl and the micro-level structure of combat: When you pick an exit in the dungeoncrawl and find a room filled with monsters, you seamlessly switch into combat. When the combat has been resolved (and the room emptied of interest), you effortlessly return to the dungeoncrawl scenario structure and pick another exit.
+
+Rinse, wash, repeat.
+
+REWARDS
+
+Combat also shows us how D&D links its systems of reward directly to its default game structures: The dungeoncrawl takes you to monsters, combat lets you defeat the monsters, and defeated monsters reward you with XP and treasure.
+
+This is something which I believe other XP reward systems have generally overlooked: Many games have broken XP away from being a combat reward, but they haven’t reattached the XP award to another concrete game structure.
+
+Whether or not that’s a desirable thing is a completely different discussion; a discussion involving Skinner boxes, the psychology of reward-driven pleasure, mechanical-reinforcement techniques, and a whole mess of other stuff.
+
+But I think it’s an unexplored design space that would be interesting to turn some focus on. Particularly when you consider that (A)D&D has featured non-combat rewards for more than 20 years, and yet people still complain about all the XP in D&D coming from killing monsters.
+
+The first really successful “post-crawl” scenario structure in the RPG industry is the mystery scenario. While it’s easy to find antecedents, it’s really with the publication of Call of Cthulhu in 1981 that the mystery scenario’s popularity exploded.
+
+Call of Cthulhu - Sandy Antunes (1981)Thirty years later it can be a little difficult to appreciate how radical Call of Cthulhu was and just how fresh a breath of air it provided. It’s been said that the game “busted gaming out of the dungeon” (which is more literally true if we understand “dungeon” to mean crawl-based scenario structures in general), but its revolution has now become ubiquitous. If you look at published scenarios today, mystery-based scenarios are at least as popular as crawl-based scenarios (and even the crawl-based scenarios often include a large dose of mystery-based play). And outside of D&D the victory is even more complete: Virtually every published scenario is mystery-based.
+
+The degree to which this marketplace dominance reflects actual practice at the gaming table can perhaps be quibbled with. But, either way, it’s actually rather curious once you start reflecting on it: Outside of gaming, mysteries are popular, but they aren’t all-consuming. (And even within gaming you don’t see mysteries consuming the board game or video game markets.)
+
+There are probably several reasons for the popularity of mystery scenarios in RPGs. (For example, an unsolved mystery presents a challenge. Overcoming that challenge – by solving the mystery – provides the kind of clear-cut victory condition that can be achieved with only a few things outside of direct competition or combat.) But I suspect a large part of it is that mystery scenarios present straight-forward game structures that are (a) easy to explain to GMs and (b) intuitively grasped by players.
+
+If we start to look at mystery scenarios using the same structural analysis we used for dungeoncrawls, it’s relatively easy to see this from the player’s point of view:
+
+Default Goal? Solve the mystery.
+
+
+Default Action? Look for clues.
+
+At this point, however, we have to acknowledge that there’s something different about the mystery scenario structure. While it gives some guidance in answering the player’s question, “What do I do next?” it doesn’t provide a complete answer. Instead, once the players have found their clues, they’ll need to draw a conclusion from those clues. If they don’t draw the necessary conclusion, the mystery scenario will stop providing a default action for them to take.
+
+In other words, mystery scenario structures are more fragile than dungeoncrawls. And this fragility becomes more evident as we shift to the GM’s side of the equation:
+
+Easy to Prep? Unlike a dungeoncrawl, it’s very easy for a neophyte GM to screw up the design of a mystery scenario: If they don’t include a necessary clue, for example, or expect the players to make an intuitive leap they’re not capable of making, the scenario structure will break.
+
+Easy to Run? At a macro-level, mystery scenarios are usually still chunked into smaller, more manageable packets (e.g., each location where clues can be found). But, unlike a basic ‘crawl, these chunks are not as firmly “firewalled”. This generally requires the GM to have a greater understanding of the scenario’s totality and makes a mystery scenario a little more difficult for neophytes to run.
+
+At a micro-level, however, mystery scenarios are generally pretty easy to run if you’re using a skill-based system. (Which, perhaps not coincidentally, were becoming ubiquitous right around the same time mystery scenarios were sky-rocketing to dominance.) This is because skill-based systems can generally be broken down into (a) resolving the success or failure of a physical action or (b) the acquisition of information. Clues, of course, are a type of information, so skill-based systems provide a self-evident method of resolution.
+
+By way of contrast, running a mystery-based scenario in a system like OD&D – which lacks a mechanical basis for determining clue acquisition – can be a lot more challenging. Of course, this difficulty can be overcome if you simply introduce such a mechanic. A simple one would be something like, “If the players say they’re looking around, they automatically find any clues in the area.”
+
+The GUMSHOE system uses a similar mechanic. It says, “If the players say they’re using the right skill, they automatically find any matching clues in the area.” As a game structure, of course, this leaves something to be desired (encouraging, as it does, players to treat their skills like a laundry list in every scene).
+
+But I digress.
+
+FRAGILE SCENARIOS
+
+The point here is that mystery scenarios are a relatively fragile scenario structure: More likely to leave the players stymied; more likely to leave new GMs confused; more difficult for new GMs to design.
+
+What we will discover is that this is often true: Many of the RPG scenario structures we use are remarkably fragile. Like delicate sugar crystals, they are often smashed to smithereens during the course of actual play, forcing GMs to stitch them back together on-the-fly. The robust simplicity offered by the geography of a crawl-based scenario structure – “pick a direction and go” – is difficult to replicate.
+
+Obviously, once you’re aware of the fragility in your game structures, you can start thinking about ways to make them more robust. The Three Clue Rule is a simple example of this: It provides a straight-forward methodology which specifically buttresses the fragile breaking point of a basic mystery scenario.
+
+For now, however, our attention must turn back to the robust demesnes of the ‘crawl structure. For that, we’ll need to journey overland to the wild realms of the hexcrawl
+
+
+Go to Part 1
+
+Greyhawk Map Sample
+
+The basic, traditional design of a hexcrawl looks something like this:
+
+(1)   Draw a hexmap. In general, the terrain of each hex is given as a visual reference and the hex is numbered (either directly or by a gridded cross-reference). Additional features like settlements, dungeons, rivers, roads, and polities are also typically shown on the map.
+
+(2)   Key the hexmap. Using the numbered references, key each hex with an encounter or location. (It is not necessary to key all of the hexes on the map.)
+
+(3)   Use (or design) mechanics which will let you determine how far the PCs can move while traveling overland. Determine the hex the PCs start in and track their movement.
+
+(4)   Whenever the PCs enter a new hex, the GM tells them the terrain type of the hex and triggers the encounter or location keyed to that hex: The PCs experience the event, encounter the monsters, or see the location.
+
+In the traditional structure, it’s also expected that the PCs will be mapping the hexes as they explore.
+
+And that’s pretty much it.
+
+ANALYZING THE CRAWL
+
+As we look at this basic structure for the hexcrawl, we can begin to see some common features of the ‘crawl structure in general.
+
+Default Goal: The default goal of a hexcrawl is exploration. This notably lacks a strong, specific motivator. In a dungeoncrawl, as we discussed, the default goal is to “find all the treasure”, “kill all the monsters”, or some other variant of “clear the dungeon”. Exploring and mapping the dungeon is usually a part of this experience, but the exploration is primarily a means to an end.
+
+Thus, over the years, various goals have been grafted onto the hexcrawl structure to provide a strong motivation for the exploration. (For example, the hexcrawl campaign I’m currently designing takes place on the edge of civilization and there are bounties paid for those who first make interesting discoveries in the wilderness.) But I suspect one of the reasons hexcrawling faded away in the early days of the hobby is because, unlike dungeoncrawling, it lacked a clear, default goal to provide strong motivation and a reward structure.
+
+Default Action: Just like a dungeoncrawl, the default action of a hexcrawl is “pick a direction and go”.
+
+Easy to Prep: In terms of robust design, hexcrawls are very easy to prep. If it’s difficult for the GM of a dungeoncrawl to forget to include a door, it’s even more difficult for a GM to prep a hexcrawl in which the players can’t pick a direction to go. (If the GM isn’t keying every hex, there is a slight danger that they won’t include a sufficient density of content to make play interesting. This is a minimal risk, but consider something like X1 Isle of Dread: Presented as the introductory hexcrawl wilderness scenario for BECMI, the content of the module is actually too sparse to be effectively run as such.)
+
+In terms of prep load, however, hexcrawls can be a little more difficult. Partly this is because there’s no natural “end point” for prepping a hexcrawl: Trying to key an entire world (or even just a full sheet of hexes) can look pretty daunting, and early game manuals weren’t very instructive in terms of explaining how prep load could be managed.
+
+But hexcrawls can also represent a heavy prep load because any given hex can literally require just as much prep as an entire dungeon (if it, for example, has a dungeon in it).
+
+Easy to Run: Once given a proper game structure, I find hexcrawls very easy to run. Even moreso than dungeoncrawls the content of the hexcrawl is naturally firewalled into discrete sections.
+
+One thing that makes hexcrawls a little more difficult to run, however, is the transition between “levels” of material. In a dungeoncrawl, everything is handled at roughly the same level of abstraction: Whether you’re moving between keyed areas or interacting with the content in a keyed area, the actions are described in a consistent (and very specific) way. In a hexcrawl, however, the GM needs to find the effective transition point between “you spend most of the afternoon traveling over the rolling hills east of Maernath” and “you’re fighting orcs; where are you moving in the next ten seconds?”
+
+This is not a massive difficulty, of course, but it does require the GM to develop an additional skill set. Thus it is easy to see the hexcrawl as a natural progression from the dungeoncrawl for the GM: A robust structure using many of the same skills, but also requiring the development of a few new tricks.
+
+Structure, Not Straitjacket: As with the dungeoncrawl, players are given a default action (“pick a direction and go”), but within the hexcrawl scenario structure they’re still free to do pretty much anything their imaginations can concoct.
+
+Flexibility Within the Form: Even moreso than the dungeoncrawl, a GM can put just about anything they want into a hexcrawl scenario structure. (It is, after all, a method for keying an entire world.)
+
+SUMMARIZING THE ‘CRAWL
+
+Looking at the dungeoncrawl and hexcrawl side-by-side, I think we can begin to draw some general conclusions about the ‘crawl structure in general:
+
+(1)   It uses a map with keyed locations. (This provides a straight-forward prep structure.)
+
+(2)   Characters transition between keyed locations through simple, geographic movement. (This provides a default action and makes it easy to prep robust scenarios.)
+
+(3)   The structure includes an exploration-based default goal. (This motivates player engagement with the material and also synchronizes with the geographic-based navigation through the scenario structure.)
+
+In practice, I’ve also found that these ‘crawl structures make it very easy for groups to engage, disengage, and re-engage with the scenario. (You can go into a dungeon, fight stuff for awhile, leave, and when you come back the dungeon will still be there.) This, it turns out, makes them ideal structures for casual play (because players can feel as if they’ve accomplished something even if the dungeon is only half-explored) and open tables (because the disengagement/re-engagement process allows completely different groups of players to interact with the same material).
+
+After considerable thought, I’ve concluded that these latter properties come from:
+
+(A)  Material within the scenario structure is firewalled. (In general, area 20 of a dungeon isn’t dependent on area 5.)
+
+(B)   The default goal is holographic. (You can explore some of the wilderness or get some of the treasure and still feel like you’ve accomplished something. You can’t half-solve a mystery or execute half a heist and feel the same way.)
+
+(C)   The default goal is non-specific. (You can get a bunch of treasure from Dungeon A; then get more treasure from Dungeon B and still be accomplishing your goal of Getting Lots of Treasure.)
+
+(D)  The default goal isn’t interdependent. (You can clear the first half of a dungeon and somebody else can clear the second half. In general, you can’t solve the second half of a mystery unless you’ve got the clues from the first half.)
+
+We’ll be coming back to see what we can do with these general principles of the ‘crawl structure, but first I want to turn back to the hexcrawl scenario structure and see what we can build on top of a basic structure.
+
+Wilderlands of High Fantasy - Judges Guild
+Once an experienced GM has learned how to use a particular game structure, it’s usually trivial for them to “bling it out” with additional game structures that add flavor, complexity, or detail to a scenario.
+
+If we take the basic structure of a hexcrawl, for example, what could we add (or tweak) to change (and hopefully improve) our game?
+
+Random Encounters: A simple example. Just as random encounters add life and activity to a dungeon complex, they can also make a wilderness setting come alive. And it’s pretty easy to add periodic encounter checks to our hexcrawl procedures. Of course there are still questions to be answered about our exact methodology: Do we check once per hex? Once per day? Several times per day?
+
+World of Greyhawk (1980)Hexes Are Big: Does it make sense for PCs to automatically find a hex’s keyed encounter as soon as they enter the hex? Probably not. A typical 30-mile hex (like those used in the original Darlene map of Greyhawk) is larger than New York City and two-thirds the size of Rhode Island. That’s a lot of territory for a couple dozen orcs or a lonely cave entrance to get lost in.
+
+To model this, we could make the chance of experiencing a hex’s keyed encounter variable. We could even vary the probability of this (making it less likely to encounter hidden locations and more likely to encounter highly visible locations).
+
+Navigating the Wilderness: Once you’ve left roads and well-beaten trails behind you, it’s relatively easy to become lost in the wilderness (particularly if you’re not properly trained). So rather than just letting players determine precisely the direction they want to go, we could add a skill check to determine whether or not they become lost (and, if they do, determine their true direction of travel randomly). To spice things up, we could set the difficulty of this check based on the terrain type they’re currently traveling through. We could even have weather conditions modify this check (so that, for example, it would be more difficult to find your way on stormy, overcast nights than when the stars were visible).
+
+Mode of Travel: Are the PCs traveling at a normal pace, racing at high speeds, covering their tracks, spending time foraging, or crisscrossing their own path in order to thoroughly explore the local area? Based on these decisions, we could vary the speed at which they travel; the difficulty of navigation; the odds of finding local points of interest; and so forth.
+
+Tulan of the Isles - Raymond E. Feist and Stephen Abrams (1981)Other Game Structures: Tulan of the Isles, a lesser known product written by Raymond E. Feist and Stephen Abrams in 1981, includes a full game structure for prospecting gems. The Ready Ref Sheets from Judges Guild included a similar system for prospecting, detailing the amount of time it takes to prospect a hex, the percentile chances of finding a vein of precious metal, and a methodology for randomly determining the type of vein and its value.
+
+I offer this up not as something that every hexcrawl campaign requires, but rather as an example of how we often don’t think about the game structures that we use. If your players decided they wanted to go prospecting, how would you adjudicate that at the table? Would the method you use remain balanced over time if the players decided to make prospecting a major part of their characters? Could you make it as much as fun as dungeoncrawling? (If not, why not? Think about it.)
+
+Consider, too, how the availability of game structures subconsciously shapes the way we play the game. Would you, as a GM, be more likely to design a scenario hook in which the PCs are hired by a dwarven king to prospect potential gold mines in the Frostbite Peaks if you had a fun little mechanic for prospecting to build a larger situation involving goblin reavers, icingdeath undead, and rogue frostmancers around? Would your cash-strapped players be more likely to spontaneously consider prospecting in the wilderness a viable alternative for cash if the rulebook included a chapter of rules for it?
+
+As we begin to add these kinds of complexity to a game structure, it becomes crucial that we develop efficient procedures for managing that game structure.
+
+Let me explain that by way of example. Over the past year, I’ve been using my OD&D open table campaign as a testbed for developing an enhanced system for hexcrawling. As part of that development work, I trawled my way through multiple editions, supplements, adventures, and games looking for interesting material and then worked to recombine all of that disparate material into a handful of unified mechanics.
+
+When I was done, I had a handful of “core systems” into which I had boiled down a lot of ancillary details. The quick highlights include:
+
+Encounter Tables: Which unified the chance of encountering the keyed encounter for a hex, random encounters, monster lairs, and monster tracks into a single encounter check mechanic.
+Spot Distances: Bringing together all the information on when PCs spot encounters, creatures, and/or terrain features.
+Timekeeping System: Breaking the day down into six watches (each four hours long), including a system for randomly determining time within a watch. (Why? Because it provides a cleaner structure for “mid-day course corrections”, which it turns out people want to do a lot during a hexcrawl. It also provides a convenient structure for making multiple encounter checks per day, which I found useful for a number of reasons.)
+Speed and Distance: Mostly based on the 3rd Edition system for determining how far a group travels based on their base speed and the terrain they’re traveling through.
+Navigating the Wilderness: A system for determining whether PCs become lost and, if so, how they get lost. (And also how they can get back on track.)
+When it came time to put this into actual playtesting, I had gone over these systems multiple times with a fine-toothed comb. And most of it was based on “existing tech”. I was pretty confident that the system was basically rock solid.
+
+But when it came time for the actual playtesting, this is roughly what it looked like: “Okay, check for an encounter. There is an encounter, so let’s determine what the encounter is. A group of 1d12 goblins. Roll the number of goblins, mark that down. Okay, where does the encounter take place? First, determine time of day. Okay, where would they be at that time? Ask them which direction they’re going, then calculate their speed, figure out where they’ll be. Now, determine if they got lost. They did, so go back and determine where they actually ended up… Hmm. So that means they’re in this hex over here. But the terrain type has shifted… Oh, and the encounter table changed. So that means they didn’t encounter goblins, they would have encountered… Wait, what did I roll? Umm… Must have been an 83 since it was goblins, so on the new encounter table that would be vampire wombats. Roll those up. Now, since the terrain type changed I need to re-determine how far they actually got…”
+
+And so forth. It was a train wreck. Lots of painfully long pauses while I fidgeted with my notes.
+
+(This, by the way, is why you do playtesting.)
+
+RESOLUTION SEQUENCES
+
+Playtesting did result in my tweaking a few of the rules. (For example, I was running into a lot of headaches with groups who wanted to change direction in the middle of a hex. So I introduced a generic system for tracking progress through a hex and an abstract mechanic for groups that wanted to just cross and re-cross a given patch of terrain looking for stuff.)
+
+But what I eventually figured out was that my biggest problem was the lack of a clear resolution sequence. I had three or four little sub-systems that were interdependent on each other, and, as a result, I would frequently end up backtracking and needing to redo calculations that I had already performed in light of new information that had been thrown up.
+
+It took a couple more sessions of playtesting after that to really nail it down, but I eventually came up with a clean resolution sequence:
+
+Determine direction and mode of travel.
+Are They Lost?
+Encounter Check
+Determine Actual Distance Traveled
+Generate Encounter
+And with the addition of a brief resolution sequence used when a group leaves a hex, this basically solved the problem and made the Thracian Hexcrawl campaign possible.
+
+In the dozens of sessions since then, I’ve learned a few additional tricks to make play more efficient (like putting landmarks visible from a distance on the hexmap and pre-rolling encounter checks so that I know which watches encounters are going to take place in and can skip straight to generating the encounter), but it all rests on the firm foundation of a clean resolution sequence.
+
+(My next experiment is a keying system for trails: Players in hexcrawls will often follow roads, rivers, or other trails. I think there’s a way to create separate “trail maps” which will massively simplify and streamline travel along known routes. I think this should also make it possible to add a trailblazing system that will allow players to create their own trails through the wilderness. But I digress.)
+
+REFERENCES, WORKSHEETS, AND NOTE-TAKING
+
+My point with all this, of course, is that a game structure is not just a mass of mechanics: It is also the way in which you use those mechanics. If we return to the similar structures of board games and card games, for example, it is relatively trivial to note how the rules for those games are almost always presented in a clear sequence of steps: Do this, then do this, then do that…
+
+The flexible and open nature of roleplaying games obviously complicates this rigid sequencing. But, once again, we can see the value of having a default structure to serve as a backbone from which flights of greater fancy can be launched.
+
+On a similar note, I want to briefly mention the value of reference sheets, worksheets, and efficient note-taking.
+
+A common reference sheet is the GM’s screen. And it’s usually amazing to me how often the design of these screens seem to evidence no understanding of how a particular game is actually played. So, my general tip: As a GM, pay attention to the rules and tables you, personally, are looking up during play. Particularly note anything that you’re referencing frequently or which you find yourself wanting to reference quickly (during combat, for example). That’s the stuff you want to put on your GM screen.
+
+Structured worksheets for the GM used to be common place in the hobby, but they became very scarce in the late ‘80s and ‘90s. I suspect this is because this was a period in which the hobby was abandoning clear game structures, which meant that there was no way to design worksheets that would actually be widely applicable. But one of the first things I developed for running my Thracian Hexcrawl was a worksheet for tracking travel progress through hexes.
+
+On a less formal level, spend some time thinking about how you take notes. What type of stuff – like retainer morale or AC – are you frequently asking your players to look for? Is there a better way you could be keeping track of hit points for your monsters? And so forth.
+
+As we wrap up our discussion of the hexcrawl game structure, I thought it might be interesting to take a few moments to revisit a few archaic game structures that have been abandoned by the hobby.
+
+Wilderlands of High Fantasy - Necromancer GamesUntil recently, of course, the hexcrawl itself could be described as an archaic structure. By 1989 there were a few vestigial hex maps cropping up in products, but none of them were actually designed for hexcrawl play. The 2nd Edition of AD&D removed hexcrawling procedures from the rulebooks entirely. It wasn’t until Necromancer Games brought the Wilderlands back into print and Ben Robbins’ West Marches campaign went viral that people started to rediscover the lost art of the hexcrawl.
+
+The original game structure for hexcrawls described in OD&D is actually quite distinct from the hexcrawl procedures I described earlier (which were largely innovated by Judges Guild and than adapted into AD&D). The bulk of wilderness adventures in OD&D focused on castles:
+
+Castles: As stated, the ponds [on the Outdoor Survival gameboard] indicate Castles. The inhabitants of these strongholds are determined at random. Occupants of these castles will venture out if a party of adventurers passes nearby. If passing over the castle hex there is a 50% chance (die 1-3) that they will come out, if one hex away there is a 33-1/3% chance (die 1-2), and if two hexes away there is only a 16-2/3% chance (die 1). If the party is on the castle hex and hails the castle, the occupants will come forth if the party is not obviously very strong and warlike. Patriarchs are always Lawful, and Evil High Priests are always Chaotic. All other castle inhabitants will be either hostile to the adventurers (die 1-3) or neutral (4-6).
+
+This is followed by a random table for determining the occupant of a castle and their guards/retainers. Then specific procedures for each type of inhabitant are provided: Fighters will “demand a jousting match with all passersby of like class”, Magic-Users will “send passerby after treasure by Geas if they are not hostile, with the Magic-User taking at least half of all treasure so gained”, Clerics will “require passersby to give a tithe (10%) of all their money and jewels” and so forth.
+
+A vestigial remnant of this structure survived all the way into the Rule Cyclopedia (where tables were still being presented to randomly determine the attitude of castle occupants), but I’m guessing it’s been essentially nonexistent in actual play since 1980 at the latest. And, unlike JG-style hexcrawling, I doubt these “castle occupant rides forth” game structures are likely to enjoy a significant renaissance any time soon.
+
+(Although, on the other hand, there are some potentially interesting things lurking in there: First, the implied setting – in which civilization is so sparsely populated that feudal lords will ride out to meet travelers who pass anywhere within a dozen leagues of their walls – is a fascinating one. Second, note how the structure provides default scenario hooks: Like the treasure maps seeded randomly into OD&D hordes, the quests proffered by feudal lords can spontaneously transform the aimless exploration of the hexcrawl into specific direction. But I digress.)
+
+The other major procedure for wilderness play in OD&D was the idea of “clearing” a hex of monsters (which was a prerequisite for establishing a barony or stronghold):
+
+The player/character moves a force to the hex, the referee rolls a die to determine if there is a monster encountered, and if there is one the player/character’s force must remove it. If no monster is encountered the hex is already cleared. Territory up to 20 miles distant from a stronghold may be kept clear of monsters once cleared – the inhabitation of the stronghold being considered as sufficient to maintain the monster-free status.
+
+This basic structure was greatly expanded in AD&D. (For example, it added a precise system for determining when and how monsters return to an area, along with all kinds of modifiers – like placing skulls and carcasses as warning signs.) And then it, too, faded away.
+
+Boot Hill (1st Edition) - Blume & GygaxIn fact, if you look back at the early history of gaming you’ll find these kinds of explicit game structures all over the place: The system for artifact use in Gamma World, the mercantile models of Traveller, the posse and tracking system for Boot Hill (which, in the 2nd Edition, could be tied into a larger competitive structure of lawmen vs. outlaws), the status points of En Garde, and so forth.
+
+What you had, in short, were a bunch of wargamers who were very familiar with creating specific game structures heavily laden with the details of world simulation: After all, they’d been using precisely defined game structures to model historical battlefields for years. Roleplaying games, however, cracked open the game world, and the game designers were applying game structures to a much wider “world simulation”.
+
+Over time, for a variety of reasons, these explicit game structures became more and more simulationist in nature. As the focus shifted from structures that were fun to play to structures that were accurate “models of the game world”, however, the structures became rather boring and (as the details of the simulation became fetishized) often too complicated to use in actual play to any great effect.
+
+What followed next (and this all happened over the course of only a few short years) was almost inevitable: The explicit game structures became vestigial and then, with the advent of universal systems, disappeared from rulebooks entirely. (With the notable exception, of course, of highly structured combat systems.)
+
+But — and this is important to understand! — the game structures didn’t actually disappear from gaming! They are, after all, essential for play. Instead, a handful of the most popular structures became treated as a sort of common knowledge: Everybody “knew them”, so game designers didn’t bother explaining them. (Although, in truth, very few people really thought about them at all.)
+
+In short, the general sense that playing an RPG consisted of nothing more than “the players tell me what they want to do and then we resolve it” settled over the industry. But, as we’ve seen, this is completely false. What happened in actual practice was that GMs would use a random grab-bag of unexamined techniques that they had collected from people they played with, published adventures, and the occasional unique insight. And this, of course, resulted in a lot of frustrating play.
+
+The lack of explicit game structures in the rulebooks – particularly explicit scenario structures – also helped to make roleplaying games a lot less accessible to people who hadn’t played them before.
+
+Arkham Horror - Fantasy Flight GamesImagine that you took the rules for the boardgame Arkham Horror and you stripped out all the rules about explicit turn sequencing (i.e., the scenario structure of the game): Instead, you’re left with some rules about how to make skill checks; how far you can move around the board each turn; how to fight monsters; how you can move through gates and close them behind you; how you can fight Ancient Ones if they wake up; and so forth. But… what do you do with all those rules?
+
+And that, in short, is what virtually every RPG for the past thirty years except for D&D has looked like to newcomers. (And it is somewhat worrisome to note that every iteration of Dungeons & Dragons since 1983 has reduced the amount of explicit game structure in the core rulebooks until, finally, 4th Edition eliminated dungeoncrawling procedures almost entirely.)
+
+But as we look back at the archaic era of explicit game structures, I think there is something else of import to note that may help to explain why they went way: With the exception of the ‘crawls and a few others, almost all of these game structures were fundamentally incomplete.
+
+Consider, for a moment, the explicit game structure presented in the original Traveller.
+
+(1)   Create a subsector. For this, the game gives guidelines for creating a starmap; populating that starmap with planets; determining the population, law level, and technological level of those planets; determining travel zones and trade routes; and so forth.
+
+(2)   Own a starship. The game offers several options by which the PCs can own, lease, or otherwise operate a starship.
+
+(3)   Interstellar movement. Providing mechanics for determining how far and how fast PCs can move between planetary systems.
+
+(4)   Trade and revenue. Finally, explicit guidelines on how revenue can be earned by carrying cargo, passengers, and the like.
+
+When you boil it down, this is Firefly: The Roleplaying Game.
+
+Firefly as Marc Miller's Traveller
+
+But what this scenario structure notably lacks is any support for play below the interplanetary level. Traveller recognizes this lack and works to patch the hole with the concept of the Patron:
+
+The key to adventure in Traveller is the patron. When a band of adventurers meets an appropriate patron, they have a person who can give them direction in their activities, and who can reward them for success. The patron is the single most important NPC there can be. (Book 3: Worlds and Adventure)
+
+Basically, the patron serves as a default method for delivering adventure seeds to the PCs. And Traveller integrates the patron into its larger game structure by triggering patrons through its random encounter system. (So, basically, every time the PCs fly into a starport there’s a chance they’ll be contacted by someone with a special job.)
+
+Of course, this still leaves the vast gulf of what the game structure for the actual mission itself is. But it’s not as if Traveller is alone in having such gaps in its scenario structure. In fact, virtually all RPGs have such gaps. (And, at a micro-level, virtually all RPG mechanics constitute incomplete game structures, as our example of the Duchess of Canterlocke demonstrated.)
+
+MECHANICS WITHOUT STRUCTURE
+
+I’ve long maintained that RPGs naturally gravitate towards their mechanics. For example, when I added counter-intelligence mechanics to D&D, counter-intelligence suddenly became a significant part of my campaign. When I added usable encumbrance mechanics to my OD&D campaign, encumbrance-based gameplay immediately followed.
+
+What’s even more true, however, is that RPG gameplay naturally gravitates towards structure. Because they’re open-ended, of course, RPGs are not bound to their structure (like a boardgame is) and good game structures in RPGs won’t act as straitjackets, but clear game structures nevertheless attract players and GMs alike.
+
+Or, to put it another way: If you’re in a dungeon, at some point you’re almost certainly going to start dungeoncrawling.
+
+An interesting corollary of this is that mechanics which aren’t (a) required by a well-defined game structure or (b) enhancing a well-defined game structure are often ignored.
+
+As a result of this corollary, you’ll often find popular game systems ringed with a large number of rules which nobody uses. Many of these rules seem to accumulate from a vestigial urge for simulationism.
+
+This is particularly true with specialized supplements. For example, the D20 market is crammed full with supplements that aimed to provide the “Definitive Guide to Ships”. The little simulationist urge says: “There are ships in fantasyland. So we must need rules for ships.”
+
+But once you have them, what do you do with them?
+
+A typical seafaring supplement, for example, usually included all kinds of rules for varying the speed at which a group traveled: The ship they’re using, wind speed, crew experience, navigation checks, weather conditions, tidal drifts, and so forth. But unless you’re using a scenario structure in which travel time matters – and in a modern era of railroaded scenarios, it generally doesn’t – all of these rules are pretty much irrelevant. Oh, having some guidelines for how long it takes to get from Point A to Point B is nice, but anything involving a lot of calculation which varies from one day to the next is basically useless chaff.
+
+That’s how you get books full of feats that nobody takes, spells that are rarely cast, rules for ramming that nobody bothers with, and so forth. Without a supporting scenario structure, this stuff just flounders: It occasionally gets toyed with, but it rarely gets used.
+
+But imagine for a moment that someone took the time to design a fully-integrated scenario structure for sea-based play that, for example, made playing a pirate or a privateer just as much fun as dungeoncrawling or solving mysteries. You could build entire campaigns around this structure, or just slot it in as appropriate. Maybe you could even go ahead and publish a full campaign that people can just pick up and play. Suddenly all those rules for handling crew morale and ship-to-ship combat are being used.
+
+And if your new scenario structure were really successful, suddenly you’d have opened up a whole new market for support products.
+
+THE VALUE OF PARTIAL STRUCTURES
+
+The “gravitational effects” of clearly defined game structures may also help to explain why even partial scenario structures have often proved monstrously successful in the RPG industry.
+
+For example, consider Shadowrun and Paranoia. Neither game features a comprehensive scenario structure, but they both have default methods for delivering scenario hooks which also tend to lend a common shape to their scenario concepts. And you can see evidence for the efficacy of these techniques in the number of “traitorous Mr. Johnson” stories you see from Shadowrun and the number of “briefing room horror stories” you see from Paranoia.
+
+In fact, even partial scenario structures seem to be very effective at providing a commonality of experience which can draw a player base together into more meaningful communities. (This is particularly true for default scenario hooks.) Such communities provide a strong network effect which further strengthens the game.
+
+This commonality of experience also makes it possible to produce supplements which target that common ground. 76 Patrons for Traveller or Mr. Johnson’s Little Black Book for Shadowrun are obvious examples given the context of our current discussion, but it’s particularly true when it comes to adventure modules: You can trivially produce an adventure module for D&D which could theoretically be plugged into 90% or more of the current campaigns being run in the system. On the other hand, it would be essentially impossible to produce a Heavy Gear module for which that would be true.
+
+Of course, having a viable market for those kinds of adventure products makes it easier for a publisher to produce adventure products. And having adventure products available makes it easier for new GMs to start playing the game. Which further enhances the network externality of the game.
+
+Now that we’ve discussed incomplete game structures, let me go fully the wrong way about it and explain what I mean by a “complete game structure”.
+
+Most importantly, what I do not mean by a complete game structure is that the players will never be able to take actions outside the structure. As I’ve been saying all along, roleplaying games are functionally open-ended: Unlike a boardgame or card game, players are always free to propose whatever course of action strikes their fancy.
+
+Instead, what we’re talking about is a structure which can theoretically provide a complete experience. If the players choose to stick to a complete game structure, that structure will never deliver the game to a place where no structure exists.
+
+Practical experience at the game table plays a role here, and I’m also expecting a dose of common sense: It’s possible to argue that Traveller presents a “complete game structure” as long as the PCs never leave their ships. But, of course, that’s not what actually happens at the game table, is it? What happens in actual practice is that the Traveller scenario structure delivers a ship to a starport, the PCs get off their ship, and… the scenario structure has delivered them to an unstructured place.
+
+In practice, complete game structures require vertically integrated structures and closed resolution loops. They will also usually feature complete transitions from macro-level to micro-level game structures.
+
+For example, consider the basic mystery scenario structure: You start in a location and you search for clues. The clues take you to another location, where you search for clues (which will, of course, take you to another location).
+
+That’s a closed resolution loop: You can follow that structure forever.
+
+Earlier, we talked about the smooth transition from dungeoncrawling to combat in D&D: You’re in a dungeon room, you pick an exit, and you go to another dungeon room (there’s your closed resolution loop). But in that room are a bunch of monsters, so you switch to the combat system (which is another closed resolution loop) until you defeat the monsters. Once the combat is finished, you swap back to the dungeoncrawl structure, pick an exit, and go to the next room (which might also have monsters in it, in which case you swap back into combat).
+
+That’s a vertically integrated structure: The dungeoncrawl structure provides a specific trigger (“there are monsters here”) which transitions you into the combat structure; and the combat structure provides a specific trigger (“all the monsters are dead and the room is empty of interest”) which transitions you back into the dungeoncrawl structure.
+
+(As a thought experiment, imagine that you were using a dungeoncrawl structure but you had no combat system. Can you see what happens when the dungeoncrawl delivers you to a room full of orcs? The structure is incomplete. Now, imagine that you’re using a dungeoncrawl structure but instead of a combat system the rules had a well-developed mechanical structure for resolving riddle contests. That’s a very different dungeon, isn’t it?)
+
+It’s also possible to extend the chain of macro-level to micro-level transitions. An easy demonstration of this is a hex keyed with a dungeon complex: The hexcrawl structure triggers the discovery of the dungeon; entering the dungeon transitions you to the dungeoncrawl structure; and meeting some monsters in the dungeon transitions you to the combat structure.
+
+I occasionally think of this as an inverted pyramid, but it’s not necessarily a tidy one. (For example, hex keys can also easily trigger you straight into combat.)
+
+The Inverted Pyramid of Hexcrawling
+
+FEATURES OF A COMPLETE GAME STRUCTURE
+
+Let’s take a moment to look at the basic features a complete game structure requires. By matter of necessity, these will be somewhat preliminary conclusions: There aren’t many complete game structures in roleplaying games, so the body of data is sparse.
+
+First, each part of the game structure requires a clear and specific trigger. (For example, combat is triggered when someone wants to make an attack and initiative is rolled.) Vertically integrating your structure requires that the macro-structure will deliver the triggers necessary for the micro-structures. (For example, the dungeoncrawl structure delivers the trigger for combat when you enter a room filled with hostile monsters.)
+
+Second, you need a default scenario hook. This is actually just the trigger for the macro-structure which contains the micro-structures and it doesn’t need to be terribly complex: For example, the default scenario hook for a dungeoncrawl is “the dungeon entrance is in front of you”.
+
+Third, you need a default goal. This is what motivates the players to engage the scenario hook. For example, the PCs go into the dungeon (i.e., accept the hook presented by the dungeon entrance) because they want to find treasure.
+
+(It should be noted that the default scenario hook and goal are often the first things to get swapped out when you’re adapting a game structure into actual play. For example, the PCs might be going into this dungeon – which is actually a fortress – because their friend has been kidnapped by the slavers inside.)
+
+Fourth, you need a default action: Picking an exit in the dungeoncrawl; picking a direction in a hexcrawl; looking for clues in a mystery; attacking an enemy during combat; etc.
+
+Fifth, taking the default action should return you (either directly or after a sequence of actions) to a point where you can take that default action again. This is the point where you close the resolution loop and complete the game structure.
+
+EFFECTIVE GAME STRUCTURES
+
+There are also a few things which aren’t necessarily required for a complete game structure, but which are probably a good idea.
+
+First, the structure should be flexible. Flexibility for the players means the ability to make choices which are not constrained by the structure. Flexibility for the GM means the ability to include a broad and creative array of content into the “containers” of the structure.
+
+(These constitute the “structure, not a straitjacket” and “flexibility within the form” principles we talked about before.)
+
+Second, the default action should usually allow the players to make meaningful decisions. Roleplaying games are primarily about making choices and structures which don’t allow for those choices to be made will, in my opinion, struggle. Furthermore, a structure which doesn’t include points at which players are free to make decisions is probably going to strongly inhibit their opportunities to make choices which are not constrained by the structure (see above).
+
+(As a counterexample, consider a hypothetical piratecrawl structure in which the players choose a direction to sail and then the GM randomly determines what type of ship they run into: This has a great deal of flexibility for the GM, since he’s basically free to include anything which fits into a ship-shaped container. But you’ll notice that the players’ decision of sailing direction is meaningless, which will result in less than satisfactory play.)
+
+Third, assuming that we’re talking about RPGs and not STGs, the players’ decisions within the game structure should be associated and in-character.
+
+(For pretty much all the same reasons that the mechanics of an RPG should be associated.)
+
+Fourth, the reward structures of the game should probably be tied into the default actions and default goals of the game structure.
+
+(The easy example here, as I’ve mentioned before, is D&D: The default dungeoncrawl / combat game structure rewards you with XP for the default action of fighting monsters and with GP (and XP) for the default goal of treasure-hunting.)
+
+Fifth, the game structure should be fun. This, of course, can be a somewhat nebulous quality and will also vary from one group to the next. But the important point here is that a complete game structure will act as the foundation for your scenario or campaign: If that foundation is fun, then everything you and your players build on top of it will be fun. If it is simply workmanlike bookkeeping, on the other hand, you may still end up having fun if the stuff you build on top of it is awesome enough, but it’ll be less of a sure thing.
+
+Sixth, the game structure should be easy to prep. Part of this is providing a clear structure for prep (and I think you’ll find that clearly defined game structures will simultaneously provide straight-forward guidance on what you need to prep). But it’s also about limiting the amount of prep necessary for play to begin. (If your structure requires the GM to prep 500 pages of material in order to use it, it’s not going to see a lot of use in the real world.) And all of this, of course, can be helped by giving the GM tools which assist with prep (like the old dungeon- and hex-stocking tables that used to be a mainstay of D&D).
+
+I was also going to add “easy to run” to this list, but I suspect that this is a quality which actually arises naturally out of properly constructed game structures. But if you’re in need of a reminder, check out Part 8 of this series.
+
+Up until this point, a lot of this blather about “game structures” may have sounded like it was something that only game designers need to waste their time with.
+
+But, to the contrary, game structures represent the primary and most important tool in the GM’s toolbox. The more game structures a GM has mastered, the easier they will find it to prep and run their scenarios. The fewer game structures a GM knows, the more limited their scenarios and the more difficult their prep becomes.
+
+(The argument can also be made that, fundamentally, all GMs need to act like game designers: An RPG without a scenario is like Monopoly without a board. Or, to put it another way, if Monopoly were packaged like a typical RPG it would come with rules for moving your pawns and buying properties, but it would expect the group to design its own boards. Scenario design is game design.)
+
+To demonstrate what I mean about using scenario structures as tools, let’s take the example of a fairly straightforward adventure concept:
+
+The PCs have been tasked with accompanying a clerk who has been charged with acting as the proxy for the Duchess of Canterlocke to bid for a dilapidated estate standing opposite the Dweredell Gardens. The PCs are to protect him while finding out more about the other parties interested in the estate and the suspected cult activity surrounding the estate.
+
+Fifteen years ago, my mastery of game structures was limited. I basically had two of them: Dungeoncrawling and linear railroading. Faced with this concept for an adventure scenario, I would have been forced to resort to the linear railroad: A pre-programmed sequence of scenes that the PCs would experience. (To my fictionally retroactive credit, I would have probably tried to make those scenes as flexible as possible because I wasn’t actually a fan of railroading. But I would have been fighting my prep structure, and that usually means a lot more prep.
+
+In a similar fashion, you can see how the lack of a game structure for wilderness adventures has resulted in most modern adventure modules presenting overland travel as a linear sequence of pre-programmed encounters:
+
+Route to Tazion - Serpent's Skull
+
+But today, with a wider array of game structures at my fingertips, I find it relatively trivial to break this scenario concept down in a way that’s easier to prep, easier to run, and offers the players a much greater freedom in how they want to approach the scenario.
+
+(1) “The PCs are to protect him…” I’m assuming this means that there will actually be something to protect him from. To prep this, I draw up a list of threats (i.e., the attacks that will be directed his way). These might be triggered by location (“when he reaches Water Street, the assassins strike”), but just putting them on a timeline will probably work, too.
+
+(2) “To bid for a dilapidated estate…” When I prep a large social or business gathering, I prep two tracks: First, I prep a roleplaying profile for each significant participant. Second, I prep a list of significant events.
+
+Sometimes the significant events are on a timetable. Sometimes they’re keyed to particular NPCs or locations. Sometimes they’re just a list of conversation topics that are popular at the party. (Ultimately, it’s whatever makes sense and is most useful to me. More details here.)
+
+(3) “… a dilapidated estate standing opposite the Dweredell Gardens.” Here we come to a key question: Is the estate something that the PCs are supposed to explore room-by-room (like a haunted house)? Or will we just be just be treating it as a backdrop for the auction? The former gets prepped (and run) as a dungeoncrawl. The latter gets prepped with a few brief descriptions and maybe a generic floorplan if I think it’ll be important for some reason.
+
+It might also be both: The mansion itself might just be a backdrop for the auction; but the family crypts under the mansion might shift us into a ‘crawl. Or maybe the mansion is treated as a backdrop during the auction and then we approach it as a ‘crawl during the night when all the ghosts from the Well of Souls come out.
+
+(4) “The suspected cult activity around the estate.” Like most mystery structures, I’m going to default to node-based scenario design to break it down into easy-to-manage and easy-to-design chunks. To launch players into the node structure, I’ll liberally seed clues in the threats in #1, the NPCs in #2, and the rooms in #3 (if I went for a crawl-based structure there). A sample node list might look something like this:
+
+Cultist Assassination Team
+Shrine of the Black God
+Temple of the One-Eyed Priest
+Councilor Jaffar (Secret Cultist)
+The assassination team is a proactive node that attacks the clerk the PCs are guarding. One of the assassins has a distinctive tattoo (asking around town indicates people have seen people with similar tattoos hanging around the Shrine of the Black God). Questioning any of the assassins will reveal they were sent from the Temple of the One-Eyed Priest. Maybe one of them has a note signed by Jaffar telling him to kill one of their fellow assassins once the job has been completed.
+
+And so forth.
+
+BREAKING THAT DOWN
+
+The first thing is the scenario hook: The Duchess of Canterlocke wants to hire the PCs to guard a clerk for her.
+
+That hook is connected to a simple timeline structure: The clerk needs to head to the estate at Time A; assassination attempts will be made at times B and D; the open house and auction will begin at time C.
+
+That timeline has additional triggers in it: Clues on the assassins will trigger the node-based investigation. Escorting the clerk to inspect the house will trigger the ‘crawl of the house. Escorting the clerk to the auction will trigger the social-based party structure.
+
+The ‘crawl of the house will probably include triggers for combat (undead in the crypts below the house or whatever). The party structure will contain additional clues triggering the node-based investigation. And the node-based investigation will lead to both the Shrine of the Black God and the Temple of the One-Eyed Priest, which are probably both prepped as dungeoncrawls, too.
+
+USING THE RIGHT TOOLS
+
+Like most projects, once you have the right tools, it’s just a matter of identifying the right tool for the job and then using it.
+
+For the sake of argument, let’s imagine that we instead used all the wrong tools:
+
+(1) We try to prep escorting the clerk across Dweredell as a ‘crawl: That means prepping every street with a keyed encounter so that the PCs will encounter content no matter which streets they decide to walk down. (Result: Way too much prep, a lot of decisions that aren’t of particular importance to the immediate goals of the PCs, and probably some severe pacing problems.)
+
+(2) We prep the crypts under the house as a timeline of undead-themed encounters: After 5 minutes of explortation we trigger encounter 1; after 10 minutes of exploration we trigger encounter 2; and so forth. (Result: The only meaningful input the players have here is to say “we keep exploring”. Our impulse is probably to at least improvise a map as they explore, but of course that just moves us back towards the dungeoncrawl structure that we’re specifically eschewing for the purpose of this broken example.)
+
+(3) Instead of prepping auction bidders for roleplaying, we instead give ‘em combat stats and roll for initiative whenever the PCs want to talk to them.
+
+And so forth.
+
+Use the proper structures and the prep will be easy and naturally allow your players to make meaningful and relevant decisions. Use the wrong structures (either by mistake or because you don’t know the right structures to use) and your prep will be difficult and your players will struggle to make the choices they want to make.
+
+But what if the right game structure doesn’t exist?
+
+When I designed The Lost Hunt for Fantasy Flight Games, I launched the scenario by having an elven village attacked by a kehtal (a servitor of the demon gods of Keht). The idea was pretty simple: The PCs could then follow the trail of this murderous creature, which would lead them to the interdimensional rift in which the demon gods were imprisoned.
+
+The tricky part was the actual tracking. Although I wasn’t thinking in terms of game structures back in 2001, I knew that this section of the adventure needed more weight to it than a simple skill check. The experience of the adventure couldn’t be, “Fight a monster, make a Wilderness Lore check, and – ta-da! – you’ve found the interdimensional prison of an ancient god cult!”
+
+So what I ended up doing was crafting a custom game structure for tracking: Following the trail required five successful Wilderness Lore checks (DC 20). Each failure would force the PCs to backtrack (requiring an additional success in order to find the trail they lost). Each successful check would bring them to a “pit stop” along the trail, which was described in boxed text: One established the creature’s prodigious leaping ability; another brought them to another scene of carnage wrought by the creature; and so forth.
+
+Nothing too complex here: I was basically adapting the concept of complex skill checks (as found in numerous RPG systems) and tweaking it a bit. But it did take a little bit of thought and a little bit of experimentation to nail down the details. Once I had tucked this custom “pit stop and backtrack” game structure into my mental toolkit, though, it proved useful time and time again: I’ve used it probably a dozen times since then.
+
+This is, obviously, a very simple example of how you can create custom game structures to organize your prep and affect your players’ experience with the game world. In fact, it’s so straight-forward some of you are probably saying, “Duh.”
+
+So let’s tackle something a little more complicated.
+
+BETWEEN THE STARS
+
+Astronomy Picture of the Day - Flying Over Earth at Night
+
+Campaign Concept: The PCs are the crew (and possibly owners) of a starship plying the interstellar trade routes. Although some planet-side activity might croup up, the focus of this campaign is going to be on the voyages of the ship itself.
+
+Macro-Structure: For the macro-structure of the campaign, I’m going to use Traveller. As discussed in Part 10, Traveller has a well-developed system for handling interstellar travel and trade. This system empowers the PCs to make decisions about where they’re going; what they’re trading; and so forth.
+
+Scenario Triggers: As we also discussed in Part 10, however, this game structure is incomplete. It has a closed resolution loop (go to starport, deliver goods, pick up goods, go to starport), but it lacks vertical integration. So the first thing we need to figure out is the trigger we’re going to use for transitioning from the trade-and-travel macrostructure to the scenarios that will probably fill most of our actual playing time.
+
+I’m going to propose that, just like a dungeon has rooms and a wilderness has hexes, this campaign has voyages. In other words, just like we fill a room or a hex with content, we’re going to fill each trip from one star system to another with content. (Of course, some dungeon rooms are empty and some of our voyages may be uneventful. We’ll come back to that later.)
+
+BETWEEN THE STARS – KEYING VOYAGES
+
+We all know how to key a dungeon room or a hex: You write a number on the map and then you use that number to reference a description of the content of the room or hex. How do we key voyages? In other words, when the PCs leave a starport how do we know what this voyage will contain?
+
+Linear Sequence: A simple solution would be a linear sequence. You prep a scenario for their first voyage (no matter where they’re headed); then you prep a scenario for their second voyage; and so forth. The obvious disadvantage of this approach is that it doesn’t include meaningful choice for the PCs.
+
+Prometheus - ShipRandom: We could prep several voyages and then randomly determine which one we’ll use on any given trip. But, of course, once again we’ve eliminated meaningful choice for the PCs.
+
+Space Hexes: We could key each hex on the subsector map with content. Couple of problems, though: First, any given voyage will actually contain multiple hexes. Second, because the campaign isn’t exploratory in nature there will be a lot of hexes they’re unlikely to visit (since they’ll probably be sticking to direct routes between planets). We could, of course, limit our prep to hexes near established trade routes and then implement a system for randomly determining which hex’s content on the flightpath gets triggered for any particular voyage. But doing that actually suggests what might be an easier approach…
+
+Routes: What if we just key each route with content? When the PCs take a particular trade route, we trigger whatever content we keyed to that route. A potential problem here would be PCs who settle down into servicing a regular route: Once they’ve used up the keyed content for the route, there’ll be nothing new to experience the next time they take it. We could mitigate this by randomly determining cargo destinations (so that the PCs would be less likely to settle into a regular pattern) or by keying multiple scenarios to a single route (this would increase the prep load, but make it harder to completely “burn out” a given route).
+
+BETWEEN THE STARS – SPICING THE STRUCTURE
+
+So our basic structure looks like this: We key each trade route with an encounter or scenario which is experienced when the PCs take the route. In addition, we randomize cargo destinations to discourage the PCs from wearing a groove into a particular trade route.
+
+That, by itself, would give us enough structure to run a campaign: We could draw up the local subsector, map out the trade routes, key them, and start play. But what could we do to spice things up – adding flavor, complexity, and/or detail to the campaign?
+
+Random Chance: Instead of a route’s encounter happening automatically when the route is taken, we could have a randomized scenario check. Since the players won’t know whether there will be complications on a particular voyage, this will make the campaign less predictable (and also possibly less frustrating). Setting the right probability of experiencing a route scenario will probably require some experimentation: Will the PCs end up taking multiple routes on most journeys (getting from planet A to planet C via planet B)? How interested are the players in the actual trade mechanics of the game (as opposed to using the trade mechanics as a mere method of delivering content)? And so forth.
+
+For the sake of argument, let’s say that we want roughly a 1 in 3 chance of triggering a scenario. (A roll of 1-2 on 1d6.)
+
+Scenario Sources: Now that we’ve randomized the occurrence of scenarios, we can use that same mechanic to include encounters from non-route-based sources.
+
+First, we’re going to seed our cargo and passenger tables with scenario triggers. For example, carrying a shipment of positronic brains makes it more likely to be targeted by rogue robotic hijackers. Or a particular passenger might be targeted for assassination.
+
+Second, our scenario check (which is performed once per route) is now revised: On a roll of 1 we trigger a route scenario; on a roll of 2-3 we trigger a passenger scenario; on a roll of 4-5 we trigger a cargo scenario. A roll of 6 indicates no encounter.
+
+Scenarios are theoretically being triggered on rolls of 1-5 on 1d6, but our practical odds of experiencing a scenario on any given route will remain roughly 1 in 3 because the PCs may not be carrying cargo or passengers with scenario triggers.
+
+Weighted Route Tables: Instead of just keying a unique encounter (or a set of unique encounters) to each route, we could instead key each route with a weighted scenario table: So in the Black Expanse you’re more likely to get hit by pirates, while in the Inner Systems you’re more likely to get hit with a random audit.
+
+(Alternatively, we could rebuild our scenario check and include “region scenarios” as a fourth type: So each route would be keyed with a unique scenario; each region would have a random scenario table; and we’d also have cargo/passenger scenarios.)
+
+“Empty” Voyages: As noted above, we’ve now created “empty” voyages (i.e., voyages on which no scenarios will be triggered). In order to spice these up, I’m going to take a page from Ars Magica, combine it with the character creation rules for Traveller, and create a game structure for handling “down time”: Improving your skills. Improving your ship. Working on research projects. And so forth.
+
+Dockside Encounters: Another possibility would be adding structures for dockside encounters and/or scenarios. But I’m actually going to deliberately eschew this sort of thing: I want this campaign to be focused on the ship.
+
+While it’s certainly possible that the players will get tangled up in some planet-side intrigue, by specifically excluding this content from the campaign structure I’ll be steering the focus of the game away from it: Docking will generally be the boring bit that bridges the gap between the exciting stuff.
+
+Now that we have a custom campaign structure for a “Between the Stars” campaign, let’s turn our focus to the scenarios that will be triggered by that campaign structure.
+
+With quite a few of these scenarios, of course, we can use scenario structures that we’re already familiar with: Someone is murdered on board; grab our scenario structure for mysteries. The ship stumbles across a wandering asteroid studded with alien architecture; whip out the maps for an old-fashioned dungeoncrawl. We might want to give some thought to the types of hooks we can use to initiate each scenario narratively, but there’ll be no need to reinvent the wheel in designing the scenarios themselves.
+
+(Random thought: If we’re looking for a semi-generic structure for constructing scenario hooks we could define them according to (a) when they’re triggered; (b) what officer will receive the trigger; and (c) what the hook is. For example, a scenario in which the PCs are approached to smuggle a cargo might be triggered in dock before the voyage starts; target the cargomaster; and take the form of a comm call asking for a meeting at a dockside bar. The “asteroid of alien architecture” might be hooked with the navigator making a Sensors check (on a success they detect the asteroid a fair distance away; on a failure they stumble too close to it and get caught in an automated tractor beam). A murder scenario might be hooked with the security officer making a Security check (success indicates they find the body on a routine sweep; failure indicates that a random passenger finds the body).)
+
+For other scenarios, however, it may be useful to give some thought customizing new scenario structures. As an example of that, we’re going to look at the hypothetical example of hijacking scenarios. Before doing that, however, I want to make a couple of particular points.
+
+First, we’ll want to remember that the default goal of the campaign’s macro structure is to successfully run a ship in order to maximize profit. Which means that scenarios and hooks that either threaten the PCs’ profit or offer them opportunities for more profit will be most successful.
+
+Second, I want to note that this entire section of the essay is entirely hypothetical: If this stuff were to be put to a proper playtest, I have little doubt that we’d discover that some of it doesn’t work in practice and other stuff could be greatly improved. That’s just part of the process.
+
+SCENARIO STRUCTURE: HIJACKING
+
+What we’re looking at here is any scenario where passengers, stowaways, or members of the crew attempt to take control of the ship.
+
+If the ship were relatively small in size, we could probably run this using location ‘crawl techniques. In other words, we could take a fully keyed map of the ship and then run the actions of the PCs and hijackers in “real time” so to speak. This would be appropriate for something like Air Force One.
+
+But let’s assume that the ship is larger and that we want to create experiences that feel more like Die Hard or Under Siege.
+
+Node Map of the Ship: First, for purposes of navigation, let’s create a node map of the ship. This abstract representation of movement aboard ship will allow both PCs and hijackers to make meaningful decisions about where they’re going and how they’re going to get there without getting bogged down in tracking things corridor-by-corridor and room-by-room. (Although for certain key areas – like the bridge of the engine room – we may still want to draw-up detailed maps for tactical purposes.)
+
+Sith Infiltrator With Node Map
+
+With this map we can now key both nodes and the routes between nodes. We can also allow characters to secure and/or barricade specific nodes or routes. (So some routes to the bridge may be less heavily guarded than others, for example.)
+
+We can also assign travel times between locations.
+
+Shortcuts and Stealth Paths: Looking at our touchstones of Die Hard and Under Siege, we can see that a lot of the action is driven by protagonists seeking out alternative methods of moving around the structure (ventilation shafts, service corridors, burning holes through bulkheads, etc.).
+
+We could try including these routes onto our node map of the ship, possibly by using dotted lines:
+
+Sith Infiltrator With Secret Paths
+
+Or, for a simpler and more flexible solution, we could assume that the ship has sufficient structural complexity that secret routes can always be found: With a sufficiently high skill check, a character can either find a short cut (which reduces the amount of time it takes to get from one location to another) or a stealth path (which makes it possible to reach areas of the ship that have been blocked off in one way or another).
+
+To this, let’s add a wrinkle: If effort is taken, certain locations can be secured. For example, in Aliens the last of the survivors attempt to seal up a portion of the colony so that they can survive long enough for a rescue ship to arrive. Of course, the aliens still managed to find a way in, so let’s make that an opposed check: If your effort to find a stealth a path into my area is better than my check to seal the area, then you’ve found something that I forgot.
+
+Control of the Ship: For a simple structure, we could simply equate control of the ship with control of the bridge. But if wanted a more dynamic scenario, we could make it so that individual systems can be taken offline or supersede the bridge’s control from other locations in the ship. (For example, you might be able to gain navigational control from the engine room; knock communications off-line by getting to the receiver room; turn off life support from environmental control; or access the automatic security systems from the security center.)
+
+Node Effects: On a similar note, we might want to define some specific game structures for special nodes. For example, if you can access the communications array and send a distress signal, what effect will that have?
+
+Is gaining control of the automatic security systems something that can be automatically achieved in the security center? Does it require an opposed skill check? A complex skill check? If so, how much time do those checks take? (Would it give enough time for the bad guys to physically lay siege to the security center?) Do you have to do it compartment by compartment? Do we run the whole thing as a massive hacker-vs-hacker battle in virtual reality?
+
+Do I prep the armory by simply having an inventory of available supplies? Or do we code something similar to a wealth check to see if a particular piece of desired equipment is available?
+
+Random Encounters: Finally, I’m always a big fan of using random encounters to simulate the activity in complex environments. Whether it’s panicked pockets of prostrate passengers or roving hijacker enforcement teams, a well-seeded random encounter table can add unexpected twists and delightful chaos to the scenario.
+
+OTHER SCENARIO STRUCTURES
+
+Here are some other potential scenario structures for a “Between the Stars” campaign.
+
+Bomb Onboard: Touchstones might include stuff like Die Hard With a Vengeance and Law Abiding Citizen. The actual mystery of identifying the bomber can probably use a standard mystery scenario structure, but what about the process of finding (and possibly defusing) bombs before they explode? What effect do bombs have on ship systems?
+
+Plague: The Babylon 5 episode “Confessions and Lamentations” is a particularly poignant look at disease scenarios on spacecraft. “Genesis” from Star Trek: The Next Generation was a particularly stupid one. (On the other hand, TNG’s “Identity Crisis” shows the breadth of potential within the general idea.)
+
+Lost in Space: Touchstones would include… well… Lost in Space. (Also, Poul Anderon’s Tau Zero.)
+
+Collision in Space: Here you could probably lift some of the same structures for systems damage from the “Bomb Onboard” scenario structure to model collision damage.
+
+Mutiny: We could probably lift large chunks from our “Hijacking” scenario structure
+
+Smuggling: Both with the PCs engaging in smuggling and with NPC smugglers trying to use their ships to achieve their own aims.
+
+If you’re feeling up for it, grab one of these and give it the same treatment we gave hijackings: Post it here in the comments or toss a link down there to wherever you do post it.
+
+The first RPGs had unique game structures for just about everything. In the original edition of D&D, for example, evading monsters in the dungeon had one mechanical structure and the process for evading monsters in the wilderness had a completely different structure. The earliest designers, when confronted with the need to resolve the outcome of a new situation, would simply create entirely new mechanics and new paradigms to handle it.
+
+This didn’t last long: Systems that had worked well in the past got repurposed. Similar systems had their redundancies conflated away. Even more importantly, GMs looking to adjudicate unanticipated actions were quick to develop consistent methodologies. (“When you wanted to do X, we did Y. Now you want to do something that’s kind of like X, so we’ll use Y again.”) And this very rapidly evolved into the first universal, generic mechanic: Rolling either 3d6 or 1d20 and comparing it to the character’s ability score.
+
+Shortly thereafter, the idea of modifying these rolls using character skills appeared. These modifications mutated rapidly and then generally settled into the system of “ability score + skill modifier” that has basically dominated RPG mechanics for the past three decades.
+
+The advantage of having a generic, universal mechanic is that it provides the GM with a robust tool for making rulings at the table. With a properly comprehensive skill list, for example, making a ruling for the resolution of any discrete action is simply a matter of selecting the appropriate skill.
+
+(By contrast, the process of making a ruling in many early RPGs often involved first inventing the tools. It wasn’t unusual to literally invent entire dice mechanics from scratch. It’s unsurprising that GMs in these systems almost reflexively create universal mechanics as quickly as possible.)
+
+This is obviously good for the GM (for the same reason that carpenters like to have a toolbox instead of needing to reinvent the hammer for every new project), but it’s also good for the players: It creates a flexible environment in which any discrete action can be attempted within the structure of the game mechanics. This means that any action can be proposed without bogging the session down; it also means that there is no structural bias for or against any type of action. (There may still be a mechanical bias, of course, if certain actions are easier than alternatives, but that’s a separate issue.)
+
+(When I say “structural bias” I’m referring to the fact that gameplay generally gravitates towards existing game structures. I’ve talked about this a couple times previously: If there’s a system for prospecting gems, for example, players are more likely to go prospecting. If a game includes a robust system for resolving riddle contests but has no mechanics for resolving combat, it’s likely that the game will see a lot more riddling with words than it will riddling with bullets.)
+
+GENERIC SCENARIO STRUCTURES
+
+If a generic, universal action resolution mechanic is useful, it’s not hard to see how much more useful a generic, universal scenario structure would be. With a tool like that, GMs could seamlessly transition their campaigns to be virtually anything and it would all be as robust, entertaining, and rewarding as a dungeoncrawl or a combat encounter.
+
+Unsurprisingly, therefore, the history of the industry is studded with efforts to expand the generic, universal mechanic to include larger structures at both micro- and macro-levels. Many of these efforts have historically been little more than crude guidelines, often fumbling in the dark towards an objective that has been poorly understood. Others, however, have attempted to create more comprehensive and defined structures.
+
+In recent years, the best-known example of this sort of thing has almost certainly been D&D 4th Edition’s skill challenges.
+
+And, unfortunately, skill challenges show all the characteristic failures typical of these systems: Dissociated mechanics (including emergent dissociated properties). A systemic blandness that often results in fundamental gameplay which is “not fun”. A prevention of meaningful choices by the players (or an outright forbiddance of such choices). And so forth.
+
+In Part 11 I listed six properties of effective game structures:
+
+They should be flexible (allowing players to make decisions not constrained by the structure).
+They should have a capacity for meaningful decisions.
+They should allow players to make decisions which are associated and in-character.
+The default actions of the structure should be tied to the reward structures of the game.
+They should be fun.
+They should be easy to prep.
+And while skill challenges satisfy some of these criteria (more or less depending on exactly which version of the skill challenge rules you’re actually using), they obviously fail to fulfill most of them (and arguably the most important ones).
+
+Most of these problems seem to crop up due to the lack of specificity inherent in a generic structure. For example, while it’s possible to break almost any activity down into an abstract “action” which can be resolved with a generic skill check, the procedural and structural differences between, for example, negotiating a peace treaty, safely traversing a haunted forest, or prospecting for gems seem to defy a generic approach. And when such a generic approach is attempted, the result usually dissociates itself as the mechanical decisions divorce themselves from the decisions being made by the characters in those unique situations.
+
+On the other hand, while Eurogames prove that abstract mechanical representations can still provide fundamentally fun gameplay, efforts to solve the dissociative problems with generic scenario structures tend to emphasize flat, bland mechanics that strive to be as “vanilla” as possible. And that results in gameplay which is mechanically boring.
+
+Historically, this appears to be an insoluble balancing act: The more “interest” you add to the mechanics, the more specific they become and the stronger they dissociate from the game world. The more generic you make the mechanics, the blander and more boring they become. (Nor does there seem much success in solving fully for one or the other: Making the mechanics less specific seems to solve some problems of dissociation, but simultaneously introduces others.)
+
+THE HOLY GRAIL
+
+This would be an appropriate time for me to announce a dramatic cutting of this Gordian knot, unveiling an incredible generic scenario structure that would revolutionize your gaming table.
+
+Sadly, however, this is not to be.
+
+A truly successful, fun, and effective generic scenario structure would be the holy grail of roleplaying games. But, much like the holy grail, it may also be an unattainable prize.
+
+On the other hand, at this time last year, I would have said that even generic structures at a level of complexity comparable to combat (i.e., generic structures for resolving conflicts in multiple steps) had largely failed. But as I recently discussed, Technoir has achieved a remarkable success in accomplishing exactly that (albeit in a form which I haven’t figured out how to reverse engineer successfully into other RPGs yet).
+
+So there may be some breakthroughs lurking out there; just waiting for the right time and the right circumstances to emerge. Unfortunately, I won’t be the one to bring them into the limelight. (At least not today.)
+
+I suspect that at least part of the problem with achieving these breakthroughs, however, is that our current range of robust, fully-developed scenario structures is so dreadfully limited in its scope and variety: If all you’ve seen is an apple and a couple of pears, it would be difficult to reverse engineer what the generic definition of “fruit” should be.
+
+Personally, I think it would be great if we started seeing more unique, fully-developed scenario structures in the hobby and industry. It’s something that’s been consuming more and more of my own time (as this series of essays might suggest), and I think that broad experimentation in this area will begin to open up possibilities for dynamic gameplay that we can’t even really begin to imagine today. (Particularly as these robust scenario structures are mastered and recombined.)
+
+As a final rumination on the subject of game structures, I want to discuss player-known and player-unknown game structures and the differences between the two in actual play.
+
+Let me demonstrate what I’m talking about by way of example.
+
+THE UNKNOWN HEX
+
+In the earliest hexcrawling structures, the players were supposed to be aware of the hexes. Volume 3: The Underworld & Wilderness Adventures for OD&D, for example, reads, “When players venture into this area they should have a blank hexagon map, and as they move over each hex the referee will inform them as to what kind of terrain is in that hex.”
+
+In designing the structure I use for hexcrawling, on the other hand, I specifically eschewed this approach: Although I found the abstraction of the hex map useful in many ways, I didn’t want the players to directly interface with that abstraction. Instead, I wanted them to interact with the game world.
+
+So while I used the abstraction of the hex map for its convenience in mapping and keying, my players had to figure out how to navigate the world purely from the view point of their characters.
+
+The original version of hexcrawling is a player-known game structure: They can see, understand, and even manipulate the game structure that you’re using to represent the game world. Most combat systems are another excellent example of player-known game structures.
+
+My version of hexcrawling is a player-unknown game structure: They perceive only the game world and don’t know exactly what structures you’re using to prep and run that world. Another common example of a player-unknown game structure are random encounters: Did they run into goblins in that hallway because the encounter was keyed there or because the GM rolled a random encounter?
+
+USING PLAYER-UNKNOWN STRUCTURES
+
+My decision to obfuscate my hexcrawling procedures is not unusual for me. As a GM, I’m generally trying to find simple methods of organizing my prep work so that it can be easily and efficiently referenced and used during play. But I don’t necessarily want my players to see the structure that I use: I want them to see the messy, chaotic world that their characters live in.
+
+The method I refer to a “The Second Track” in Advanced Node-Based Design is an example of this: I organize two distinct and easy-to-manage groups of nodes, but then I mix them together in play to create a more complex reality.
+
+I discussed another example as “Minor Elevation Shifts” as part of the Xandering Techniques: “When the PCs come to a staircase they may naturally assume that they are going up or down to a new level of the dungeon. But by including minor elevation shifts within the topography of a single dungeon level you can confound their expectations … These techniques aren’t just a matter of confusing the players’ mapping. You are disrupting their ability to intuit the organization of your maps by analyzing the reality of the game world. While maintaining clean and simple maps for your own use and reference, you are creating a world that not only seems more dynamic and complex, but actually is more dynamic and complex.”
+
+More generally, if the players don’t know the structure you’re using then they can’t engage the structure: Instead, they have to propose actions in-character.
+
+See if you can imagine for a moment what combat would be like if the players had no idea what the underlying structure of the game was. I don’t just mean a scenario in which the GM is keeping their hit point totals secret from them: I mean that the players don’t know what rounds are; they don’t know what attack rolls are; they don’t know what hit points are. What effect would that have on how combat is experienced at the game table?
+
+On a similar note, running a new game structure in a player-unknown configuration can be a great method for diagnosing inadequacies, shortcomings, and dissociations in the structure. If you come to your players and say, “Here’s a system for Gee-Whizzing and it has rules for A, B, and C.” Then your players may focus exclusively on the options that have been presented to them.
+
+But if you just come to your players and say, “Let’s do some Gee-Whizzing.” Then your players will be free to propose any action that occurs to them: If they stick to A, B, and C then you’ve done your job well. If they’re proposing D, E, F, and G then you’ve got some holes to fill.
+
+Similarly, if you find that your structure keeps expecting the players to make decisions that they aren’t making (or that they can’t make without being aware of the structure), then that’s a huge tip-off that your structure is dissociated.
+
+USING PLAYER-KNOWN STRUCTURES
+
+This is not to say, however, that player-unknown structures are the be-all and end-all of gaming. On the other end of the spectrum, player-known structures are specifically useful because they allow players to make decisions informed by the game structures in play.
+
+In my hexcrawling structure, for example, players must select their mode of travel: Normal, Hustling, Cautious, or Exploring.
+
+(Normal movement has no modifiers. Hustling increases navigation DCs. Cautious movement is made at ¾ normal speed, navigation DCs are decreased, and the chance for non-exploratory encounters is halved. Finally, while exploring, characters move at ½ normal speed and the chance for encounters is doubled.)
+
+For roughly a dozen sessions or so, I kept this structure hidden from the players: Instead, I applied the appropriate mode of travel based on the actions they proposed. (For example, if they said that they were going to start moving carefully through the woods in order to avoid encountering any of the orc warbands they knew were looking for them, then I would slot them into the “cautious” mode of travel.)
+
+Eventually, however, I concluded that it made more sense to make this a player-known structure: First, because the players were assuming – in the absence of additional information – that these types of decisions were irrelevant in the game structure I was using. (And because of this false intuition of the game structure, they stopped feeding me the cues I was using to assign modes of travel.) Second, because choosing a mode of travel had a significant impact on the efficacy of navigation in the system. (Hiding this structure from them actually made them less competent than their characters.)
+
+You can see a similar principle in the familiar debate of whether or not GMs should tell their players the target number for an action check.  (My opinion is that you should only obfuscate the target number if that obfuscation mirrors a lack of information on the part of the character. Otherwise, providing the DC is the quickest way to overcome the vast difference in bandwidth between the character’s perception of the world around them and the player’s perception of that world. For example, a character standing in front of a chasm can actually see the chasm. The player, on the other hand, is completely dependent on a very narrow band of audio communication from the GM.)
+
+But I digress.
+
+As a final point of consideration in player-known structures, consider the Point of First Contact in that structure. As described in an essay at D-Constructions:
+
+For better or for worse, most RPGs have freeform moments and structured moments, and it’s a really good idea to think about how the latter start. […]
+
+The first die does get a lot of focus in play because it’s the break moment. It’s the moment you start concentrating and reach for your first contact with the rules. So it pops up in your mind and yells “THIS IS IMPORTANT”. To an extent, therefore, it doesn’t matter what your CORE mechanic is because your first gets more attention. […]
+
+ 
+
+It’s worthwhile, therefore, to make sure your first contact IS important to the kind of game you want to run. In Smallville your first die is your value – what you believe in, why you care about this struggle at all. In Marvel it’s what kind of team you’re in – are you the kind of person who performs better in a team, with a buddy, or solo. Right way we have something central to Marvel’s enduring dynamic.
+
+ 
+
+What’s your first point of contact? In every sense?
+
+IN CONCLUSION
+
+This has been a very long series of essays. It’s touched on a lot of different subjects (which is perhaps unsurprising, given that the topic is one that lies at the heart of virtually every moment at your gaming table). But if you gain absolutely nothing else from it, I hope you can take away two important points:
+
+First, I think a lot of the linear, railroaded scenarios that we see in roleplaying games are the result of GMs who have a limited (or nonexistent) toolset. Often I think GMs don’t even realize that these types of tools exist. But they do exist and there’s nothing complex or mysterious about them. Once you know they exist, they’re not even particularly difficult to master.
+
+Second, if you’re a GM, I think you’ll benefit greatly from consciously thinking about the game structures you’re using: Innovate. Experiment. Create. Share. Playtest.
+
+One of the most exciting thing about the Old School Renaissance for me has been its role in rediscovering highly effective game structures that had largely been forgotten by the mainstream gaming community. Over the past few years, we’ve seen how much fresh creativity and original gameplay can be generated out of tapping a robust game structure like hexcrawling that has lain dormant for years.
+
+But I think that’s barely scratching the surface. If we can get stuff like Carcosa and Points of Light and Kingmaker out of hexcrawling, what else have we been missing out on?
+
+Game structures are merely ornately-wrought keys. The really interesting stuff is what lies beyond the doors those keys will unlock.
+

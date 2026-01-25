@@ -1,0 +1,154 @@
+Don’t Prep Plots March 23rd, 2009
+Hal Foster - Aleta on the High Seas
+
+If you’re GMing a roleplaying game, you should never prep a plot.
+
+Everyone’s tastes are different. These matters are subjective. What works for one person won’t necessarily work for another. Yada, yada, yada.
+
+But, seriously, don’t prep plots.
+
+First, a definition of terms: A plot is the sequence of events in a story.
+
+And the problem with trying to prep a plot for an RPG is that you’re attempting to pre-determine events that have not yet happened. Your gaming session is not a story — it is a happening. It is something about which stories can be told, but in the genesis of the moment it is not a tale being told. It is a fact that is transpiring.
+
+PREPPING WITHOUT PLOTS
+
+Don’t prep plots, prep situations.
+
+What’s the difference?
+
+A plot is a sequence of events: A happens, then B happens, then C happens. (In more complicated forms, the sequence of events might fork like a Choose Your Own Adventure book, but the principle remains the same.)
+
+A situation, on the other hand, is merely a set of circumstances. The events that happen as a result of that situation will depend on the actions the PCs take.
+
+For example, a plot might look like this: “Pursuing the villains who escaped during last week’s session, the PCs will get on a ship bound for the port city of Tharsis. On their voyage they will spot a derelict. They will board the derelict and discover that one of the villains has transformed into a monster and killed the entire crew… except for one lone survivor. They will fight the monster and rescue the survivor. While they’re fighting the monster, the derelict will have floated into the territorial waters of Tharsis. They will be intercepted by a fleet of Tharsian ships. Once their tale is told, they will be greeted in Tharsis as heroes for their daring rescue of the derelict. Following a clue given by the survivor of the derelict, they will climb Mt. Tharsis and reach the Temple of Olympus. They can then wander around the temple asking questions. This will accomplish nothing, but when they reach the central sanctuary of the temple the villains will attempt to assassinate them. The assassination attempt goes awry, and the magical idol at the center of the temple is destroyed. Unfortunately, this idol is the only thing holding the temple to the side of the mountain — without it the entire temple begins sliding down the mountain as the battle continues to rage between the PCs and villains!”
+
+(This is derived from an actual, published adventure. Names and milieu have been changed to protect the innocent. Bonus points to anyone who can correctly identify the original source.)
+
+A situation, on the other hand, looks like this: “The villains have escaped on two ships heading towards Tarsis. One of the villains transforms during the voyage into a terrible monster and kills the crew, leaving the ship floating as a derelict outside the coastal waters of Tharsis. At such-and-such a time, the ship will be spotted by the Tharsis navy. The other villains have reached the Temple of Olympus atop Mt. Tharsis and assumed cover identities.”
+
+THE DIRTY SECRET
+
+Many people are intimidated by the idea of prepping without a plot. It seems like a lot of work. If the players can do anything, how are you supposed to cope with that?
+
+The dirty secret, though, is that it’s actually a lot more difficult to prep plots than situations.
+
+To understand why, let’s take a closer look at our example of a plotted adventure. It’s a tightly-knit sequence of events that, when broken down, looks like this:
+
+(1) The PCs pursue the villains. (What if they don’t?)
+
+(2) The PCs have to choose to follow them by ship. (What if they decide to ride down the coast? Or teleport?)
+
+(3) The PCs have to spot the derelict. (What if they roll poorly on their Perception check?)
+
+(4) The PCs have to board the derelict. (What if they just sail past it?)
+
+(5) The PCs have to rescue the survivor. (What if they fail? Or choose to flee before realizing the survivor is there?)
+
+(6) The PCs have to question the survivor. (What if they decide not to pressure an injured man?)
+
+(7) The PCs have to go to the central sanctuary of the temple.
+
+(8) The assassination attempt on the PCs has to play out in a very specific way.
+
+What you’re looking at is a chain of potential points of failure. Each of these points is heavily designed with a specific and expected outcome… and if that outcome doesn’t happen the GM is left to railroad the players back onto the tracks he’s laid out.
+
+By contrast, let’s look at what we need to design this same adventure as a situation:
+
+(1) The PCs have to pursue the villains. (This is the hook into the entire scenario. It’s a potential failure point shared by all scenarios. If the PCs aren’t interested in going to the red dragon’s lair, it doesn’t matter how you prep the lair.)
+
+(2) You need to design the city of Tharsis. (Where is it? What’s it like? What can the PCs do there? Et cetera.)
+
+(3) You need to design the derelict ship.
+
+(4) You need to design the Temple of Olympus.
+
+(5) You need to stat up the Tharsis navy, the villains, and (possibly) the survivor.
+
+(6) There needs to be a way for the PCs to know the villains are hiding out in the Temple of Olympus. (In the plot-based design, this is one of the failure points: They either question the survivor or they have no way of knowing where to go next. In situation-based design, you would use the Three Clue Rule and figure out two additional methods by which the PCs could reach this conclusion. This can be as simple as making a Gather Information check in Tharsis and/or questioning the captain/crew of the ship the villains took.)
+
+Here’s the dirty secret: Take a closer look at that list. With the exception of #6, those are all things that you also needed to prep for your plot-based design. (And even #6 is one-third complete.)
+
+Here’s an analogy: Situation-based design is like handing the players a map and then saying “figure out where you’re going”. Plot-based design, on the other hand, is like handing the players a map on which a specific route has been marked with invisible ink… and then requiring them to follow that invisible path.
+
+ROBUST DESIGN
+
+The advantage of situation-based prep is that it’s robust. Surprisingly, however, that robustness doesn’t require a lot of extra work. In fact, as we’ve shown, it usually requires a lot less work. Here are a few things to consider while doing situation-based prep.
+
+THREE CLUE RULE: I’ve already devoted a lengthy essay to the Three Clue Rule. Basically, the Three Clue Rule states: For any conclusion you want the PCs to make, include at least three clues.
+
+The theory is that, even if the players miss two of the clues, you’ve got pretty great odds that they’ll find the third and figure things out.
+
+The Three Clue Rule can also be applied to adventure design in general: For any given problem in an adventure, you should always prep at least one solution and remain open to any potential solutions your players may devise. But for any chokepoint problem (by which I mean “a problem which must be overcome in order for the adventure to continue”), try to include three possible routes to success.
+
+That may sound like a lot of work, but these distinct paths don’t need to be particularly convuluted. (In fact, they shouldn’t be.) For example, a problem might be “Mickey Dee has a piece of information the PCs need”. The solutions can be as simple as (1) knock him out and take it; (2) negotiate with him for it; or (3) sneak into his office and steal it. The actual prep that you do for any one of these solutions takes care of 99% of the prep for the other two.
+
+It should be noted that, just because any given solution is “simple”, it doesn’t mean that the scenario will be (or should be) simple. The convulution of the scenario arises from the way in which a series of problems are overcome. And the nice thing about situation-based prep is that you don’t have to figure out exactly how these problems will be strung together — that arises naturally out of the actions taken by the PCs.
+
+GOAL-ORIENTED OPPONENTS: Instead of trying to second-guess what your PCs will do and then trying to plan out specific reactions to each possibility, simply ask yourself, “What is the bad guy trying to do?”
+
+The most effective way of prepping this material will depend on the particulars of the scenario you’re designing. It might be nothing more than a sequential list of objectives. Or it might be a detailed timeline.
+
+Note that some scenarios won’t be based around the bad guys trying to carry out some specific scheme. They might just be going about business as usual when the PCs decide to show up and make a mess of things. In other words, the “goal” might be nothing more than “maintain the standard guard rotation”.
+
+If you’re interested in seeing this type of prep work in action, I’ve put together a lengthy example of using detailed timelines from my own campaign. (My players should not click that link.)
+
+DON’T PLAN SPECIFIC CONTINGENCIES: Whatever approach you take, the key aspect is that you’ll usually be laying out what would happen if the PCs don’t get involved. If you get some ideas about contingency plans, go ahead and jot them down, but don’t waste too much time on them.
+
+I say “waste your time” because that’s exactly what most contingency planning is. The basic structure of contingency planning is: If the PCs interfere at point X, then the bad guys do X2. If the PCs interfere at point Y, then the bad guys do Y2. If the PCs interfere at point Z, then the bad guys do Z2.
+
+Of course, if the PCs don’t interfere at point X, then all the time you spent prepping contingency X2 is completely wasted. Even more importantly, if the PCs do interfere at point X then point Y and point Z will generally be fundamentally altered or even cease to exist — so all the prep work that went into Y2 and Z2 is also wasted.
+
+This is where situation-based prep usually gets maligned for requiring more work: People think they need to try to prepare themselves for every conceivable action the PCs might take. But, in point of fact, that’s not situation-based prep. That’s plot-based prep juiced up on Choose Your Own Adventure steroids. It’s the type of prep you would need to do if you were programming a computer game.
+
+But you’re not programming a computer game. You’re prepping a scenario for a roleplaying game. When the PCs choose to do X or Y or Z (or A or B or C), you don’t need a pre-programmed reaction. You’re sitting right there at the table with them. You can just react.
+
+KNOW YOUR TOOLKIT: In order to react, you need to know your toolkit. If the PCs start investigating Lord Bane, what resources does he have to thwart them? If they lay siege to the slavers’ compound, what are the defenses?
+
+Typical “tools” include personnel, equipment, physical locations, and information.
+
+For example, if the PCs are investigating a local Mafia leader then you might know that:
+
+(1) He has a couple of goon squads, a trained assassin on staff, and two bodyguards. You might also know that he has an estranged wife and two sons. (These are all types of personnel.)
+
+(2) He lives in a mansion on the east side of town, typically frequents his high-end illegal casino in the secret basement of a downtown skyscraper, and also has a bolt-hole set up in a seedy tavern. (These are all physical locations.)
+
+(3) He has blackmail material on one of the PCs. (This is information.)
+
+(4) He has bribed a local cop. (This is a different type of personnel.)
+
+And just like a real toolbox, you should have some idea what the tools are useful for. You know that a hammer is for nails and a screwdriver is for screws. Similarly, you know that the goon squad can be used to beat-up the PCs as a warning or to guard the bolt-hole. You know that the estranged wife can be used as a source of information on the mansion’s security system. And so forth.
+
+You can think of this as non-specific contingency planning. You aren’t giving yourself a hammer and then planning out exactly which nails you’re going to hit and how hard to hit them: You’re giving yourself a hammer and saying, “Well, if the players give me anything that looks even remotely like a nail, I know what I can hit it with.”
+
+(For example, you know that the estranged wife is familiar with the details of her husband’s operations and the security of the mansion. That’s the hammer. What you don’t have to figure out is how the PCs get that information from her: Maybe they just ask her nicely. Or bribe her. Or offer to protect her. Or they plant a surveillance bug on her. Or tap her phones. Or kidnap her sons and threaten to kill them unless she plants a bomb in her husband’s mansion. These are all nails. The players will provide them.)
+
+The other trick to designing your toolkit is organizing the pertinent resources into usable chunks. Take the goon squads for example: You could try to track the actions of every individual goon while running the adventure, but that quickly becomes incredibly complicated. By organizing them into squads you give yourself a manageable unit that you can keep track of.
+
+On the other hand, don’t let this organization shackle you. If you need an individual goon, just peel ’em off one of the squads and use them. You’re drawing a forest because that’s easier to map — but if the PCs need to chop down some firewood, don’t miss the trees for the forest.
+
+CONCLUDING THOUGHTS
+
+Despite my tongue-in-cheek opening to this essay, there’s nothing inherently wrong with plot-based design. Plenty of great games have been run with tightly or loosely plotted scenarios. And the argument can certainly be made that, “The players don’t care if they’re on a railroad, if the train’s heading to Awesome Town.”
+
+But I’ll admit that, in my experience, Awesome Town is usually a lot more awesome when I let the PCs chart their own course.
+
+Is that because I’m such an amazingly awesome GM that I can always roll with the punches and come up with some awesome improvisation? Maybe. But I think it has more to do with the fact that the players are actually pretty good judges of what they want. And if they come up with a detailed plan for infiltrating the mob boss’ downtown casino as card dealers and gamblers, then they’ll probably have a lot more fun seeing that plan come to fruition than if I artificially quash it so that they can go back to my “awesome” idea of kidnapping the sons of the mob boss and using them to blackmail his wife.
+
+(Which isn’t to say that the PCs should always succeed. Overcoming adversity is awesome as well. But there’s a difference between a plan that doesn’t work because it didn’t work and a plan that doesn’t work because I, as a GM, want them to be doing something else.)
+
+And with that so-called advantage of plot-based design laid to one side, I’m not sure what it’s really supposed to be offering. On the other hand, the advantages of scenario-based design are huge:
+
+(1) It requires significantly less work to prep.
+
+(2) It empowers the players and makes their choices meaningful.
+
+The latter really cannot be emphasized enough. For me, the entire reason to play a roleplaying game is to see what happens when the players make meaningful choices. In my experience, the result is almost always different than anything I could have anticipated or planned for.
+
+If I wanted to tell my players a story (which is what plot-based design really boils down to), then it’s far more efficient and effective to simply write a story. In my opinion, if you’re playing a roleplaying game then you should play to the strengths of the medium: The magical creativity which only happens when people get together.
+
+For examples of what I’m talking about, you can also read about the Unexpected Successes from my own table. The Twin Deaths of Thuren Issek are particularly awesome.
+
+On the other hand, if you have a group that’s used to being shown the Correct Path and then following it, suddenly throwing them into the deep-end of an open-ended scenario may have disastrous results, just like any other sudden shift in the style of play. Others, of course, will immediately take to it like a fish takes to water. But if you’re running into problems, just sit down and talk things over with your players. Explain where the disconnect is happening. Maybe give them a copy of this essay so that they can have a better understanding of what’s going on (and what’s not going on) behind the screen.
+
+I suspect that once they know the shackles have been taken off, they’ll revel in their newfound freedom.
