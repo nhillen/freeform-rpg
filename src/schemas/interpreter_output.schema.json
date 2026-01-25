@@ -7,16 +7,22 @@
     "referenced_entities",
     "proposed_actions",
     "assumptions",
-    "risk_flags"
+    "risk_flags",
+    "perception_flags"
   ],
   "properties": {
-    "intent": {"type": "string"},
+    "intent": {
+      "type": "string",
+      "description": "High-level interpretation of what the player is trying to do"
+    },
     "referenced_entities": {
       "type": "array",
+      "description": "Entity IDs mentioned or implied in the player input",
       "items": {"type": "string"}
     },
     "proposed_actions": {
       "type": "array",
+      "description": "Concrete actions derived from player intent",
       "items": {
         "type": "object",
         "required": ["action", "target_id", "details"],
@@ -30,11 +36,37 @@
     },
     "assumptions": {
       "type": "array",
+      "description": "Assumptions made when interpreting ambiguous input",
       "items": {"type": "string"}
     },
     "risk_flags": {
       "type": "array",
+      "description": "Content flags (violence, sensitive, etc.)",
       "items": {"type": "string"}
+    },
+    "perception_flags": {
+      "type": "array",
+      "description": "Issues where player referenced something character cannot perceive",
+      "items": {
+        "type": "object",
+        "required": ["entity_id", "issue"],
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "description": "The entity the player referenced"
+          },
+          "issue": {
+            "type": "string",
+            "description": "Why this is a perception problem",
+            "enum": ["not_present", "not_known", "obscured", "out_of_range"]
+          },
+          "player_assumption": {
+            "type": "string",
+            "description": "What the player seemed to assume about this entity"
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": false

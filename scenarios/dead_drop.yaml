@@ -1,0 +1,334 @@
+# Dead Drop - Test Scenario
+# A cyberpunk noir investigation case
+
+id: dead_drop
+name: "Dead Drop"
+description: "A simple courier job goes wrong when you find your contact dead."
+genre: cyberpunk_noir
+estimated_length: "2-4 hours"
+
+# Default game system for this scenario
+default_system: noir_standard
+
+# Calibration defaults (can be overridden)
+calibration:
+  tone:
+    gritty_vs_cinematic: 0.7
+    dark_vs_light: 0.6
+    moral_complexity: 0.8
+    slow_burn_vs_action: 0.5
+  themes:
+    primary:
+      - "trust_and_betrayal"
+      - "cost_of_survival"
+    secondary:
+      - "corporate_power"
+  risk:
+    lethality: "moderate"
+    failure_mode: "consequential"
+    permanence: "meaningful"
+    plot_armor: "thin"
+  boundaries:
+    lines:
+      - "sexual_violence"
+      - "child_harm"
+    veils:
+      - "graphic_torture"
+
+# Genre rules for context injection
+genre_rules:
+  setting: "Near-future cyberpunk city"
+  technology: "Cybernetics common, AR overlays ubiquitous, AI assistants"
+  society: "Megacorp controlled, massive inequality, gig economy"
+  tone: "Neon-lit shadows, rain-slicked streets, moral ambiguity"
+  what_works:
+    - "Street smarts and contacts"
+    - "Information as leverage"
+    - "Creative tech use"
+  what_doesnt:
+    - "Frontal assault on corps"
+    - "Trusting authorities"
+    - "Clean solutions"
+
+# Initial clocks
+clocks:
+  - id: heat
+    name: "Heat"
+    value: 1
+    max: 8
+    triggers:
+      "4": "Cops start asking questions in the district"
+      "6": "Active investigation opened on you"
+      "8": "Task force mobilized, nowhere is safe"
+    tags: ["pressure"]
+
+  - id: time
+    name: "Time"
+    value: 8
+    max: 12
+    triggers:
+      "4": "Dawn approaches, options narrowing"
+      "2": "Final hours, desperation time"
+      "0": "Deadline passed, consequences arrive"
+    tags: ["pressure"]
+
+  - id: harm
+    name: "Harm"
+    value: 0
+    max: 4
+    triggers:
+      "2": "You're hurt bad, need to slow down"
+      "4": "Critical condition, one more hit and you're done"
+    tags: ["player"]
+
+  - id: cred
+    name: "Cred"
+    value: 500
+    max: 9999
+    triggers: {}
+    tags: ["resource"]
+
+  - id: rep
+    name: "Rep"
+    value: 2
+    max: 5
+    triggers:
+      "0": "You're nobody, doors close"
+      "4": "Word's out, people take you seriously"
+    tags: ["social"]
+
+# Entities
+entities:
+  # Player character
+  - id: player
+    type: pc
+    name: "Kira"
+    attrs:
+      background: "Former corporate courier turned independent"
+      skills: ["navigation", "negotiation", "streetwise"]
+      appearance: "Weathered synth-leather jacket, neural interface port visible at temple"
+      weakness: "Owes money to the wrong people"
+    tags: ["player"]
+
+  # NPCs
+  - id: viktor
+    type: npc
+    name: "Viktor"
+    attrs:
+      role: "Fixer"
+      description: "Middle-aged, cybernetic eye, always knows a guy"
+      location: "The Neon Dragon"
+      agenda: "Keep his network intact, stay useful to everyone"
+      knowledge: ["who hired the courier", "where the package was going"]
+    tags: ["ally", "fixer"]
+
+  - id: dead_courier
+    type: npc
+    name: "Jin"
+    attrs:
+      role: "The Victim"
+      description: "Young, cheap cybernetics, worked for Viktor"
+      status: "dead"
+      cause_of_death: "Neural overload, likely forced"
+      knowledge: ["had the package", "was meeting someone"]
+    tags: ["victim", "deceased"]
+
+  - id: mira
+    type: npc
+    name: "Mira"
+    attrs:
+      role: "Information Broker"
+      description: "Augmented eyes that see data streams, speaks in fragments"
+      location: "DataHaven cafe"
+      agenda: "Collect secrets, sell to highest bidder"
+      knowledge: ["corporate interest in the package", "who's hunting couriers"]
+    tags: ["neutral", "broker"]
+
+  - id: corpo_agent
+    type: npc
+    name: "Agent Chen"
+    attrs:
+      role: "Corporate Security"
+      description: "Clean suit, cold eyes, Zenith Industries badge"
+      agenda: "Retrieve the package, eliminate witnesses"
+      resources: ["corporate backing", "surveillance access"]
+    tags: ["threat", "corporate"]
+
+  # Locations
+  - id: neon_dragon
+    type: location
+    name: "The Neon Dragon"
+    attrs:
+      description: "Dive bar in the Undercity, neutral ground for deals"
+      atmosphere: "Smoky, neon signs, synth music, tired faces"
+      features: ["bar", "back booths", "back exit to alley"]
+    tags: ["social", "neutral"]
+
+  - id: alley_behind_dragon
+    type: location
+    name: "Alley Behind the Dragon"
+    attrs:
+      description: "Rain-slicked alley, dumpsters, fire escape"
+      atmosphere: "Dark, smells of garbage and ozone"
+      features: ["dumpster", "fire escape", "Jin's body"]
+    tags: ["crime_scene"]
+
+  - id: datahaven
+    type: location
+    name: "DataHaven Cafe"
+    attrs:
+      description: "Underground data broker hangout, screens everywhere"
+      atmosphere: "Humming servers, blue light, paranoid patrons"
+      features: ["private booths", "encrypted terminals"]
+    tags: ["information"]
+
+  # Items
+  - id: credstick
+    type: item
+    name: "Credstick"
+    attrs:
+      value: 500
+      description: "Anonymous credit storage"
+    tags: ["currency"]
+
+  - id: neural_interface
+    type: item
+    name: "Neural Interface"
+    attrs:
+      description: "Standard civilian model, temple mount"
+      capabilities: ["AR overlay", "basic net access", "comms"]
+    tags: ["cyberware", "equipped"]
+
+  - id: package
+    type: item
+    name: "The Package"
+    attrs:
+      description: "Small sealed container, biometric lock, unknown contents"
+      status: "missing"
+      last_seen: "Jin was carrying it"
+    tags: ["macguffin", "plot"]
+
+# Initial facts (what the player knows at start)
+facts:
+  - id: fact_job
+    subject_id: player
+    predicate: "has_job"
+    object:
+      description: "Pick up a package from Jin, deliver to Viktor"
+      pay: 200
+      deadline: "Tonight"
+    visibility: "known"
+    tags: ["quest"]
+
+  - id: fact_viktor_contact
+    subject_id: viktor
+    predicate: "relationship"
+    object:
+      to: "player"
+      type: "employer"
+      history: "Has given you jobs before, pays fair"
+    visibility: "known"
+    tags: ["relationship"]
+
+  - id: fact_jin_dead
+    subject_id: dead_courier
+    predicate: "status"
+    object: "dead"
+    visibility: "known"
+    tags: ["discovery"]
+
+  - id: fact_jin_location
+    subject_id: dead_courier
+    predicate: "location"
+    object: "alley_behind_dragon"
+    visibility: "known"
+    tags: ["scene"]
+
+  # Hidden facts (world knowledge player hasn't discovered)
+  - id: fact_package_contents
+    subject_id: package
+    predicate: "contains"
+    object:
+      description: "Stolen Zenith research data on neural override tech"
+    visibility: "world"
+    tags: ["secret", "plot"]
+
+  - id: fact_chen_hunting
+    subject_id: corpo_agent
+    predicate: "is_hunting"
+    object:
+      target: "anyone who touched the package"
+      method: "surveillance network"
+    visibility: "world"
+    tags: ["threat", "hidden"]
+
+  - id: fact_viktor_knows
+    subject_id: viktor
+    predicate: "knows"
+    object:
+      what: "The package is hot, maybe too hot"
+      will_share: "If pressed, for a price"
+    visibility: "world"
+    tags: ["information"]
+
+# Initial relationships
+relationships:
+  - a_id: player
+    b_id: viktor
+    rel_type: "trust"
+    intensity: 2
+    notes:
+      history: "Several successful jobs"
+      status: "professional"
+
+  - a_id: player
+    b_id: mira
+    rel_type: "acquaintance"
+    intensity: 1
+    notes:
+      history: "Bought info once"
+      status: "neutral"
+
+# Initial threads
+threads:
+  - id: main_thread
+    title: "Find out what happened to Jin and the package"
+    status: "active"
+    stakes:
+      success: "Get paid, stay alive"
+      failure: "Viktor's unhappy, maybe worse"
+    related_entity_ids: ["dead_courier", "package", "viktor"]
+    tags: ["main"]
+
+  - id: side_thread_heat
+    title: "Someone is watching"
+    status: "active"
+    stakes:
+      success: "Stay off the radar"
+      failure: "Hunted by corps"
+    related_entity_ids: ["corpo_agent"]
+    tags: ["pressure"]
+
+# Starting scene
+starting_scene:
+  location_id: alley_behind_dragon
+  present_entity_ids: ["player", "dead_courier"]
+  time:
+    hour: 23
+    period: "night"
+    weather: "rain"
+  constraints: {}
+  visibility_conditions: "dim"
+  noise_level: "quiet"
+
+# Opening narration (for first turn)
+opening_text: |
+  The rain comes down in sheets, turning the alley into a river of neon reflections. You found Jin where Viktor said he'd be—behind the Neon Dragon, near the dumpsters. But Jin's not waiting for you. Jin's not waiting for anyone anymore.
+
+  The body is slumped against the wall, cheap cybernetics still flickering with residual charge. No obvious wounds, but the way his eyes are fixed on nothing tells you enough. Neural overload. Someone fried his brain.
+
+  The package isn't here.
+
+  Your credstick has 500 on it, your neural interface is pinging Viktor asking for status, and somewhere in this rain-soaked city, whoever killed Jin might already know you were supposed to be here.
+
+  What do you do?

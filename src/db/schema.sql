@@ -15,7 +15,10 @@ CREATE TABLE IF NOT EXISTS facts (
   object_json TEXT NOT NULL,
   visibility TEXT NOT NULL,
   confidence REAL NOT NULL,
-  tags TEXT NOT NULL
+  tags TEXT NOT NULL,
+  -- Perception tracking (when/how player learned this)
+  discovered_turn INTEGER,
+  discovery_method TEXT
 );
 
 CREATE TABLE IF NOT EXISTS scene (
@@ -23,7 +26,11 @@ CREATE TABLE IF NOT EXISTS scene (
   location_id TEXT NOT NULL,
   present_entity_ids_json TEXT NOT NULL,
   time_json TEXT NOT NULL,
-  constraints_json TEXT NOT NULL
+  constraints_json TEXT NOT NULL,
+  -- Perception conditions
+  visibility_conditions TEXT DEFAULT 'normal',
+  noise_level TEXT DEFAULT 'normal',
+  obscured_entities_json TEXT DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS threads (
@@ -82,7 +89,25 @@ CREATE TABLE IF NOT EXISTS summaries (
   turn_no_range TEXT NOT NULL
 );
 
+-- Campaign configuration (calibration, game system, metadata)
+CREATE TABLE IF NOT EXISTS campaigns (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  -- Calibration settings (tone, themes, risk, boundaries, agency)
+  calibration_json TEXT NOT NULL DEFAULT '{}',
+  -- Game system configuration (clocks, rolls, consequences)
+  system_json TEXT NOT NULL DEFAULT '{}',
+  -- Genre rules for context injection
+  genre_rules_json TEXT NOT NULL DEFAULT '{}',
+  -- Current turn number
+  current_turn INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_events_campaign_turn ON events (campaign_id, turn_no);
 CREATE INDEX IF NOT EXISTS idx_facts_subject ON facts (subject_id);
+CREATE INDEX IF NOT EXISTS idx_facts_visibility ON facts (visibility);
 CREATE INDEX IF NOT EXISTS idx_relationships_a ON relationships (a_id);
 CREATE INDEX IF NOT EXISTS idx_relationships_b ON relationships (b_id);
+CREATE INDEX IF NOT EXISTS idx_entities_type ON entities (type);
