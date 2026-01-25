@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ValidatorOutput",
+  "type": "object",
+  "required": [
+    "allowed_actions",
+    "blocked_actions",
+    "clarification_needed",
+    "clarification_question",
+    "costs"
+  ],
+  "properties": {
+    "allowed_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "target_id", "details"],
+        "properties": {
+          "action": {"type": "string"},
+          "target_id": {"type": "string"},
+          "details": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "blocked_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "reason"],
+        "properties": {
+          "action": {"type": "string"},
+          "reason": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "clarification_needed": {"type": "boolean"},
+    "clarification_question": {"type": "string"},
+    "costs": {
+      "type": "object",
+      "required": ["heat", "time", "cred", "harm", "rep"],
+      "properties": {
+        "heat": {"type": "integer"},
+        "time": {"type": "integer"},
+        "cred": {"type": "integer"},
+        "harm": {"type": "integer"},
+        "rep": {"type": "integer"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

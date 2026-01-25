@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NarratorOutput",
+  "type": "object",
+  "required": ["final_text", "next_prompt", "suggested_actions"],
+  "properties": {
+    "final_text": {"type": "string"},
+    "next_prompt": {"type": "string"},
+    "suggested_actions": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

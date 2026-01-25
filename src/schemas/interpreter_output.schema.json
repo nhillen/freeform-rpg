@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InterpreterOutput",
+  "type": "object",
+  "required": [
+    "intent",
+    "referenced_entities",
+    "proposed_actions",
+    "assumptions",
+    "risk_flags"
+  ],
+  "properties": {
+    "intent": {"type": "string"},
+    "referenced_entities": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "proposed_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "target_id", "details"],
+        "properties": {
+          "action": {"type": "string"},
+          "target_id": {"type": "string"},
+          "details": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

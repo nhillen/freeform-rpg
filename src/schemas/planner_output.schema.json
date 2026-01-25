@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PlannerOutput",
+  "type": "object",
+  "required": [
+    "beats",
+    "tension_move",
+    "clarification_question",
+    "next_suggestions"
+  ],
+  "properties": {
+    "beats": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "tension_move": {"type": "string"},
+    "clarification_question": {"type": "string"},
+    "next_suggestions": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

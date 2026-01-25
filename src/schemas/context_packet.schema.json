@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ContextPacket",
+  "type": "object",
+  "required": [
+    "scene",
+    "present_entities",
+    "entities",
+    "facts",
+    "threads",
+    "clocks",
+    "inventory",
+    "summary",
+    "recent_events"
+  ],
+  "properties": {
+    "scene": {
+      "type": "object",
+      "required": ["location_id", "time", "constraints"],
+      "properties": {
+        "location_id": {"type": "string"},
+        "time": {"type": "object"},
+        "constraints": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "present_entities": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "entities": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "facts": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "threads": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "clocks": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "inventory": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "summary": {
+      "type": "object",
+      "required": ["scene", "threads"],
+      "properties": {
+        "scene": {"type": "string"},
+        "threads": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "recent_events": {
+      "type": "array",
+      "items": {"type": "object"}
+    }
+  },
+  "additionalProperties": false
+}
