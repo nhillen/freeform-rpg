@@ -161,6 +161,8 @@ def play_cmd(args):
 
     # REPL loop
     turn_count = len(events)
+    last_turn_no = events[-1]["turn_no"] if events else None
+
     while True:
         try:
             user_input = input("> ").strip()
@@ -177,13 +179,14 @@ def play_cmd(args):
 
         # Handle commands
         if user_input.startswith('/'):
-            _handle_command(user_input, store, args.campaign)
+            _handle_command(user_input, store, args.campaign, last_turn_no)
             continue
 
         # Run turn
         try:
             result = orchestrator.run_turn(args.campaign, user_input)
             turn_count += 1
+            last_turn_no = result.turn_no
             print(f"\n{result.final_text}\n")
 
             if result.clarification_needed:
@@ -193,20 +196,29 @@ def play_cmd(args):
             print(f"Error: {e}")
 
 
-def _handle_command(cmd, store, campaign_id):
+def _handle_command(cmd, store, campaign_id, last_turn_no=None):
     """Handle REPL commands."""
-    cmd = cmd.lower()
+    parts = cmd.lower().split()
+    base_cmd = parts[0]
 
-    if cmd == '/help':
+    if base_cmd == '/help':
         print("""
 Commands:
   /status  - Show character status (harm, cred)
   /clocks  - Show all clocks
   /scene   - Show current scene
   /threads - Show active threads
+
+Feedback:
+  /good    - Mark last turn as good (thumbs up)
+  /bad     - Mark last turn as bad (thumbs down)
+  /flag    - Flag an issue with last turn
+  /note    - Add a comment about last turn
+  /eval    - Show evaluation summary
+
   /quit    - Exit the game
 """)
-    elif cmd == '/status' or cmd == '/clocks':
+    elif base_cmd == '/status' or base_cmd == '/clocks':
         clocks = store.get_all_clocks()
         print("\n=== Clocks ===")
         for c in clocks:
@@ -214,7 +226,7 @@ Commands:
             print(f"  {c['name']}: {bar} {c['value']}/{c['max']}")
         print()
 
-    elif cmd == '/scene':
+    elif base_cmd == '/scene':
         scene = store.get_scene()
         if scene:
             loc = store.get_entity(scene.get('location_id'))
@@ -226,7 +238,7 @@ Commands:
         else:
             print("No scene set.")
 
-    elif cmd == '/threads':
+    elif base_cmd == '/threads':
         threads = store.get_active_threads()
         print("\n=== Active Threads ===")
         for t in threads:
@@ -238,9 +250,80 @@ Commands:
                 print(f"    Failure: {stakes['failure']}")
         print()
 
+    # Feedback commands
+    elif base_cmd == '/good':
+        _log_feedback(store, campaign_id, last_turn_no, "thumbs_up")
+        print("👍 Feedback recorded. Thanks!")
+
+    elif base_cmd == '/bad':
+        _log_feedback(store, campaign_id, last_turn_no, "thumbs_down")
+        print("👎 Feedback recorded. We'll try to improve.")
+
+    elif base_cmd == '/flag':
+        issue = " ".join(parts[1:]) if len(parts) > 1 else input("What's the issue? ")
+        _log_feedback(store, campaign_id, last_turn_no, "flag_issue", issue)
+        print(f"🚩 Issue flagged: {issue}")
+
+    elif base_cmd == '/note':
+        note = " ".join(parts[1:]) if len(parts) > 1 else input("Your note: ")
+        _log_feedback(store, campaign_id, last_turn_no, "comment", note)
+        print(f"📝 Note recorded.")
+
+    elif base_cmd == '/eval':
+        _show_eval_summary(store, campaign_id)
+
     else:
         print(f"Unknown command: {cmd}")
         print("Type /help for available commands.")
+
+
+def _log_feedback(store, campaign_id, turn_no, feedback_type, value=None):
+    """Log player feedback."""
+    from src.eval import EvaluationTracker, PlayerFeedback, FeedbackType
+
+    if turn_no is None:
+        print("No turn to give feedback on yet.")
+        return
+
+    tracker = EvaluationTracker(store)
+    ft = FeedbackType(feedback_type)
+    feedback = PlayerFeedback(turn_no=turn_no, feedback_type=ft, value=value)
+    tracker.log_feedback(campaign_id, feedback)
+
+
+def _show_eval_summary(store, campaign_id):
+    """Show evaluation summary."""
+    from src.eval import EvaluationTracker
+
+    tracker = EvaluationTracker(store)
+
+    print("\n=== Evaluation Summary ===")
+
+    # Metrics summary
+    metrics = tracker.get_metrics_summary(campaign_id)
+    if metrics["turns"] > 0:
+        print(f"\nTurns played: {metrics['turns']}")
+        summary = metrics.get("summary", {})
+        print(f"Avg latency: {summary.get('avg_latency_ms', 0):.0f}ms")
+        print(f"Clarification rate: {summary.get('clarification_rate', 0):.0%}")
+        print(f"Avg narrative length: {summary.get('avg_narrative_length', 0):.0f} chars")
+
+    # Feedback summary
+    feedback = tracker.get_feedback_summary(campaign_id)
+    if feedback["total"] > 0:
+        print(f"\nFeedback received: {feedback['total']}")
+        sentiment = feedback.get("sentiment", {})
+        if sentiment.get("ratio") is not None:
+            print(f"Sentiment: {sentiment['positive']}👍 / {sentiment['negative']}👎 ({sentiment['ratio']:.0%} positive)")
+
+    # Problem turns
+    problems = tracker.get_problematic_turns(campaign_id)
+    if problems:
+        print(f"\nProblem turns: {len(problems)}")
+        for p in problems[:3]:  # Show first 3
+            print(f"  Turn {p['turn_no']}: {', '.join(p['issues'])}")
+
+    print()
 
 
 def _progress_bar(value, max_val, width=20):
@@ -288,6 +371,71 @@ def replay_cmd(args):
         _load_json(args.prompt_overrides),
     )
     print(format_replay_report(report))
+
+
+def eval_cmd(args):
+    """Show evaluation report for campaign."""
+    from src.eval import EvaluationTracker
+    import json
+
+    store = StateStore(args.db)
+    tracker = EvaluationTracker(store)
+
+    metrics = tracker.get_metrics_summary(args.campaign)
+    feedback = tracker.get_feedback_summary(args.campaign)
+    problems = tracker.get_problematic_turns(args.campaign)
+
+    report = {
+        "campaign_id": args.campaign,
+        "metrics": metrics,
+        "feedback": feedback,
+        "problem_turns": problems
+    }
+
+    if args.json:
+        print(json.dumps(report, indent=2))
+    else:
+        print("\n" + "=" * 60)
+        print(f"Evaluation Report: {args.campaign}")
+        print("=" * 60)
+
+        if metrics["turns"] > 0:
+            print(f"\n📊 Metrics ({metrics['turns']} turns):")
+            summary = metrics.get("summary", {})
+            print(f"  Avg latency: {summary.get('avg_latency_ms', 0):.0f}ms")
+            print(f"  Clarification rate: {summary.get('clarification_rate', 0):.0%}")
+            print(f"  Avg narrative length: {summary.get('avg_narrative_length', 0):.0f} chars")
+
+            rolls = summary.get("roll_distribution", {})
+            if rolls:
+                print(f"  Roll outcomes: {rolls}")
+        else:
+            print("\n📊 No metrics recorded yet.")
+
+        if feedback["total"] > 0:
+            print(f"\n💬 Feedback ({feedback['total']} items):")
+            sentiment = feedback.get("sentiment", {})
+            if sentiment.get("ratio") is not None:
+                print(f"  👍 {sentiment['positive']} / 👎 {sentiment['negative']} ({sentiment['ratio']:.0%} positive)")
+
+            by_type = feedback.get("by_type", {})
+            if by_type.get("flag_issue"):
+                print(f"  🚩 Flagged issues: {len(by_type['flag_issue'])}")
+            if by_type.get("comment"):
+                print(f"  📝 Comments: {len(by_type['comment'])}")
+        else:
+            print("\n💬 No feedback recorded yet.")
+
+        if problems:
+            print(f"\n⚠️  Problem turns ({len(problems)}):")
+            for p in problems[:5]:
+                print(f"  Turn {p['turn_no']}: {', '.join(p['issues'])}")
+            if len(problems) > 5:
+                print(f"  ... and {len(problems) - 5} more")
+        else:
+            print("\n✅ No problem turns detected.")
+
+        print()
 
 
 def list_scenarios_cmd(args):
@@ -369,6 +517,11 @@ def build_parser():
     # play (interactive mode)
     play_parser = sub.add_parser("play", help="Interactive play mode")
     play_parser.set_defaults(func=play_cmd)
+
+    # eval (evaluation report)
+    eval_parser = sub.add_parser("eval", help="Show evaluation report")
+    eval_parser.add_argument("--json", action="store_true", help="Output JSON")
+    eval_parser.set_defaults(func=eval_cmd)
 
     # show-event
     show_event_parser = sub.add_parser("show-event", help="Show a stored event")
