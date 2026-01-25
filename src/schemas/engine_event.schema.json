@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EngineEvent",
+  "description": "An event emitted by the Resolver representing a concrete outcome or state change",
+  "type": "object",
+  "required": ["type", "details", "tags"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Event type (e.g., 'action_succeeded', 'clock_triggered', 'fact_discovered')",
+      "enum": [
+        "action_succeeded",
+        "action_failed",
+        "action_partial",
+        "clock_advanced",
+        "clock_triggered",
+        "fact_discovered",
+        "fact_updated",
+        "relationship_changed",
+        "item_acquired",
+        "item_lost",
+        "scene_changed",
+        "thread_updated",
+        "harm_taken",
+        "npc_action"
+      ]
+    },
+    "details": {
+      "type": "object",
+      "description": "Event-specific details",
+      "additionalProperties": true
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags for filtering/categorization",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}
