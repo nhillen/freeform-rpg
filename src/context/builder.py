@@ -73,6 +73,9 @@ class ContextBuilder:
         else:
             visible_ids = present_ids
 
+        # Apply entity limit
+        visible_ids = visible_ids[:options.max_entities]
+
         entities = self.store.get_entities_by_ids(visible_ids)
 
         # Get facts (with perception filtering)
