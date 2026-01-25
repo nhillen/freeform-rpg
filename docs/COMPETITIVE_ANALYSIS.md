@@ -100,6 +100,23 @@ User Input → LLM → Response → State Update
 
 ### From mnehmos-rpg-mcp
 
+#### 0. Perception/Observation Layer (CRITICAL)
+mnehmos explicitly separates "Sensory Organs" (read-only observation tools) from action tools. This prevents a common failure mode:
+
+**The Problem:**
+- LLM describes things character can't perceive
+- Player acts on metagame knowledge ("I duck before the sniper shoots")
+- Actions reference entities the character doesn't know exist
+
+**Their Approach:**
+- OBSERVE step comes before ORIENT/DECIDE/ACT
+- Read-only tools query what character can perceive
+- Separate "world state" from "character knowledge" from "current perception"
+
+**Our Gap:** We don't have an explicit perception layer. Our Validator checks presence/location but not "does the character know this exists?"
+
+**See:** `docs/gm_reference/PERCEPTION_DESIGN.md` for proposed implementation.
+
 #### 1. "Propose/Validate" Enforcement ✓
 We already have this with our Validator pass, but mnehmos makes it more explicit:
 - LLM output is always a *proposal*
