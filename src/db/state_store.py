@@ -389,10 +389,10 @@ class StateStore:
         return _parse_clock_row(row)
 
     def get_clock_by_name(self, name: str) -> Optional[dict]:
-        """Get clock by name."""
+        """Get clock by name (case-insensitive)."""
         with self.connect() as conn:
             row = conn.execute(
-                "SELECT * FROM clocks WHERE name = ?",
+                "SELECT * FROM clocks WHERE LOWER(name) = LOWER(?)",
                 (name,)
             ).fetchone()
         if not row:
@@ -418,6 +418,11 @@ class StateStore:
         Returns list of trigger messages that fired.
         """
         clock = self.get_clock(clock_id)
+        # Fall back to name lookup if ID not found
+        if not clock:
+            clock = self.get_clock_by_name(clock_id)
+            if clock:
+                clock_id = clock["id"]
         if not clock:
             raise ValueError(f"Clock not found: {clock_id}")
 
@@ -462,6 +467,11 @@ class StateStore:
     def adjust_clock(self, clock_id: str, delta: int) -> list[str]:
         """Adjust clock value by delta. Returns triggered events."""
         clock = self.get_clock(clock_id)
+        # Fall back to name lookup if ID not found
+        if not clock:
+            clock = self.get_clock_by_name(clock_id)
+            if clock:
+                clock_id = clock["id"]
         if not clock:
             raise ValueError(f"Clock not found: {clock_id}")
         return self.update_clock(clock_id, value=clock["value"] + delta)

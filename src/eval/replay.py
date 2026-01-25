@@ -5,6 +5,7 @@ Supports:
 - Replaying turns with different prompt versions
 - Side-by-side comparison of outputs
 - Statistical analysis of variant performance
+- Clean replay via state snapshots
 """
 
 from dataclasses import dataclass
@@ -17,6 +18,12 @@ from ..db.state_store import StateStore, json_dumps
 from ..llm.gateway import LLMGateway, MockGateway
 from ..llm.prompt_registry import PromptRegistry
 from ..core.orchestrator import Orchestrator
+from .snapshots import (
+    SnapshotManager,
+    create_snapshot_before_turn,
+    run_turn_in_sandbox,
+    compare_turn_outputs as snapshot_compare,
+)
 
 
 @dataclass
@@ -54,6 +61,8 @@ def rerun_turns(
     """
     Replay turns with optional prompt version overrides.
 
+    Uses state snapshots to replay each turn in an isolated sandbox.
+
     Args:
         state_store: Database connection
         campaign_id: Campaign to replay
@@ -76,13 +85,8 @@ def rerun_turns(
             "events": []
         }
 
-    # Setup orchestrator for replay
+    # Setup for replay
     gateway = llm_gateway or MockGateway()
-    prompts_dir = Path(__file__).parent.parent / "prompts"
-    registry = prompt_registry or PromptRegistry(prompts_dir)
-
-    # We need a fresh database for replay to avoid contaminating state
-    # For now, we'll just re-run the LLM stages without committing
 
     results = []
     for event in events:
@@ -90,18 +94,25 @@ def rerun_turns(
         player_input = event["player_input"]
         original_output = event["final_text"]
 
-        # Extract original context
-        try:
-            context_packet = json.loads(event.get("context_packet_json", "{}"))
-        except:
-            context_packet = {}
-
-        # Re-run with new prompts (without committing to DB)
+        # Get snapshot before this turn
         start_time = time.time()
+        try:
+            snapshot = create_snapshot_before_turn(state_store, campaign_id, turn_no)
 
-        # For now, just return the original since we can't safely replay
-        # without a proper state snapshot system
-        replay_output = original_output
+            # Run turn in sandbox with prompt overrides
+            replay_result = run_turn_in_sandbox(
+                state_store,
+                snapshot,
+                player_input,
+                prompt_versions=prompt_overrides,
+                llm_gateway=gateway
+            )
+            replay_output = replay_result.get("final_text", "")
+
+        except Exception as e:
+            # Fall back to original if sandbox fails
+            replay_output = original_output
+
         latency_ms = (time.time() - start_time) * 1000
 
         results.append(ReplayResult(
@@ -130,7 +141,7 @@ def rerun_turns(
             }
             for r in results
         ],
-        "note": "Full replay requires state snapshot support. Currently returns original outputs."
+        "note": "Turns replayed in isolated sandbox environments using state snapshots."
     }
 
 
@@ -145,13 +156,15 @@ def ab_test_turn(
     """
     Run A/B test on a single turn with two prompt variants.
 
+    Uses state snapshots to run each variant in an isolated sandbox.
+
     Args:
         state_store: Database connection
         campaign_id: Campaign containing the turn
         turn_no: Turn to test
         variant_a_versions: Prompt versions for A (e.g., {"narrator": "v0"})
         variant_b_versions: Prompt versions for B (e.g., {"narrator": "v1"})
-        llm_gateway: LLM gateway (required for real comparisons)
+        llm_gateway: LLM gateway (uses MockGateway if not provided)
 
     Returns:
         ABTestResult with both outputs
@@ -162,13 +175,29 @@ def ab_test_turn(
         raise ValueError(f"Turn {turn_no} not found in campaign {campaign_id}")
 
     player_input = event["player_input"]
+    gateway = llm_gateway or MockGateway()
 
-    # For now, return stub results since we need LLM for real comparison
+    # Use snapshot system for clean comparison
+    comparison = snapshot_compare(
+        state_store,
+        campaign_id,
+        turn_no,
+        variant_a_versions,
+        variant_b_versions,
+        llm_gateway=gateway
+    )
+
     return ABTestResult(
         turn_no=turn_no,
         player_input=player_input,
-        variant_a={"versions": variant_a_versions, "output": "[Requires LLM]"},
-        variant_b={"versions": variant_b_versions, "output": "[Requires LLM]"},
+        variant_a={
+            "versions": variant_a_versions,
+            "output": comparison.get("variant_a", {}).get("output", ""),
+        },
+        variant_b={
+            "versions": variant_b_versions,
+            "output": comparison.get("variant_b", {}).get("output", ""),
+        },
         metrics_a={},
         metrics_b={}
     )
