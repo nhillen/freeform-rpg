@@ -9,6 +9,77 @@
     "suggested_actions": {
       "type": "array",
       "items": {"type": "string"}
+    },
+    "established_facts": {
+      "type": "array",
+      "description": "New narrative details introduced that should persist across turns",
+      "items": {
+        "type": "object",
+        "required": ["subject", "detail"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Entity ID or 'scene' this fact is about"
+          },
+          "detail": {
+            "type": "string",
+            "description": "The narrative detail to remember"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "introduced_items": {
+      "type": "array",
+      "description": "Tangible items introduced by narration that should become real game objects",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "narrative_role"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Short item name (e.g. 'Data Chip', 'Stim Patch')"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief in-world description"
+          },
+          "narrative_role": {
+            "type": "string",
+            "description": "Why this item matters to the story",
+            "enum": ["clue", "tool", "flavor", "resource"]
+          },
+          "found_on": {
+            "type": "string",
+            "description": "Entity ID this was found on/in, if applicable"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "scene_transition": {
+      "type": ["object", "null"],
+      "description": "Declare when the player has physically moved to a new location",
+      "properties": {
+        "location_id": {
+          "type": "string",
+          "description": "Kebab-case ID for the location (e.g. 'merchant-quarter', 'taxi-cab')"
+        },
+        "location_name": {
+          "type": "string",
+          "description": "Human-readable location name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief orienting description of the new location"
+        },
+        "present_entities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Entity IDs present in the new scene (always include 'player')"
+        }
+      },
+      "required": ["location_id", "location_name", "present_entities"]
     }
   },
   "additionalProperties": false

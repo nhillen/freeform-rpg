@@ -5,8 +5,10 @@ Pipeline stages:
   Player Input → Interpreter → Validator → Planner → Resolver → Narrator → Commit
 """
 
+import sys
+import time
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Callable, Optional, Protocol
 
 from ..context.builder import ContextBuilder, ContextOptions
 from ..db.state_store import StateStore, json_dumps, new_event_id
@@ -32,6 +34,7 @@ class TurnResult:
     clarification_needed: bool = False
     clarification_question: str = ""
     suggested_actions: list = field(default_factory=list)
+    debug_info: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -57,11 +60,13 @@ class Orchestrator:
         state_store: StateStore,
         llm_gateway: LLMGateway,
         prompt_registry: PromptRegistry,
-        prompt_versions: Optional[dict] = None
+        prompt_versions: Optional[dict] = None,
+        on_stage: Optional[Callable[[str], None]] = None
     ):
         self.store = state_store
         self.gateway = llm_gateway
         self.prompts = prompt_registry
+        self.on_stage = on_stage
 
         self.versions = DEFAULT_PROMPT_VERSIONS.copy()
         if prompt_versions:
@@ -71,6 +76,11 @@ class Orchestrator:
         self.context_builder = ContextBuilder(state_store)
         self.validator = Validator(state_store)
         self.resolver = Resolver(state_store)
+
+    def _notify(self, stage: str):
+        """Notify observer of current pipeline stage."""
+        if self.on_stage:
+            self.on_stage(stage)
 
     def run_turn(
         self,
@@ -90,8 +100,11 @@ class Orchestrator:
             TurnResult with final text and metadata
         """
         options = options or {}
+        timings = {}
+        t0 = time.monotonic()
 
         # Stage 1: Build context
+        self._notify("Building context")
         context_options = ContextOptions(
             include_world_facts=options.get("include_world_facts", False)
         )
@@ -103,9 +116,13 @@ class Orchestrator:
         context_packet["player_input"] = player_input
 
         # Stage 2: Interpreter (LLM)
+        self._notify("Interpreting")
+        t_stage = time.monotonic()
         interpreter_output = self._run_interpreter(context_packet)
+        timings["interpreter_ms"] = int((time.monotonic() - t_stage) * 1000)
 
         # Stage 3: Validator (deterministic)
+        self._notify("Validating")
         validator_output = self.validator.validate(
             interpreter_output,
             context_packet
@@ -113,22 +130,33 @@ class Orchestrator:
 
         # Check if clarification needed
         if validator_output.clarification_needed:
-            return self._create_clarification_result(
+            result = self._create_clarification_result(
                 campaign_id,
                 player_input,
                 context_packet,
                 interpreter_output,
                 validator_output.to_dict()
             )
+            result.debug_info = {
+                "interpreter": interpreter_output,
+                "validator": validator_output.to_dict(),
+                "timings": timings,
+                "total_ms": int((time.monotonic() - t0) * 1000),
+            }
+            return result
 
         # Stage 4: Planner (LLM)
+        self._notify("Planning")
+        t_stage = time.monotonic()
         planner_output = self._run_planner(
             context_packet,
             interpreter_output,
             validator_output.to_dict()
         )
+        timings["planner_ms"] = int((time.monotonic() - t_stage) * 1000)
 
         # Stage 5: Resolver (deterministic)
+        self._notify("Resolving")
         resolver_output = self.resolver.resolve(
             context_packet,
             validator_output.to_dict(),
@@ -137,14 +165,18 @@ class Orchestrator:
         )
 
         # Stage 6: Narrator (LLM)
+        self._notify("Narrating")
+        t_stage = time.monotonic()
         narrator_output = self._run_narrator(
             context_packet,
             validator_output.to_dict(),
             planner_output,
             resolver_output.to_dict()
         )
+        timings["narrator_ms"] = int((time.monotonic() - t_stage) * 1000)
 
         # Stage 7: Commit - Apply state changes and log event
+        self._notify("Committing")
         turn_result = self._commit_turn(
             campaign_id,
             player_input,
@@ -155,6 +187,16 @@ class Orchestrator:
             resolver_output.to_dict(),
             narrator_output
         )
+
+        turn_result.debug_info = {
+            "interpreter": interpreter_output,
+            "validator": validator_output.to_dict(),
+            "planner": planner_output,
+            "resolver": resolver_output.to_dict(),
+            "narrator": narrator_output,
+            "timings": timings,
+            "total_ms": int((time.monotonic() - t0) * 1000),
+        }
 
         return turn_result
 
@@ -169,14 +211,14 @@ class Orchestrator:
             response = self.gateway.run_structured(
                 prompt=prompt_template.template,
                 input_data={
-                    "context": context_packet,
+                    "context_packet": context_packet,
                     "player_input": context_packet["player_input"]
                 },
                 schema=schema
             )
             return response.content
         except Exception as e:
-            # Fallback to stub output on error
+            print(f"[engine] Interpreter LLM failed ({type(e).__name__}: {e}), using stub", file=sys.stderr)
             return self._stub_interpreter_output(context_packet)
 
     def _run_planner(
@@ -195,15 +237,14 @@ class Orchestrator:
             response = self.gateway.run_structured(
                 prompt=prompt_template.template,
                 input_data={
-                    "context": context_packet,
-                    "interpreter": interpreter_output,
-                    "validator": validator_output
+                    "context_packet": context_packet,
+                    "validator_output": validator_output
                 },
                 schema=schema
             )
             return response.content
         except Exception as e:
-            # Fallback to stub output on error
+            print(f"[engine] Planner LLM failed ({type(e).__name__}: {e}), using stub", file=sys.stderr)
             return self._stub_planner_output()
 
     def _run_narrator(
@@ -223,16 +264,16 @@ class Orchestrator:
             response = self.gateway.run_structured(
                 prompt=prompt_template.template,
                 input_data={
-                    "context": context_packet,
-                    "validator": validator_output,
-                    "planner": planner_output,
-                    "resolver": resolver_output
+                    "context_packet": context_packet,
+                    "engine_events": resolver_output.get("engine_events", []),
+                    "planner_output": planner_output,
+                    "blocked_actions": validator_output.get("blocked_actions", [])
                 },
                 schema=schema
             )
             return response.content
         except Exception as e:
-            # Fallback to stub output on error
+            print(f"[engine] Narrator LLM failed ({type(e).__name__}: {e}), using stub", file=sys.stderr)
             return self._stub_narrator_output(resolver_output)
 
     def _stub_interpreter_output(self, context_packet: dict) -> dict:
@@ -367,6 +408,96 @@ class Orchestrator:
         for trigger in triggers:
             # Could emit additional events here
             pass
+
+        # Commit narrator-established facts to state
+        established_facts = narrator_output.get("established_facts", [])
+        for ef in established_facts:
+            subject = ef.get("subject", "scene")
+            detail = ef.get("detail", "")
+            if detail:
+                fact_id = f"narrator_t{turn_no}_{new_event_id()[:8]}"
+                self.store.create_fact(
+                    fact_id=fact_id,
+                    subject_id=subject,
+                    predicate="narrator_established",
+                    obj=detail,
+                    visibility="known",
+                    tags=["narrator", f"turn_{turn_no}"]
+                )
+
+        # Commit narrator-introduced items as real game entities
+        introduced_items = narrator_output.get("introduced_items", [])
+        for item in introduced_items:
+            item_name = item.get("name", "")
+            if not item_name:
+                continue
+            item_id = item_name.lower().replace(" ", "_").replace("'", "")
+            role = item.get("narrative_role", "flavor")
+            tags = ["introduced", role, f"turn_{turn_no}"]
+
+            # Only create if entity doesn't already exist
+            existing = self.store.get_entity(item_id)
+            if not existing:
+                self.store.create_entity(
+                    entity_id=item_id,
+                    entity_type="item",
+                    name=item_name,
+                    attrs={
+                        "description": item.get("description", ""),
+                        "narrative_role": role,
+                        "found_on": item.get("found_on", ""),
+                    },
+                    tags=tags
+                )
+            # Add to player inventory (add_inventory handles stacking)
+            self.store.add_inventory(owner_id="player", item_id=item_id, qty=1)
+
+            # Clue items get a fact linking them to narrative significance
+            if role == "clue" and item.get("description"):
+                self.store.create_fact(
+                    fact_id=f"clue_{item_id}_{new_event_id()[:8]}",
+                    subject_id=item_id,
+                    predicate="clue_significance",
+                    obj=item.get("description", ""),
+                    visibility="known",
+                    tags=["clue", f"turn_{turn_no}"]
+                )
+
+        # Commit narrator-declared scene transitions
+        scene_transition = narrator_output.get("scene_transition")
+        if scene_transition:
+            location_id = scene_transition["location_id"]
+            location_name = scene_transition.get("location_name", location_id)
+            description = scene_transition.get("description", "")
+            present_entities = scene_transition.get("present_entities", ["player"])
+
+            # Ensure player is always present
+            if "player" not in present_entities:
+                present_entities.insert(0, "player")
+
+            # Create the location entity if it doesn't exist
+            existing_location = self.store.get_entity(location_id)
+            if not existing_location:
+                self.store.create_entity(
+                    entity_id=location_id,
+                    entity_type="location",
+                    name=location_name,
+                    attrs={
+                        "description": description,
+                        "name": location_name,
+                    },
+                    tags=["location", f"turn_{turn_no}"]
+                )
+
+            # Update the scene, preserving current time/constraints
+            current_scene = self.store.get_scene()
+            self.store.set_scene(
+                location_id=location_id,
+                present_entity_ids=present_entities,
+                time=current_scene.get("time") if current_scene else None,
+                constraints=current_scene.get("constraints") if current_scene else None,
+            )
+
         event_id = new_event_id()
 
         pass_outputs = {

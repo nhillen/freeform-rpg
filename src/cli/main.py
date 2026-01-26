@@ -103,7 +103,7 @@ def new_game(args):
         print(f"\n{result.opening_text}")
 
     print(f"\nTo continue, run:")
-    print(f"  python -m src.cli.main --db {args.db} --campaign {args.campaign} play")
+    print(f"  freeform-rpg --db {args.db} --campaign {args.campaign} play")
 
 
 def run_turn_cmd(args):
@@ -144,8 +144,83 @@ def run_turn_cmd(args):
             print(f"[Clarification needed: {result.get('clarification_question', '')}]")
 
 
+def _format_rolls(debug_info: dict) -> str:
+    """Format dice rolls as a brief inline display."""
+    if not debug_info:
+        return ""
+    resolver = debug_info.get("resolver", {})
+    rolls = resolver.get("rolls", [])
+    if not rolls:
+        return ""
+
+    parts = []
+    for roll in rolls:
+        dice = roll.get("dice", "2d6")
+        total = roll.get("total", "?")
+        outcome = roll.get("outcome", "?")
+        action = roll.get("action", "")
+        label = {"success": "Success", "critical": "Critical!", "mixed": "Mixed", "failure": "Failure"}.get(outcome, outcome)
+        prefix = f"{action.capitalize()} " if action else ""
+        parts.append(f"[{prefix}{dice}: {total} — {label}]")
+    return "  ".join(parts)
+
+
+def _format_debug_panel(debug_info: dict) -> str:
+    """Format debug info as a readable panel."""
+    lines = []
+    lines.append("─── debug ───")
+
+    timings = debug_info.get("timings", {})
+    total = debug_info.get("total_ms", 0)
+
+    # Interpreter summary
+    interp = debug_info.get("interpreter", {})
+    actions = interp.get("proposed_actions", [])
+    if actions:
+        action_strs = [f"{a.get('action', '?')}→{a.get('target_id', '?')}" for a in actions]
+        lines.append(f"  interpreter: {', '.join(action_strs)}  ({timings.get('interpreter_ms', '?')}ms)")
+    else:
+        lines.append(f"  interpreter: (no actions)  ({timings.get('interpreter_ms', '?')}ms)")
+
+    # Validator summary
+    validator = debug_info.get("validator", {})
+    allowed = len(validator.get("allowed_actions", []))
+    blocked = len(validator.get("blocked_actions", []))
+    lines.append(f"  validator: {allowed} allowed, {blocked} blocked")
+
+    # Resolver summary
+    resolver = debug_info.get("resolver", {})
+    events = resolver.get("engine_events", [])
+    if events:
+        event_types = [e.get("type", "?") for e in events]
+        lines.append(f"  resolver: {', '.join(event_types)}")
+
+    # Show dice rolls from resolver
+    rolls = resolver.get("rolls", [])
+    for roll in rolls:
+        dice = roll.get("dice", "2d6")
+        raw = roll.get("raw_values", [])
+        total = roll.get("total", "?")
+        outcome = roll.get("outcome", "?")
+        margin = roll.get("margin", 0)
+        action = roll.get("action", "?")
+        lines.append(f"    roll [{action}]: {dice}={raw} total={total} → {outcome} (margin={margin})")
+
+    # Timing
+    stage_parts = []
+    for key in ["interpreter_ms", "planner_ms", "narrator_ms"]:
+        if key in timings:
+            label = key.replace("_ms", "")
+            stage_parts.append(f"{label}={timings[key]}ms")
+    lines.append(f"  timing: {', '.join(stage_parts)}  (total {total}ms)")
+    lines.append("─────────────")
+    return "\n".join(lines)
+
+
 def play_cmd(args):
     """Interactive play mode (REPL)."""
+    from src.cli.spinner import Spinner
+
     store = StateStore(args.db)
     store.ensure_schema()
 
@@ -163,6 +238,16 @@ def play_cmd(args):
         print("  Run 'login' to set one up, or set ANTHROPIC_API_KEY environment variable.")
         sys.exit(1)
 
+    # Debug mode state
+    debug_mode = getattr(args, "verbose", False)
+
+    # Spinner reference for stage updates
+    active_spinner = [None]  # mutable container for closure
+
+    def on_stage(stage_name: str):
+        if active_spinner[0]:
+            active_spinner[0].update(stage_name)
+
     # Setup orchestrator with real LLM
     prompts_dir = Path(__file__).parent.parent / "prompts"
     prompt_registry = PromptRegistry(prompts_dir)
@@ -171,7 +256,8 @@ def play_cmd(args):
     orchestrator = Orchestrator(
         state_store=store,
         llm_gateway=gateway,
-        prompt_registry=prompt_registry
+        prompt_registry=prompt_registry,
+        on_stage=on_stage
     )
 
     print(f"\n{'='*60}")
@@ -179,7 +265,7 @@ def play_cmd(args):
     print(f"Campaign: {campaign.get('name', args.campaign)}")
     print(f"{'='*60}")
     print("Type your actions, or 'quit' to exit.")
-    print("Commands: /status, /clocks, /scene, /help\n")
+    print("Commands: /status, /clocks, /scene, /debug, /help\n")
 
     # Show any opening text from last event
     events = store.get_events_range(args.campaign, 0, 1)
@@ -215,22 +301,55 @@ def play_cmd(args):
             print("Goodbye!")
             break
 
-        # Handle commands
+        # Handle /debug toggle
+        if user_input.lower() == '/debug':
+            debug_mode = not debug_mode
+            print(f"Debug mode: {'on' if debug_mode else 'off'}")
+            continue
+
+        # Handle other commands
         if user_input.startswith('/'):
             _handle_command(user_input, store, args.campaign, last_turn_no)
             continue
 
-        # Run turn
+        # Run turn with spinner
         try:
-            result = orchestrator.run_turn(args.campaign, user_input)
+            spinner = Spinner("Thinking")
+            active_spinner[0] = spinner
+
+            with spinner:
+                result = orchestrator.run_turn(args.campaign, user_input)
+
+            active_spinner[0] = None
             turn_count += 1
             last_turn_no = result.turn_no
             print(f"\n{result.final_text}\n")
 
+            # Show location header on scene transition
+            narrator_data = result.debug_info.get("narrator", {})
+            scene_transition = narrator_data.get("scene_transition")
+            if scene_transition:
+                loc_name = scene_transition.get("location_name", "Unknown")
+                loc_desc = scene_transition.get("description", "")
+                print(f"[Location: {loc_name}]")
+                if loc_desc:
+                    print(f"{loc_desc}")
+                print()
+
+            # Show dice rolls (always visible when they happen)
+            rolls_line = _format_rolls(result.debug_info)
+            if rolls_line:
+                print(f"  {rolls_line}\n")
+
             if result.clarification_needed:
                 print(f"[{result.clarification_question}]")
 
+            if debug_mode and result.debug_info:
+                print(_format_debug_panel(result.debug_info))
+                print()
+
         except Exception as e:
+            active_spinner[0] = None
             print(f"Error: {e}")
 
 
@@ -246,6 +365,7 @@ Commands:
   /clocks  - Show all clocks
   /scene   - Show current scene
   /threads - Show active threads
+  /debug   - Toggle debug mode (show pipeline internals)
 
 Feedback:
   /good    - Mark last turn as good (thumbs up)
@@ -510,7 +630,7 @@ def build_parser():
         help="Campaign ID (default: default)",
     )
 
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(dest="command")
 
     # login
     login_parser = sub.add_parser("login", help="Set up API key")
@@ -562,6 +682,7 @@ def build_parser():
 
     # play (interactive mode)
     play_parser = sub.add_parser("play", help="Interactive play mode")
+    play_parser.add_argument("--verbose", "-v", action="store_true", help="Show debug info after each turn")
     play_parser.set_defaults(func=play_cmd)
 
     # eval (evaluation report)
@@ -594,7 +715,12 @@ def build_parser():
 def main():
     parser = build_parser()
     args = parser.parse_args()
-    args.func(args)
+
+    if args.command is None:
+        from src.cli.guided import guided_flow
+        guided_flow(db_path=args.db)
+    else:
+        args.func(args)
 
 
 if __name__ == "__main__":
