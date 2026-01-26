@@ -11,6 +11,8 @@ from typing import Optional
 
 import yaml
 
+from ..core.clock_config import cyberpunk_noir_clock_rules
+
 
 @dataclass
 class ScenarioTemplate:
@@ -23,6 +25,9 @@ class ScenarioTemplate:
 
     # Genre context
     genre_rules: dict = field(default_factory=dict)
+
+    # System configuration (clock rules, etc.)
+    system: dict = field(default_factory=dict)
 
     # Structural elements
     locations: list[dict] = field(default_factory=list)
@@ -51,6 +56,7 @@ class ScenarioTemplate:
             genre=data.get("genre", "cyberpunk_noir"),
             estimated_length=data.get("estimated_length", "2-4 hours"),
             genre_rules=data.get("genre_rules", {}),
+            system=data.get("system", {}),
             locations=data.get("locations", []),
             npcs=data.get("npcs", data.get("entities", [])),  # Support both formats
             facts=data.get("facts", []),
@@ -125,6 +131,7 @@ class ScenarioTemplate:
             "genre": self.genre,
             "estimated_length": self.estimated_length,
             "genre_rules": self.genre_rules,
+            "system": self.system,
             "locations": self.locations,
             "npcs": self.npcs,
             "facts": self.facts,
@@ -178,6 +185,7 @@ def _create_default_template(template_id: str) -> ScenarioTemplate:
             "technology": "Near-future, cybernetics common",
             "tone": "Gritty, morally ambiguous"
         },
+        system={"clock_rules": cyberpunk_noir_clock_rules()},
         locations=[
             {
                 "id": "starting_location",

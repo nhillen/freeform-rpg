@@ -144,6 +144,19 @@ def run_turn_cmd(args):
             print(f"[Clarification needed: {result.get('clarification_question', '')}]")
 
 
+def _format_clock_deltas(clock_deltas: list) -> str:
+    """Format clock deltas as an inline display line."""
+    if not clock_deltas:
+        return ""
+    parts = []
+    for delta in clock_deltas:
+        name = delta.get("name", delta.get("id", "?"))
+        old = delta["old"]
+        new = delta["new"]
+        parts.append(f"[{name}: {old} \u2192 {new}]")
+    return "  ".join(parts)
+
+
 def _format_rolls(debug_info: dict) -> str:
     """Format dice rolls as a brief inline display."""
     if not debug_info:
@@ -336,10 +349,19 @@ def play_cmd(args):
                     print(f"{loc_desc}")
                 print()
 
+            # Show clock deltas (always visible when clocks change)
+            clocks_line = _format_clock_deltas(result.clock_deltas)
+            if clocks_line:
+                print(f"  {clocks_line}")
+
             # Show dice rolls (always visible when they happen)
             rolls_line = _format_rolls(result.debug_info)
             if rolls_line:
-                print(f"  {rolls_line}\n")
+                print(f"  {rolls_line}")
+
+            # Extra blank line after status indicators
+            if clocks_line or rolls_line:
+                print()
 
             if result.clarification_needed:
                 print(f"[{result.clarification_question}]")

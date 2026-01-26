@@ -34,6 +34,7 @@ class TurnResult:
     clarification_needed: bool = False
     clarification_question: str = ""
     suggested_actions: list = field(default_factory=list)
+    clock_deltas: list = field(default_factory=list)
     debug_info: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -44,6 +45,7 @@ class TurnResult:
             "clarification_needed": self.clarification_needed,
             "clarification_question": self.clarification_question,
             "suggested_actions": self.suggested_actions,
+            "clock_deltas": self.clock_deltas,
         }
 
 
@@ -164,6 +166,36 @@ class Orchestrator:
             options
         )
 
+        # Stage 5.5: Apply state diff early to capture clock triggers for narrator
+        turn_no = self.store.get_next_turn_no(campaign_id)
+        state_diff = resolver_output.to_dict().get("state_diff", {})
+
+        # Snapshot clock values before applying state diff
+        clocks_before = {c["id"]: c for c in self.store.get_all_clocks()}
+
+        triggers = self.store.apply_state_diff(state_diff, turn_no)
+
+        # Snapshot clock values after applying state diff, compute deltas
+        clocks_after = {c["id"]: c for c in self.store.get_all_clocks()}
+        clock_deltas = []
+        for clock_id, after in clocks_after.items():
+            before = clocks_before.get(clock_id)
+            if before and before["value"] != after["value"]:
+                clock_deltas.append({
+                    "id": clock_id,
+                    "name": after.get("name", clock_id),
+                    "old": before["value"],
+                    "new": after["value"],
+                })
+
+        # Inject clock triggers as engine events so narrator can reference them
+        for trigger_msg in triggers:
+            resolver_output.engine_events.append({
+                "type": "clock_triggered",
+                "details": {"message": trigger_msg},
+                "tags": ["clock", "trigger"]
+            })
+
         # Stage 6: Narrator (LLM)
         self._notify("Narrating")
         t_stage = time.monotonic()
@@ -175,7 +207,7 @@ class Orchestrator:
         )
         timings["narrator_ms"] = int((time.monotonic() - t_stage) * 1000)
 
-        # Stage 7: Commit - Apply state changes and log event
+        # Stage 7: Commit - Log event and apply narrator-declared state
         self._notify("Committing")
         turn_result = self._commit_turn(
             campaign_id,
@@ -185,7 +217,10 @@ class Orchestrator:
             validator_output.to_dict(),
             planner_output,
             resolver_output.to_dict(),
-            narrator_output
+            narrator_output,
+            turn_no=turn_no,
+            state_diff_applied=True,
+            clock_deltas=clock_deltas
         )
 
         turn_result.debug_info = {
@@ -394,20 +429,19 @@ class Orchestrator:
         validator_output: dict,
         planner_output: dict,
         resolver_output: dict,
-        narrator_output: dict
+        narrator_output: dict,
+        turn_no: Optional[int] = None,
+        state_diff_applied: bool = False,
+        clock_deltas: Optional[list] = None
     ) -> TurnResult:
         """Apply state changes and log the complete turn."""
-        # Get turn number first
-        turn_no = self.store.get_next_turn_no(campaign_id)
+        if turn_no is None:
+            turn_no = self.store.get_next_turn_no(campaign_id)
 
-        # Apply state diff
+        # Apply state diff (unless already applied before narrator)
         state_diff = resolver_output.get("state_diff", {})
-        triggers = self.store.apply_state_diff(state_diff, turn_no)
-
-        # Handle any triggered effects
-        for trigger in triggers:
-            # Could emit additional events here
-            pass
+        if not state_diff_applied:
+            self.store.apply_state_diff(state_diff, turn_no)
 
         # Commit narrator-established facts to state
         established_facts = narrator_output.get("established_facts", [])
@@ -498,6 +532,68 @@ class Orchestrator:
                 constraints=current_scene.get("constraints") if current_scene else None,
             )
 
+        # Record planner tension moves as pending threats for escalation tracking
+        tension_move = planner_output.get("tension_move", "")
+        if tension_move:
+            self.store.create_fact(
+                fact_id=f"threat_t{turn_no}_{new_event_id()[:8]}",
+                subject_id="scene",
+                predicate="pending_threat",
+                obj={
+                    "description": tension_move,
+                    "threat_type": "soft",
+                    "turn_issued": turn_no
+                },
+                visibility="known",
+                tags=["pending_threat", f"turn_{turn_no}"]
+            )
+
+        # Commit narrator-introduced NPCs as tracked game entities
+        introduced_npcs = narrator_output.get("introduced_npcs", [])
+        for npc in introduced_npcs:
+            npc_id = npc.get("entity_id", "")
+            npc_name = npc.get("name", "")
+            if not npc_id or not npc_name:
+                continue
+
+            existing = self.store.get_entity(npc_id)
+            if not existing:
+                self.store.create_entity(
+                    entity_id=npc_id,
+                    entity_type="npc",
+                    name=npc_name,
+                    attrs={
+                        "description": npc.get("description", ""),
+                        "role": npc.get("role", ""),
+                    },
+                    tags=["introduced", f"turn_{turn_no}"]
+                )
+
+            # Add NPC to current scene
+            current_scene = self.store.get_scene()
+            if current_scene:
+                present = list(current_scene["present_entity_ids"])
+                if npc_id not in present:
+                    present.append(npc_id)
+                    self.store.update_scene_entities(present)
+
+            # Create initial neutral relationship with player
+            existing_rel = self.store.get_relationship("player", npc_id, "contact")
+            if not existing_rel:
+                self.store.create_relationship(
+                    "player", npc_id, "contact", intensity=0
+                )
+
+        # Commit narrator-declared thread updates
+        thread_updates = narrator_output.get("thread_updates", [])
+        for tu in thread_updates:
+            thread_id = tu.get("thread_id")
+            new_status = tu.get("status")
+            if thread_id and new_status:
+                existing_thread = self.store.get_thread(thread_id)
+                if existing_thread:
+                    self.store.update_thread(thread_id, status=new_status)
+
         event_id = new_event_id()
 
         pass_outputs = {
@@ -527,7 +623,8 @@ class Orchestrator:
             final_text=narrator_output["final_text"],
             clarification_needed=False,
             clarification_question="",
-            suggested_actions=narrator_output.get("suggested_actions", [])
+            suggested_actions=narrator_output.get("suggested_actions", []),
+            clock_deltas=clock_deltas or []
         )
 
 

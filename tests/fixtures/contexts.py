@@ -7,6 +7,7 @@ Context packets are what get sent to the LLM prompts.
 from typing import Optional
 from .entities import make_player, make_npc, make_location, hostile_npc, friendly_npc, test_location
 from .facts import make_known_fact, make_world_fact
+from src.core.clock_config import cyberpunk_noir_clock_rules
 
 
 def minimal_context(
@@ -50,7 +51,8 @@ def minimal_context(
             "themes": {},
             "risk": {"lethality": "moderate", "failure_mode": "consequential"}
         },
-        "genre_rules": {}
+        "genre_rules": {},
+        "system": {"clock_rules": cyberpunk_noir_clock_rules()}
     }
 
 
@@ -122,7 +124,8 @@ def combat_context(
             "themes": {"primary": ["survival"]},
             "risk": {"lethality": "moderate", "failure_mode": "consequential"}
         },
-        "genre_rules": {"setting": "Urban noir"}
+        "genre_rules": {"setting": "Urban noir"},
+        "system": {"clock_rules": cyberpunk_noir_clock_rules()}
     }
 
 
@@ -215,7 +218,8 @@ def investigation_context(
             "themes": {"primary": ["truth", "justice"]},
             "risk": {"lethality": "low", "failure_mode": "consequential"}
         },
-        "genre_rules": {"setting": "Noir investigation"}
+        "genre_rules": {"setting": "Noir investigation"},
+        "system": {"clock_rules": cyberpunk_noir_clock_rules()}
     }
 
 

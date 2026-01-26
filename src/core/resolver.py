@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Tuple
 
 from ..db.state_store import StateStore
+from .clock_config import ClockConfig, load_clock_config
 
 
 @dataclass
@@ -19,6 +20,7 @@ class RollResult:
     total: int
     outcome: str  # 'failure', 'mixed', 'success', 'critical'
     margin: int  # How far above/below threshold
+    action: str = ""  # What action this roll was for
 
 
 @dataclass
@@ -38,7 +40,8 @@ class ResolverOutput:
                     "raw_values": r.raw_values,
                     "total": r.total,
                     "outcome": r.outcome,
-                    "margin": r.margin
+                    "margin": r.margin,
+                    "action": r.action
                 }
                 for r in self.rolls
             ]
@@ -96,25 +99,43 @@ class Resolver:
             "facts_update": [],
             "inventory_changes": [],
             "scene_update": {},
-            "threads_update": []
+            "threads_update": [],
+            "relationship_changes": []
         }
 
         # Get game system from context (for roll mechanics)
         calibration = context_packet.get("calibration", {})
         risk_settings = calibration.get("risk", {})
 
+        # Load clock configuration
+        clock_config = load_clock_config(context_packet.get("system", {}))
+
         # Apply costs first (they happen regardless of outcome)
         costs = validator_output.get("costs", {})
-        self._apply_costs(costs, state_diff)
+        if clock_config.enabled:
+            self._apply_costs(costs, state_diff, clock_config)
+
+        # Deduplicate and cap actions (max 2, no same-type+same-target dupes)
+        raw_actions = validator_output.get("allowed_actions", [])
+        allowed_actions = []
+        seen_keys = set()
+        for action in raw_actions:
+            key = (action.get("action", "").lower(), action.get("target_id", "").lower())
+            if key not in seen_keys:
+                seen_keys.add(key)
+                allowed_actions.append(action)
+            if len(allowed_actions) >= 2:
+                break
 
         # Resolve each allowed action
-        for action in validator_output.get("allowed_actions", []):
+        for action in allowed_actions:
             action_events, action_rolls, action_diff = self._resolve_action(
                 action,
                 context_packet,
                 planner_output,
                 risk_settings,
-                options
+                options,
+                clock_config
             )
             engine_events.extend(action_events)
             rolls.extend(action_rolls)
@@ -125,7 +146,8 @@ class Resolver:
         if tension_move:
             tension_events, tension_diff = self._apply_tension_move(
                 tension_move,
-                context_packet
+                context_packet,
+                clock_config
             )
             engine_events.extend(tension_events)
             self._merge_diff(state_diff, tension_diff)
@@ -136,16 +158,15 @@ class Resolver:
             rolls=rolls
         )
 
-    def _apply_costs(self, costs: dict, state_diff: dict) -> None:
+    def _apply_costs(self, costs: dict, state_diff: dict, clock_config: Optional[ClockConfig] = None) -> None:
         """Apply costs to state diff."""
-        clock_names = ["heat", "time", "cred", "harm", "rep"]
+        if clock_config is None:
+            clock_config = ClockConfig()
 
-        for clock_name in clock_names:
+        for clock_name in clock_config.clocks_enabled:
             delta = costs.get(clock_name, 0)
             if delta != 0:
-                # Time decrements, others increment
-                if clock_name == "time":
-                    delta = -delta
+                delta = clock_config.apply_direction(clock_name, delta)
                 state_diff["clocks"].append({
                     "id": clock_name,
                     "delta": delta
@@ -157,7 +178,8 @@ class Resolver:
         context_packet: dict,
         planner_output: dict,
         risk_settings: dict,
-        options: dict
+        options: dict,
+        clock_config: Optional[ClockConfig] = None
     ) -> Tuple[list[dict], list[RollResult], dict]:
         """Resolve a single action."""
         events = []
@@ -168,7 +190,8 @@ class Resolver:
             "facts_update": [],
             "inventory_changes": [],
             "scene_update": {},
-            "threads_update": []
+            "threads_update": [],
+            "relationship_changes": []
         }
 
         action_type = action.get("action", "")
@@ -181,6 +204,7 @@ class Resolver:
         if needs_roll:
             # Perform roll
             roll_result = self._roll(options.get("force_roll"))
+            roll_result.action = action_type
             rolls.append(roll_result)
 
             # Determine outcome based on roll
@@ -191,14 +215,22 @@ class Resolver:
 
         # Generate events based on outcome
         if outcome == "success" or outcome == "critical":
+            event_details = {
+                "action": action_type,
+                "target_id": target_id,
+                "description": details,
+                "critical": outcome == "critical"
+            }
+
+            # Include concrete discoveries for search/investigate
+            if action_type.lower() in ["search", "investigate", "examine"] and target_id:
+                discoveries = self._gather_search_discoveries(target_id, context_packet)
+                if discoveries:
+                    event_details["discoveries"] = discoveries
+
             events.append({
                 "type": "action_succeeded",
-                "details": {
-                    "action": action_type,
-                    "target_id": target_id,
-                    "description": details,
-                    "critical": outcome == "critical"
-                },
+                "details": event_details,
                 "tags": ["player_action"]
             })
 
@@ -207,6 +239,19 @@ class Resolver:
                 action_type, target_id, details, context_packet
             )
             self._merge_diff(diff, action_diff)
+
+            # Emit relationship_changed events
+            for rel_change in action_diff.get("relationship_changes", []):
+                events.append({
+                    "type": "relationship_changed",
+                    "details": {
+                        "a_id": rel_change["a_id"],
+                        "b_id": rel_change["b_id"],
+                        "rel_type": rel_change.get("rel_type", "trust"),
+                        "delta": rel_change["delta"]
+                    },
+                    "tags": ["social", "relationship"]
+                })
 
         elif outcome == "mixed":
             events.append({
@@ -222,7 +267,7 @@ class Resolver:
 
             # Partial success - some effect plus complication
             action_diff = self._apply_mixed_effects(
-                action_type, target_id, details, context_packet, risk_settings
+                action_type, target_id, details, context_packet, risk_settings, clock_config
             )
             self._merge_diff(diff, action_diff)
 
@@ -240,7 +285,7 @@ class Resolver:
 
             # Failure - consequence without effect
             action_diff = self._apply_failure_effects(
-                action_type, target_id, context_packet, risk_settings
+                action_type, target_id, context_packet, risk_settings, clock_config
             )
             self._merge_diff(diff, action_diff)
 
@@ -251,7 +296,10 @@ class Resolver:
         # Safe actions that don't need rolls
         safe_actions = {
             "look", "examine", "observe", "listen", "wait",
-            "think", "remember", "talk", "ask", "say"
+            "think", "remember", "talk", "ask", "say",
+            "search", "investigate", "read", "check", "assess",
+            "use", "take", "grab", "pickup", "drop", "give", "put",
+            "open", "close", "move", "go", "enter", "exit", "walk",
         }
 
         if action_type.lower() in safe_actions:
@@ -261,7 +309,8 @@ class Resolver:
         risky_actions = {
             "attack", "fight", "combat", "shoot", "steal",
             "hack", "sneak", "climb", "jump", "chase",
-            "persuade", "intimidate", "deceive", "negotiate"
+            "persuade", "intimidate", "deceive", "negotiate",
+            "provoke",
         }
 
         if action_type.lower() in risky_actions:
@@ -318,13 +367,12 @@ class Resolver:
             "facts_update": [],
             "inventory_changes": [],
             "scene_update": {},
-            "threads_update": []
+            "threads_update": [],
+            "relationship_changes": []
         }
 
-        # Investigation actions discover facts
+        # Investigation actions discover facts and surface entity info
         if action_type.lower() in ["investigate", "search", "examine", "hack"]:
-            # In a real implementation, this would reveal specific facts
-            # For now, just mark the action type
             diff["facts_add"].append({
                 "subject_id": target_id or "scene",
                 "predicate": "investigated_by_player",
@@ -333,12 +381,74 @@ class Resolver:
                 "tags": ["player_discovery"]
             })
 
-        # Social actions might improve relationships
-        if action_type.lower() in ["talk", "persuade", "help"]:
-            # Would update relationship intensity
-            pass
+            # Reveal hidden (world-visibility) facts about the target
+            if target_id:
+                all_facts = self.store.get_facts_for_subject(target_id)
+                for fact in all_facts:
+                    if fact.get("visibility") == "world":
+                        diff["facts_update"].append({
+                            "id": fact["id"],
+                            "visibility": "known"
+                        })
+
+        # Social actions update relationships
+        if action_type.lower() in ["talk", "persuade", "help", "negotiate"]:
+            if target_id and target_id.lower() not in ("scene", "self", "player"):
+                diff["relationship_changes"].append({
+                    "a_id": "player",
+                    "b_id": target_id,
+                    "rel_type": "trust",
+                    "delta": 1
+                })
 
         return diff
+
+    def _gather_search_discoveries(
+        self,
+        target_id: str,
+        context_packet: dict
+    ) -> list[dict]:
+        """Gather discoverable information about a search target for engine events."""
+        discoveries = []
+
+        # Surface entity attrs as discoverable info
+        entity = self.store.get_entity(target_id)
+        if entity:
+            attrs = entity.get("attrs", {})
+            # Surface relevant attributes
+            for key in ["knowledge", "cause_of_death", "status", "description"]:
+                if key in attrs:
+                    discoveries.append({
+                        "type": key,
+                        "detail": attrs[key]
+                    })
+
+        # Surface any hidden facts about this entity being revealed
+        all_facts = self.store.get_facts_for_subject(target_id)
+        for fact in all_facts:
+            if fact.get("visibility") == "world":
+                discoveries.append({
+                    "type": "hidden_fact",
+                    "predicate": fact["predicate"],
+                    "detail": fact["object"]
+                })
+
+        # Check inventory (items the entity is carrying)
+        try:
+            inventory = self.store.get_inventory(target_id)
+            for item in inventory:
+                item_entity = self.store.get_entity(item["item_id"])
+                if item_entity:
+                    discoveries.append({
+                        "type": "item_found",
+                        "item_id": item["item_id"],
+                        "name": item_entity.get("name", item["item_id"]),
+                        "detail": item_entity.get("attrs", {}).get("description", "")
+                    })
+        except Exception:
+            pass
+
+        return discoveries
 
     def _apply_mixed_effects(
         self,
@@ -346,21 +456,26 @@ class Resolver:
         target_id: str,
         details: str,
         context_packet: dict,
-        risk_settings: dict
+        risk_settings: dict,
+        clock_config: Optional[ClockConfig] = None
     ) -> dict:
         """Apply effects for mixed success."""
+        if clock_config is None:
+            clock_config = load_clock_config(context_packet.get("system", {}))
+
         diff = self._apply_success_effects(action_type, target_id, details, context_packet)
 
-        # Add complication cost
-        complication_cost = 1
-        if risk_settings.get("failure_mode") == "punishing":
-            complication_cost = 2
+        if not clock_config.enabled:
+            return diff
 
-        # Usually adds heat or time
-        if action_type.lower() in ["combat", "attack", "violence"]:
-            diff["clocks"].append({"id": "heat", "delta": complication_cost})
-        else:
-            diff["clocks"].append({"id": "time", "delta": -complication_cost})
+        # Add complication cost
+        multiplier = 2 if risk_settings.get("failure_mode") == "punishing" else 1
+
+        for effect in clock_config.get_complication_effects(action_type):
+            clock_id = effect["id"]
+            delta = effect["delta"] * multiplier
+            delta = clock_config.apply_direction(clock_id, delta)
+            diff["clocks"].append({"id": clock_id, "delta": delta})
 
         return diff
 
@@ -369,37 +484,44 @@ class Resolver:
         action_type: str,
         target_id: str,
         context_packet: dict,
-        risk_settings: dict
+        risk_settings: dict,
+        clock_config: Optional[ClockConfig] = None
     ) -> dict:
         """Apply effects for failed action."""
+        if clock_config is None:
+            clock_config = load_clock_config(context_packet.get("system", {}))
+
         diff = {
             "clocks": [],
             "facts_add": [],
             "facts_update": [],
             "inventory_changes": [],
             "scene_update": {},
-            "threads_update": []
+            "threads_update": [],
+            "relationship_changes": []
         }
+
+        # Failed social actions sour relationships
+        if action_type.lower() in ["persuade", "intimidate", "deceive", "negotiate", "provoke"]:
+            if target_id and target_id.lower() not in ("scene", "self", "player"):
+                diff["relationship_changes"].append({
+                    "a_id": "player",
+                    "b_id": target_id,
+                    "rel_type": "trust",
+                    "delta": -1
+                })
+
+        if not clock_config.enabled:
+            return diff
 
         # Failures have consequences based on risk settings
         failure_mode = risk_settings.get("failure_mode", "consequential")
 
-        if failure_mode == "forgiving":
-            # Minor consequence - just time lost
-            diff["clocks"].append({"id": "time", "delta": -1})
-
-        elif failure_mode == "consequential":
-            # Moderate consequence
-            if action_type.lower() in ["combat", "attack"]:
-                diff["clocks"].append({"id": "harm", "delta": 1})
-            else:
-                diff["clocks"].append({"id": "heat", "delta": 1})
-
-        else:  # punishing
-            # Severe consequence
-            if action_type.lower() in ["combat", "attack"]:
-                diff["clocks"].append({"id": "harm", "delta": 2})
-            diff["clocks"].append({"id": "heat", "delta": 1})
+        for effect in clock_config.get_failure_clock_effects(action_type, failure_mode):
+            clock_id = effect["id"]
+            delta = effect["delta"]
+            delta = clock_config.apply_direction(clock_id, delta)
+            diff["clocks"].append({"id": clock_id, "delta": delta})
 
         return diff
 
@@ -446,9 +568,13 @@ class Resolver:
     def _apply_tension_move(
         self,
         tension_move: str,
-        context_packet: dict
+        context_packet: dict,
+        clock_config: Optional[ClockConfig] = None
     ) -> Tuple[list[dict], dict]:
         """Apply the planner's tension move."""
+        if clock_config is None:
+            clock_config = load_clock_config(context_packet.get("system", {}))
+
         events = []
         diff = {
             "clocks": [],
@@ -456,28 +582,23 @@ class Resolver:
             "facts_update": [],
             "inventory_changes": [],
             "scene_update": {},
-            "threads_update": []
+            "threads_update": [],
+            "relationship_changes": []
         }
 
-        # Tension moves advance clocks or create events
-        if "heat" in tension_move.lower() or "attention" in tension_move.lower():
-            diff["clocks"].append({"id": "heat", "delta": 1})
+        # Match tension move text to a clock via configured keywords
+        matched_clock = clock_config.get_tension_clock(tension_move) if clock_config.enabled else None
+
+        if matched_clock:
+            delta = clock_config.apply_direction(matched_clock, 1)
+            diff["clocks"].append({"id": matched_clock, "delta": delta})
             events.append({
                 "type": "clock_advanced",
-                "details": {"clock": "heat", "reason": tension_move},
+                "details": {"clock": matched_clock, "reason": tension_move},
                 "tags": ["tension", "gm_move"]
             })
-
-        elif "time" in tension_move.lower() or "deadline" in tension_move.lower():
-            diff["clocks"].append({"id": "time", "delta": -1})
-            events.append({
-                "type": "clock_advanced",
-                "details": {"clock": "time", "reason": tension_move},
-                "tags": ["tension", "gm_move"]
-            })
-
         else:
-            # Generic tension event
+            # Generic tension event (no clock match or clocks disabled)
             events.append({
                 "type": "npc_action",
                 "details": {"description": tension_move},
@@ -488,7 +609,7 @@ class Resolver:
 
     def _merge_diff(self, target: dict, source: dict) -> None:
         """Merge source diff into target diff."""
-        for key in ["clocks", "facts_add", "facts_update", "inventory_changes", "threads_update"]:
+        for key in ["clocks", "facts_add", "facts_update", "inventory_changes", "threads_update", "relationship_changes"]:
             if key in source and source[key]:
                 target[key].extend(source[key])
 

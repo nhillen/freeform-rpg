@@ -24,21 +24,38 @@ pip install -e .
 pip install -e ".[dev]"
 
 # Set up your API key (interactive)
-python3 -m src.cli.main login
+freeform-rpg login
 ```
 
 ## Quick Start
 
+The fastest way to start playing:
+
+```bash
+pip install -e .
+freeform-rpg
+```
+
+Running `freeform-rpg` with no arguments launches a guided flow that:
+1. Checks for an API key (prompts interactive login if missing)
+2. Creates the game database automatically
+3. Shows your saved games, or walks you through starting a new one
+4. Drops you into the interactive play REPL
+
+### Manual Setup (power users)
+
 ```bash
 # Initialize a new game database
-python3 -m src.cli.main init-db
+freeform-rpg init-db
 
 # Start a new game with the included scenario
-python3 -m src.cli.main new-game --scenario dead_drop
+freeform-rpg new-game --scenario dead_drop
 
 # Enter interactive play mode
-python3 -m src.cli.main play
+freeform-rpg play
 ```
+
+All subcommands also work via `python3 -m src.cli.main` if you haven't installed the package.
 
 ## Authentication
 
@@ -46,7 +63,7 @@ The engine requires an Anthropic API key to run. You can set this up in two ways
 
 ### Interactive Login (Recommended)
 ```bash
-python3 -m src.cli.main login
+freeform-rpg login
 ```
 
 This will:
@@ -65,7 +82,7 @@ The environment variable takes precedence over the stored config.
 ### Logout
 To remove your stored API key:
 ```bash
-python3 -m src.cli.main logout
+freeform-rpg logout
 ```
 
 ## CLI Commands
@@ -87,7 +104,7 @@ python3 -m src.cli.main logout
 
 #### new-game options
 ```bash
-python3 -m src.cli.main new-game [OPTIONS]
+freeform-rpg new-game [OPTIONS]
 
 --scenario SCENARIO    # Scenario file to load (e.g., dead_drop)
 --template TEMPLATE    # Template to use if no scenario specified
@@ -104,7 +121,7 @@ python3 -m src.cli.main new-game [OPTIONS]
 
 #### run-turn options
 ```bash
-python3 -m src.cli.main run-turn [OPTIONS]
+freeform-rpg run-turn [OPTIONS]
 
 --input, -i INPUT              # Player input text (required)
 --prompt-versions VERSIONS     # JSON object, e.g. {"interpreter":"v1"}
@@ -121,14 +138,14 @@ python3 -m src.cli.main run-turn [OPTIONS]
 
 #### eval options
 ```bash
-python3 -m src.cli.main eval [OPTIONS]
+freeform-rpg eval [OPTIONS]
 
 --json    # Output as JSON
 ```
 
 #### replay options
 ```bash
-python3 -m src.cli.main replay [OPTIONS]
+freeform-rpg replay [OPTIONS]
 
 --start-turn START    # First turn to replay (required)
 --end-turn END        # Last turn to replay (required)
@@ -148,15 +165,15 @@ These options apply to all commands:
 
 ```bash
 # Start fresh
-python3 -m src.cli.main init-db --db my_game.db
-python3 -m src.cli.main --db my_game.db new-game --scenario dead_drop --preset noir_standard
+freeform-rpg init-db --db my_game.db
+freeform-rpg --db my_game.db new-game --scenario dead_drop --preset noir_standard
 
 # Play interactively
-python3 -m src.cli.main --db my_game.db play
+freeform-rpg --db my_game.db play
 
 # Or run individual turns
-python3 -m src.cli.main --db my_game.db run-turn -i "I examine the body carefully"
-python3 -m src.cli.main --db my_game.db run-turn -i "I search his pockets"
+freeform-rpg --db my_game.db run-turn -i "I examine the body carefully"
+freeform-rpg --db my_game.db run-turn -i "I search his pockets"
 ```
 
 ## Testing
@@ -216,7 +233,7 @@ Scenarios are YAML files in the `scenarios/` directory that define:
 
 ### List Available Scenarios
 ```bash
-python3 -m src.cli.main list-scenarios
+freeform-rpg list-scenarios
 ```
 
 ### Current Scenarios
@@ -251,10 +268,10 @@ result = orchestrator.process_turn("I search the room")
 
 ```bash
 # Check current evaluation metrics
-python3 -m src.cli.main eval
+freeform-rpg eval
 
 # View specific event
-python3 -m src.cli.main show-event 5
+freeform-rpg show-event 5
 ```
 
 ### A/B Testing Prompts
@@ -263,7 +280,7 @@ Use replay to test different prompt versions against the same inputs:
 
 ```bash
 # Replay turns 1-5 with narrator v2
-python3 -m src.cli.main replay --start-turn 1 --end-turn 5 --prompt-overrides '{"narrator":"v2"}'
+freeform-rpg replay --start-turn 1 --end-turn 5 --prompt-overrides '{"narrator":"v2"}'
 ```
 
 ## Troubleshooting
@@ -277,7 +294,7 @@ pip install -e .
 ### "No API key found" or authentication errors
 Run the login command:
 ```bash
-python3 -m src.cli.main login
+freeform-rpg login
 ```
 Or set the environment variable:
 ```bash
@@ -287,7 +304,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 ### Database Errors
 Re-initialize the database:
 ```bash
-python3 -m src.cli.main init-db --db game.db
+freeform-rpg init-db --db game.db
 ```
 
 ### Test Failures

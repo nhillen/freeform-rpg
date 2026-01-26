@@ -35,6 +35,59 @@ calibration:
     veils:
       - "graphic_torture"
 
+# System rules (clock behavior, costs, display)
+# Clocks are opt-in: without this section, no clock costs or effects apply.
+# Customize or remove to change game mechanics per scenario.
+system:
+  clock_rules:
+    enabled: true
+    clocks_enabled: ["heat", "time", "harm", "cred", "rep"]
+    direction:
+      time: "decrement"
+    cost_map:
+      _default: {time: 1}
+      violence: {heat: 1}
+      combat: {heat: 1}
+      attack: {heat: 1}
+      social: {time: 1}
+      talk: {time: 1}
+      investigate: {time: 1}
+      search: {time: 1}
+      examine: {time: 1}
+      travel: {time: 1}
+      move: {time: 1}
+      go: {time: 1}
+      crime: {heat: 2}
+      steal: {heat: 2, time: 1}
+      hack: {heat: 1, time: 1}
+      bribe: {cred: 50}
+      buy: {cred: 0}
+    complication_clocks:
+      combat:
+        - {id: heat, delta: 1}
+      default:
+        - {id: time, delta: 1}
+    failure_effects:
+      forgiving:
+        default:
+          - {id: time, delta: 1}
+      consequential:
+        combat:
+          - {id: harm, delta: 1}
+        default:
+          - {id: heat, delta: 1}
+      punishing:
+        combat:
+          - {id: harm, delta: 2}
+          - {id: heat, delta: 1}
+        default:
+          - {id: heat, delta: 1}
+    tension_keywords:
+      heat: ["heat", "attention"]
+      time: ["time", "deadline"]
+    display:
+      show_deltas: true
+
 # Genre rules for context injection
 genre_rules:
   setting: "Near-future cyberpunk city"

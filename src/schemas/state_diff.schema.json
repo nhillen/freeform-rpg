@@ -8,7 +8,8 @@
     "facts_update",
     "inventory_changes",
     "scene_update",
-    "threads_update"
+    "threads_update",
+    "relationship_changes"
   ],
   "properties": {
     "clocks": {
@@ -28,11 +29,26 @@
       "items": {"type": "object"}
     },
     "scene_update": {
-      "type": "object"}
-    ,
+      "type": "object"
+    },
     "threads_update": {
       "type": "array",
       "items": {"type": "object"}
+    },
+    "relationship_changes": {
+      "type": "array",
+      "description": "Changes to entity relationships",
+      "items": {
+        "type": "object",
+        "required": ["a_id", "b_id", "delta"],
+        "properties": {
+          "a_id": {"type": "string"},
+          "b_id": {"type": "string"},
+          "rel_type": {"type": "string", "default": "trust"},
+          "delta": {"type": "integer", "minimum": -2, "maximum": 2},
+          "reason": {"type": "string"}
+        }
+      }
     }
   },
   "additionalProperties": false

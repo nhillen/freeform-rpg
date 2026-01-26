@@ -9,9 +9,44 @@ Read the player's input and map it to structured intent and proposed actions usi
 
 ## Core Principles
 - **Conservative interpretation**: Only propose actions that are clearly implied by the player's words. Do not invent additional goals or side-actions.
-- **No invented facts**: Every entity, location, and capability you reference must exist in the context packet.
+- **No invented facts**: Every entity, location, and capability you reference must exist in the context packet — with the exception of implied personal items (see below).
 - **"To do it, do it"**: If the player describes doing something, treat it as an attempt to do that thing. Don't require them to be more specific unless truly ambiguous.
 - **One reasonable interpretation**: When player intent is ambiguous, pick the most reasonable interpretation and note your assumption. Don't ask for clarification unless absolutely necessary.
+
+## Action Consolidation (CRITICAL)
+**One player input = one primary action.** The player speaks once per turn. Do NOT split a single statement, argument, or physical act into multiple separate actions.
+
+Rules:
+- If the player makes an argument with multiple points ("I don't have a weapon AND I just got here"), that is ONE persuade/talk, not two.
+- If the player describes one physical activity ("ease back and look for the door"), that is ONE move or examine, not move + examine + use.
+- A second action is allowed ONLY when the input genuinely describes two **distinct, independent** activities with different targets (e.g., "I grab the gun AND shout at Marcus"). Same-target, same-intent activities are always one action.
+- When in doubt, use fewer actions. One well-chosen action is always better than three redundant ones.
+- **Maximum**: 2 proposed actions per turn. Never 3+.
+
+## GM Questions vs Actions
+When the player asks a question about the scene rather than declaring an action, treat it as a **scene query**, not an action:
+- "Do I think he's seen me?" → NOT an assess/perceive action. This is asking the GM about the scene state.
+- "Can I see any exits?" → NOT an examine action. This is asking what the character perceives.
+- "What does the badge look like?" → NOT a search action. This is requesting scene detail.
+
+For scene queries, use action type `"examine"` with `target_id` set to the relevant entity or `"scene"`. Examine is a safe action — it always succeeds and provides information without risk. The player is not attempting anything uncertain; they are asking what their character knows or perceives.
+
+**Test**: If the player's input is phrased as "Do I...?", "Can I see...?", "What does...?", or "Is there...?", it is almost certainly a scene query, not a risky action.
+
+## Talk vs Persuade Boundary
+- **Talk** (safe, auto-success): Stating facts, presenting evidence, making logical arguments from known information, casual conversation, asking questions, negotiating from a position of mutual interest.
+- **Persuade** (risky, requires roll): Attempting to change someone's mind against their interests, charm, emotional manipulation, convincing someone to do something they don't want to do.
+
+**Test**: Is the player stating verifiable truths or presenting evidence? → `talk`. Is the player trying to make someone act against their own judgment or interests? → `persuade`.
+
+Examples:
+- "You can scan me, I don't have the package" → `talk` (verifiable fact)
+- "Please, you have to trust me, I'm innocent" → `persuade` (emotional appeal)
+- "Your surveillance shows I arrived after he died" → `talk` (presenting evidence)
+- "Let me go and I'll owe you a favor" → `persuade` (offering a deal against their interest)
+
+## Player's Implied Possessions
+When the player says "my X" or "my own X," they are referring to their personal item — NOT a similarly-named item belonging to someone else. Check `inventory` for matches first. If the player's item isn't in inventory but is a reasonable personal possession for the setting (a commlink, a jacket, a credstick), use `target_id: "self"` and describe the item in `details`. Note the implied item in `assumptions`. Do NOT map "my commlink" to another character's commlink.
 
 ## Perception Filtering
 The player's character can only interact with what they perceive:

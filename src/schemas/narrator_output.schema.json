@@ -80,6 +80,57 @@
         }
       },
       "required": ["location_id", "location_name", "present_entities"]
+    },
+    "introduced_npcs": {
+      "type": "array",
+      "description": "NPCs introduced by narration that should become tracked game entities",
+      "items": {
+        "type": "object",
+        "required": ["entity_id", "name", "description"],
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "description": "Kebab-case entity ID (e.g. 'taxi-driver', 'dock-worker')"
+          },
+          "name": {
+            "type": "string",
+            "description": "NPC display name (e.g. 'Renzo', 'Dock Worker')"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief in-world description"
+          },
+          "role": {
+            "type": "string",
+            "description": "Narrative role (e.g. 'witness', 'obstacle', 'contact')"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "thread_updates": {
+      "type": "array",
+      "description": "Thread status changes declared by narration",
+      "items": {
+        "type": "object",
+        "required": ["thread_id", "status"],
+        "properties": {
+          "thread_id": {
+            "type": "string",
+            "description": "ID of the thread to update"
+          },
+          "status": {
+            "type": "string",
+            "description": "New thread status",
+            "enum": ["active", "stalled", "resolved", "failed"]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the thread status changed"
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": false

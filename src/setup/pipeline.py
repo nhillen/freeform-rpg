@@ -142,6 +142,7 @@ class SetupPipeline:
             campaign_id=campaign_id,
             name=template.name,
             calibration=calibration.to_dict(),
+            system=template.system,
             genre_rules=template.genre_rules
         )
 

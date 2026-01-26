@@ -10,6 +10,7 @@ from typing import Optional
 
 from ..db.state_store import StateStore
 from ..context.builder import ContextBuilder
+from .clock_config import ClockConfig, load_clock_config
 
 
 @dataclass
@@ -53,26 +54,6 @@ class Validator:
     5. Cost assignment: apply Heat, Time, Cred, Harm, Rep costs
     """
 
-    # Default costs by action category
-    DEFAULT_COSTS = {
-        "violence": {"heat": 1},
-        "combat": {"heat": 1},
-        "attack": {"heat": 1},
-        "social": {"time": 1},
-        "talk": {"time": 1},
-        "investigate": {"time": 1},
-        "search": {"time": 1},
-        "examine": {"time": 1},
-        "travel": {"time": 1},
-        "move": {"time": 1},
-        "go": {"time": 1},
-        "crime": {"heat": 2},
-        "steal": {"heat": 2, "time": 1},
-        "hack": {"heat": 1, "time": 1},
-        "bribe": {"cred": 50},
-        "buy": {"cred": 0},  # Amount determined by context
-    }
-
     def __init__(self, state_store: StateStore):
         self.store = state_store
         self.context_builder = ContextBuilder(state_store)
@@ -94,15 +75,23 @@ class Validator:
         Returns:
             ValidatorOutput with allowed/blocked actions and costs
         """
+        clock_config = load_clock_config(context_packet.get("system", {}))
+
         allowed_actions = []
         blocked_actions = []
-        total_costs = {"heat": 0, "time": 0, "cred": 0, "harm": 0, "rep": 0}
+        total_costs = {c: 0 for c in clock_config.clocks_enabled} if clock_config.enabled else {}
 
         proposed_actions = interpreter_output.get("proposed_actions", [])
         perception_flags = interpreter_output.get("perception_flags", [])
 
-        # Check perception flags first - these block actions
-        flagged_entities = {pf["entity_id"] for pf in perception_flags}
+        # Resolve perception flag entity IDs (LLM may use names)
+        # Only flag entities that remain unresolvable to present entities
+        present_ids = set(context_packet.get("present_entities", []))
+        flagged_entities = set()
+        for pf in perception_flags:
+            resolved = self._resolve_target_id(pf["entity_id"], context_packet)
+            if resolved not in present_ids:
+                flagged_entities.add(resolved)
 
         for action in proposed_actions:
             result = self._validate_action(
@@ -149,6 +138,38 @@ class Validator:
             costs=total_costs
         )
 
+    def _resolve_target_id(self, target_id: str, context_packet: dict) -> str:
+        """Resolve a target reference to an entity ID.
+
+        The LLM interpreter may return entity names instead of IDs.
+        Try to match by name (case-insensitive) when the ID isn't found directly.
+        """
+        if not target_id:
+            return target_id
+
+        entities = context_packet.get("entities", [])
+
+        # Direct ID match
+        entity_ids = {e["id"] for e in entities}
+        if target_id in entity_ids:
+            return target_id
+
+        # Name match (case-insensitive)
+        target_lower = target_id.lower()
+        for entity in entities:
+            if entity.get("name", "").lower() == target_lower:
+                return entity["id"]
+
+        # Partial name match (e.g. "jin" matching "Jin 'The Courier' Tanaka")
+        for entity in entities:
+            if target_lower in entity.get("name", "").lower():
+                return entity["id"]
+
+        return target_id
+
+    # Targets that represent the general environment, not specific entities
+    META_TARGETS = {"scene", "environment", "area", "surroundings", "room", "self", "player"}
+
     def _validate_action(
         self,
         action: dict,
@@ -157,10 +178,13 @@ class Validator:
     ) -> ValidationResult:
         """Validate a single action."""
         action_type = action.get("action", "").lower()
-        target_id = action.get("target_id", "")
+        raw_target = action.get("target_id", "")
+        target_id = self._resolve_target_id(raw_target, context_packet)
 
-        # Check 1: Target entity perception
-        if target_id and target_id in flagged_entities:
+        is_meta_target = target_id and target_id.lower() in self.META_TARGETS
+
+        # Check 1: Target entity perception (skip for meta-targets)
+        if not is_meta_target and target_id and target_id in flagged_entities:
             return ValidationResult(
                 action=action_type,
                 target_id=target_id,
@@ -168,25 +192,56 @@ class Validator:
                 reason=f"Target '{target_id}' is not perceivable"
             )
 
-        # Check 2: Target must be in present entities (if specified)
-        if target_id:
+        # Check 2: Target must be reachable (entity, scene feature, or environment)
+        if target_id and not is_meta_target:
             present_ids = set(context_packet.get("present_entities", []))
-            # Allow targeting self or items in inventory
             inventory_items = {
                 i["item_id"] for i in context_packet.get("inventory", [])
             }
+            entity_ids = {e["id"] for e in context_packet.get("entities", [])}
+            location_id = context_packet.get("scene", {}).get("location_id", "")
 
-            if target_id not in present_ids and target_id not in inventory_items:
-                # Check if it's a known entity at all
-                entity_ids = {e["id"] for e in context_packet.get("entities", [])}
-                if target_id not in entity_ids:
+            target_known = (
+                target_id in present_ids
+                or target_id in inventory_items
+                or target_id in entity_ids
+                or target_id == location_id
+            )
+
+            if not target_known:
+                # Check scene features (e.g. "door", "dumpster", "fire escape")
+                scene_features = self._get_scene_features(context_packet)
+                target_lower = target_id.lower().replace("unknown_", "")
+                feature_match = any(
+                    target_lower in f.lower() or f.lower() in target_lower
+                    for f in scene_features
+                )
+
+                # Check narrator-established facts
+                facts = context_packet.get("facts", [])
+                fact_match = any(
+                    target_lower in str(f.get("object", "")).lower()
+                    for f in facts
+                    if f.get("predicate") == "narrator_established"
+                )
+
+                if feature_match or fact_match:
+                    # Scene feature / established element — allow it
+                    pass
+                elif self._is_environment_action(action_type):
+                    # Simple physical action on the environment — allow it
+                    pass
+                else:
                     return ValidationResult(
                         action=action_type,
                         target_id=target_id,
                         allowed=False,
                         reason=f"Unknown entity: '{target_id}'"
                     )
-                else:
+
+            # Known entity but not present in scene
+            elif target_id not in present_ids and target_id not in inventory_items and target_id != location_id:
+                if target_id in entity_ids:
                     return ValidationResult(
                         action=action_type,
                         target_id=target_id,
@@ -218,7 +273,8 @@ class Validator:
             )
 
         # Calculate costs
-        costs = self._calculate_costs(action_type, action, context_packet)
+        clock_config = load_clock_config(context_packet.get("system", {}))
+        costs = self._calculate_costs(action_type, action, context_packet, clock_config)
 
         return ValidationResult(
             action=action_type,
@@ -226,6 +282,31 @@ class Validator:
             allowed=True,
             costs=costs
         )
+
+    def _get_scene_features(self, context_packet: dict) -> list[str]:
+        """Get features of the current scene's location."""
+        scene = context_packet.get("scene", {})
+        location_id = scene.get("location_id", "")
+        if not location_id:
+            return []
+
+        for entity in context_packet.get("entities", []):
+            if entity["id"] == location_id:
+                return entity.get("attrs", {}).get("features", [])
+        return []
+
+    def _is_environment_action(self, action_type: str) -> bool:
+        """Check if this action type is a simple environment interaction."""
+        environment_actions = {
+            "knock", "bang", "push", "pull", "open", "close",
+            "climb", "jump", "touch", "use", "enter", "exit",
+            "hide", "lean", "sit", "stand", "crouch", "run",
+            "move", "go", "walk", "look", "listen", "wait",
+            "yell", "shout", "call", "signal",
+            "drop", "throw", "toss", "discard",
+            "sneak", "dodge", "duck", "crawl",
+        }
+        return action_type.lower() in environment_actions
 
     def _get_inventory_requirements(self, action_type: str) -> dict:
         """Get inventory items required for an action type."""
@@ -243,12 +324,14 @@ class Validator:
 
         facts = context_packet.get("facts", [])
 
-        # Check for "dead" or "destroyed" facts
+        # Check for "dead" or "destroyed" facts (only blocks interactive actions)
+        interactive_actions = {"talk", "ask", "speak", "persuade", "intimidate", "bribe", "trade", "give"}
         if target_id:
             for fact in facts:
                 if fact["subject_id"] == target_id:
                     if fact["predicate"] == "status" and fact["object"] in ["dead", "destroyed"]:
-                        return f"Cannot target '{target_id}': they are {fact['object']}"
+                        if action_type in interactive_actions:
+                            return f"Cannot {action_type} '{target_id}': they are {fact['object']}"
 
         # Check for location constraints
         scene = context_packet.get("scene", {})
@@ -266,11 +349,18 @@ class Validator:
         self,
         action_type: str,
         action: dict,
-        context_packet: dict
+        context_packet: dict,
+        clock_config: Optional["ClockConfig"] = None
     ) -> dict:
         """Calculate costs for an action."""
-        # Start with default costs for action type
-        costs = dict(self.DEFAULT_COSTS.get(action_type, {"time": 1}))
+        if clock_config is None:
+            clock_config = load_clock_config(context_packet.get("system", {}))
+
+        if not clock_config.enabled:
+            return {}
+
+        # Start with configured costs for action type
+        costs = clock_config.get_cost(action_type)
 
         # Adjust based on calibration risk settings
         calibration = context_packet.get("calibration", {})
@@ -292,9 +382,12 @@ class Validator:
         """Generate a clarification question for blocked actions."""
         if len(blocked_actions) == 1:
             action = blocked_actions[0]
-            return f"I'm not sure what you mean by '{action['action']}'. Could you clarify what you're trying to do?"
+            reason = action.get("reason", "")
+            if "not present" in reason or "not perceivable" in reason or "Unknown entity" in reason:
+                return f"You don't see anything like that here. What are you trying to interact with?"
+            return f"Could you clarify what you're trying to do?"
 
-        return "Some of your intended actions aren't clear to me. Could you describe what you're trying to accomplish?"
+        return "Some of your intended actions aren't clear. Could you describe what you're trying to accomplish?"
 
 
 def validate(

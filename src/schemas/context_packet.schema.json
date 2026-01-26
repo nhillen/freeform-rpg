@@ -60,6 +60,58 @@
     "recent_events": {
       "type": "array",
       "items": {"type": "object"}
+    },
+    "relationships": {
+      "type": "array",
+      "description": "Player's relationships with known entities",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entity_id": {"type": "string"},
+          "entity_name": {"type": "string"},
+          "rel_type": {"type": "string"},
+          "intensity": {"type": "integer"},
+          "notes": {"type": "object"}
+        }
+      }
+    },
+    "npc_agendas": {
+      "type": "array",
+      "description": "Agendas of NPCs present or relevant to the scene",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entity_id": {"type": "string"},
+          "name": {"type": "string"},
+          "agenda": {"type": "string"}
+        }
+      }
+    },
+    "investigation_progress": {
+      "type": "object",
+      "description": "Clue discovery progress per active thread",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "thread_name": {"type": "string"},
+          "clues_found": {"type": "integer"},
+          "clues_total": {"type": "integer"},
+          "last_clue_turn": {"type": ["integer", "null"]}
+        }
+      }
+    },
+    "pending_threats": {
+      "type": "array",
+      "description": "Unresolved soft/hard move threats from prior turns",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fact_id": {"type": "string"},
+          "description": {"type": "string"},
+          "turn_declared": {"type": "integer"},
+          "severity": {"type": "string"}
+        }
+      }
     }
   },
   "additionalProperties": false

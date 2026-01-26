@@ -89,3 +89,4 @@ A freeform, chat-first, genre-flexible narrative RPG engine with continuity, rea
 ## Open questions
 - Target response length range per turn.
 - Whether the initial case should stay cyberpunk for v0 or rotate to another setting.
+- **Authored scenarios vs. full procedural generation**: Are pre-authored scenario YAML files (locations, NPCs, items, threads) worth the effort, or should the engine generate everything from a short premise each session? Authored scenarios have repeatability but limited replay value. Procedural generation is unique each time but harder to quality-control. A possible middle ground: authored "scenario seeds" (tone, theme, a few key NPCs/constraints) that the engine expands at runtime. Tradeable/shareable scenario packs could have value if they define enough structure to be interesting without being rigid. Needs playtesting to evaluate.

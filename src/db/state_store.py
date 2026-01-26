@@ -119,6 +119,14 @@ class StateStore:
                 )
                 conn.commit()
 
+    def list_campaigns(self) -> list[dict]:
+        """List all campaigns, most recently updated first."""
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM campaigns ORDER BY updated_at DESC"
+            ).fetchall()
+        return [_parse_campaign_row(row) for row in rows]
+
     # =========================================================================
     # Entity Operations
     # =========================================================================
@@ -849,6 +857,23 @@ class StateStore:
                 status=thread.get("status"),
                 stakes=thread.get("stakes")
             )
+
+        # Apply relationship changes
+        for rel_change in diff.get("relationship_changes", []):
+            a_id = rel_change["a_id"]
+            b_id = rel_change["b_id"]
+            rel_type = rel_change.get("rel_type", "trust")
+            delta = rel_change.get("delta", 0)
+
+            existing = self.get_relationship(a_id, b_id, rel_type)
+            if existing:
+                new_intensity = max(-10, min(10, existing["intensity"] + delta))
+                self.update_relationship_intensity(a_id, b_id, rel_type, delta)
+            else:
+                self.create_relationship(
+                    a_id, b_id, rel_type,
+                    intensity=max(-10, min(10, delta))
+                )
 
         return triggered
 
