@@ -294,6 +294,112 @@ class TestRiskCalibration:
         assert "harm" in result.costs
 
 
+class TestEstimatedMinutesPassthrough:
+    """Tests for estimated_minutes passthrough from interpreter to validator output."""
+
+    def test_estimated_minutes_passed_through(self, state_store, minimal_context):
+        """estimated_minutes from interpreter is included in allowed_actions."""
+        validator = Validator(state_store)
+
+        interpreter_output = {
+            "intent": "look around",
+            "referenced_entities": ["test_location"],
+            "proposed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking", "estimated_minutes": 3}
+            ],
+            "assumptions": [],
+            "risk_flags": [],
+            "perception_flags": []
+        }
+
+        result = validator.validate(interpreter_output, minimal_context)
+
+        assert len(result.allowed_actions) == 1
+        assert result.allowed_actions[0]["estimated_minutes"] == 3
+
+    def test_missing_estimated_minutes_not_in_output(self, state_store, minimal_context):
+        """When estimated_minutes is absent, it is not added to allowed_actions."""
+        validator = Validator(state_store)
+
+        interpreter_output = {
+            "intent": "look around",
+            "referenced_entities": ["test_location"],
+            "proposed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking"}
+            ],
+            "assumptions": [],
+            "risk_flags": [],
+            "perception_flags": []
+        }
+
+        result = validator.validate(interpreter_output, minimal_context)
+
+        assert len(result.allowed_actions) == 1
+        assert "estimated_minutes" not in result.allowed_actions[0]
+
+
+class TestRiskFlagsPassthrough:
+    """Tests for risk_flags passthrough from interpreter to validator output."""
+
+    def test_risk_flags_passed_through(self, state_store, minimal_context):
+        """Risk flags from interpreter are included in validator output."""
+        validator = Validator(state_store)
+
+        interpreter_output = {
+            "intent": "flee",
+            "referenced_entities": ["test_location"],
+            "proposed_actions": [
+                {"action": "move", "target_id": "test_location", "details": "running away"}
+            ],
+            "assumptions": [],
+            "risk_flags": ["pursuit", "dangerous"],
+            "perception_flags": []
+        }
+
+        result = validator.validate(interpreter_output, minimal_context)
+
+        assert result.risk_flags == ["pursuit", "dangerous"]
+        output_dict = result.to_dict()
+        assert output_dict["risk_flags"] == ["pursuit", "dangerous"]
+
+    def test_empty_risk_flags_passed_through(self, state_store, minimal_context):
+        """Empty risk flags are preserved."""
+        validator = Validator(state_store)
+
+        interpreter_output = {
+            "intent": "look",
+            "referenced_entities": ["test_location"],
+            "proposed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking"}
+            ],
+            "assumptions": [],
+            "risk_flags": [],
+            "perception_flags": []
+        }
+
+        result = validator.validate(interpreter_output, minimal_context)
+
+        assert result.risk_flags == []
+
+    def test_missing_risk_flags_defaults_empty(self, state_store, minimal_context):
+        """Missing risk_flags key defaults to empty list."""
+        validator = Validator(state_store)
+
+        interpreter_output = {
+            "intent": "look",
+            "referenced_entities": ["test_location"],
+            "proposed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking"}
+            ],
+            "assumptions": [],
+            "perception_flags": []
+        }
+
+        result = validator.validate(interpreter_output, minimal_context)
+
+        assert result.risk_flags == []
+
+
 class TestOutputFormat:
     """Tests for validator output format."""
 
@@ -318,6 +424,7 @@ class TestOutputFormat:
         assert "clarification_needed" in output_dict
         assert "clarification_question" in output_dict
         assert "costs" in output_dict
+        assert "risk_flags" in output_dict
 
     def test_costs_has_all_clock_types(self, state_store, minimal_context):
         """Costs dict has all clock types."""

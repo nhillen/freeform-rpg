@@ -29,7 +29,13 @@
         "properties": {
           "action": {"type": "string"},
           "target_id": {"type": "string"},
-          "details": {"type": "string"}
+          "details": {"type": "string"},
+          "estimated_minutes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "Estimated fictional duration in minutes"
+          }
         },
         "additionalProperties": false
       }

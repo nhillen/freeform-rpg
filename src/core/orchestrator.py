@@ -84,6 +84,53 @@ class Orchestrator:
         if self.on_stage:
             self.on_stage(stage)
 
+    @staticmethod
+    def _compute_period(hour: int) -> str:
+        """Map hour-of-day to a named period."""
+        if 5 <= hour < 6:
+            return "pre_dawn"
+        elif 6 <= hour < 8:
+            return "dawn"
+        elif 8 <= hour < 12:
+            return "morning"
+        elif 12 <= hour < 17:
+            return "afternoon"
+        elif 17 <= hour < 20:
+            return "evening"
+        else:
+            return "night"
+
+    def _advance_scene_time(self, minutes: int) -> dict:
+        """Advance scene time by estimated minutes. Returns change info."""
+        if minutes <= 0:
+            return {}
+        scene = self.store.get_scene()
+        if not scene:
+            return {}
+        current_time = scene.get("time", {})
+        old_hour = current_time.get("hour", 0)
+        old_minute = current_time.get("minute", 0)
+        old_period = current_time.get("period", self._compute_period(old_hour))
+
+        total_minutes = old_hour * 60 + old_minute + minutes
+        new_hour = (total_minutes // 60) % 24
+        new_minute = total_minutes % 60
+        new_period = self._compute_period(new_hour)
+
+        updated_time = dict(current_time)  # preserves weather etc.
+        updated_time["hour"] = new_hour
+        updated_time["minute"] = new_minute
+        updated_time["period"] = new_period
+        self.store.update_scene_time(updated_time)
+
+        return {
+            "old_period": old_period,
+            "new_period": new_period,
+            "new_hour": new_hour,
+            "new_minute": new_minute,
+            "period_changed": old_period != new_period,
+        }
+
     def run_turn(
         self,
         campaign_id: str,
@@ -181,11 +228,18 @@ class Orchestrator:
         for clock_id, after in clocks_after.items():
             before = clocks_before.get(clock_id)
             if before and before["value"] != after["value"]:
+                # Check sources of this clock's changes to determine if consequence-driven
+                sources = {
+                    e.get("source", "unknown")
+                    for e in state_diff.get("clocks", [])
+                    if e["id"] == clock_id
+                }
                 clock_deltas.append({
                     "id": clock_id,
                     "name": after.get("name", clock_id),
                     "old": before["value"],
                     "new": after["value"],
+                    "consequence": bool(sources - {"cost"}),
                 })
 
         # Inject clock triggers as engine events so narrator can reference them
@@ -194,6 +248,20 @@ class Orchestrator:
                 "type": "clock_triggered",
                 "details": {"message": trigger_msg},
                 "tags": ["clock", "trigger"]
+            })
+
+        # Stage 5.6: Advance fictional scene time
+        time_change = self._advance_scene_time(resolver_output.total_estimated_minutes)
+        if time_change.get("period_changed"):
+            resolver_output.engine_events.append({
+                "type": "time_period_changed",
+                "details": {
+                    "old_period": time_change["old_period"],
+                    "new_period": time_change["new_period"],
+                    "new_hour": time_change["new_hour"],
+                    "new_minute": time_change["new_minute"],
+                },
+                "tags": ["time", "atmosphere"]
             })
 
         # Stage 6: Narrator (LLM)
@@ -558,14 +626,26 @@ class Orchestrator:
 
             existing = self.store.get_entity(npc_id)
             if not existing:
+                npc_attrs = {
+                    "description": npc.get("description", ""),
+                    "role": npc.get("role", ""),
+                }
+                # Store capability fields if provided by narrator
+                if npc.get("threat_level"):
+                    npc_attrs["threat_level"] = npc["threat_level"]
+                if npc.get("capabilities"):
+                    npc_attrs["capabilities"] = npc["capabilities"]
+                if npc.get("equipment"):
+                    npc_attrs["equipment"] = npc["equipment"]
+                if npc.get("limitations"):
+                    npc_attrs["limitations"] = npc.get("limitations", [])
+                if npc.get("escalation_profile"):
+                    npc_attrs["escalation_profile"] = npc["escalation_profile"]
                 self.store.create_entity(
                     entity_id=npc_id,
                     entity_type="npc",
                     name=npc_name,
-                    attrs={
-                        "description": npc.get("description", ""),
-                        "role": npc.get("role", ""),
-                    },
+                    attrs=npc_attrs,
                     tags=["introduced", f"turn_{turn_no}"]
                 )
 
@@ -600,6 +680,7 @@ class Orchestrator:
             "interpreter": interpreter_output,
             "validator": validator_output,
             "planner": planner_output,
+            "resolver": resolver_output,
             "narrator": narrator_output
         }
 

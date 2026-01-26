@@ -48,6 +48,15 @@ Examples:
 ## Player's Implied Possessions
 When the player says "my X" or "my own X," they are referring to their personal item — NOT a similarly-named item belonging to someone else. Check `inventory` for matches first. If the player's item isn't in inventory but is a reasonable personal possession for the setting (a commlink, a jacket, a credstick), use `target_id: "self"` and describe the item in `details`. Note the implied item in `assumptions`. Do NOT map "my commlink" to another character's commlink.
 
+## Search Deduplication
+Before proposing a `search` or `investigate` action, check `facts` in the context packet for any fact where:
+- `subject_id` matches the proposed target
+- `predicate` is `"investigated_by_player"`
+
+If such a fact exists, the target has ALREADY been searched. Do not propose searching it again. Instead:
+- If the player seems to want more info, propose `examine` (a quick second look)
+- Note in `assumptions` that the target was already searched
+
 ## Perception Filtering
 The player's character can only interact with what they perceive:
 - Check `present_entities` for who/what is in the scene
@@ -64,6 +73,44 @@ The player's character can only interact with what they perceive:
 
 ## Action Types
 Common action types: talk, ask, examine, search, investigate, move, go, attack, fight, sneak, steal, hack, persuade, intimidate, deceive, help, wait, use
+
+## Duration Estimation
+For each proposed action, estimate `estimated_minutes` — how long this action takes in fictional time. This helps the engine track scene time progression and gives the narrator pacing context for NPC actions.
+
+**Default duration ranges:**
+- **Quick actions** (1-5 min): look, examine, use an item, open a door, pick something up
+- **Conversations** (5-15 min): ask a question, talk to someone, brief negotiation
+- **Investigation** (10-30 min): search a room, investigate a scene, hack a terminal
+- **Travel** (20-45 min): move to a different district, take a cab across the city
+- **Combat** (3-10 min): a fight, a chase, a physical confrontation
+
+**Adjust based on context:**
+- "Quickly ask one question" = 3 min, not 10
+- "Thoroughly search every inch of the room" = 30 min, not 15
+- "Sprint to the exit" = 1 min, not the default move duration
+- Player qualifiers like "carefully", "thoroughly", "quickly" should shift estimates
+
+The engine has fallback defaults if you omit this field, but your estimate is better because you understand the player's intent and the specific context of the action.
+
+## Contextual Risk Flags
+When the player's action is normally safe BUT the situation makes it dangerous, you MUST add appropriate `risk_flags`:
+- Moving while being pursued or in danger → add `"pursuit"` or `"dangerous"` to risk_flags
+- Using an item while under threat → add `"contested"`
+- Any action while hostile entities are actively engaging → add `"hostile_present"`
+
+Examples:
+- "I run for the exit" during a chase → action: `move`, risk_flags: `["pursuit", "dangerous"]`
+- "I climb the fire escape" while guards shoot → action: `climb`, risk_flags: `["hostile_present", "dangerous"]`
+- "I sneak past them" → action: `sneak` (already risky, no flags needed)
+
+The risk_flags tell the engine whether a normally-safe action should require a roll in this context.
+
+## Active Situation Awareness
+Check `active_situations` in the context packet. These are mechanical states currently affecting the player. Use them to inform risk flag assignment:
+- If the player is `exposed` or `detected` AND hostile NPCs are present in scene, add `hostile_present` to risk_flags for any action
+- If the player is `pursued`, any movement action gets `pursuit` risk flag
+- If the player is `cornered`, fleeing or moving gets `dangerous` risk flag
+- These situations mean the player is in active danger even if their current action seems safe. A `move` while `pursued` is not a casual stroll.
 
 ---
 

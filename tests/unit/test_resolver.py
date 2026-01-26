@@ -106,6 +106,44 @@ class TestNeedsRoll:
         for action in risky_actions:
             assert resolver._needs_roll(action, minimal_context) is True
 
+    def test_safe_action_with_risk_flags_needs_roll(self, state_store, minimal_context):
+        """Safe action with risk flags (e.g., pursuit) requires a roll."""
+        resolver = Resolver(state_store)
+
+        # move is normally safe
+        assert resolver._needs_roll("move", minimal_context) is False
+
+        # But with pursuit risk flag, it requires a roll
+        assert resolver._needs_roll("move", minimal_context, risk_flags=["pursuit"]) is True
+        assert resolver._needs_roll("move", minimal_context, risk_flags=["dangerous"]) is True
+        assert resolver._needs_roll("move", minimal_context, risk_flags=["hostile_present"]) is True
+
+    def test_safe_action_with_irrelevant_flags_no_roll(self, state_store, minimal_context):
+        """Safe action with non-risky flags still doesn't need a roll."""
+        resolver = Resolver(state_store)
+
+        # Unrecognized flag should not trigger a roll
+        assert resolver._needs_roll("move", minimal_context, risk_flags=["some_other_flag"]) is False
+
+    def test_risk_flags_from_validator_plumbed_through(self, state_store, minimal_context):
+        """Risk flags from validator output are plumbed through to _needs_roll."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "move", "target_id": "test_location", "details": "running for the exit"}
+            ],
+            "blocked_actions": [],
+            "costs": {},
+            "risk_flags": ["pursuit", "dangerous"]
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+
+        # move + pursuit flags should trigger a roll
+        assert len(result.rolls) == 1
+
 
 class TestCostApplication:
     """Tests for applying costs to state diff."""
@@ -557,6 +595,346 @@ class TestMultipleActions:
 
         # Each risky action gets its own roll
         assert len(result.rolls) == 2
+
+
+class TestOutcomeStates:
+    """Tests for outcome_state and failure_state in engine events."""
+
+    def test_success_event_has_outcome_state(self, state_store, minimal_context):
+        """Successful action event includes outcome_state."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking around"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+
+        assert result.engine_events[0]["type"] == "action_succeeded"
+        assert "outcome_state" in result.engine_events[0]["details"]
+
+    def test_sneak_success_outcome_state(self, state_store, combat_context):
+        """Sneak success has appropriate outcome state."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "sneak", "target_id": "hostile_npc", "details": "sneaking past"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+        options = {"force_roll": 10}
+
+        result = resolver.resolve(combat_context, validator_output, planner_output, options)
+
+        state = result.engine_events[0]["details"]["outcome_state"]
+        assert "undetected" in state.lower()
+
+    def test_failure_event_has_failure_state(self, state_store, combat_context):
+        """Failed action event includes failure_state."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "sneak", "target_id": "hostile_npc", "details": "sneaking past"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+        options = {"force_roll": 4}
+
+        result = resolver.resolve(combat_context, validator_output, planner_output, options)
+
+        assert result.engine_events[0]["type"] == "action_failed"
+        assert "failure_state" in result.engine_events[0]["details"]
+        assert "detected" in result.engine_events[0]["details"]["failure_state"].lower()
+
+    def test_mixed_event_has_mixed_state(self, state_store, combat_context):
+        """Mixed result event includes mixed_state."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "attack", "target_id": "hostile_npc", "details": "punch"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+        options = {"force_roll": 8}
+
+        result = resolver.resolve(combat_context, validator_output, planner_output, options)
+
+        assert result.engine_events[0]["type"] == "action_partial"
+        assert "mixed_state" in result.engine_events[0]["details"]
+
+    def test_critical_outcome_state_has_exceptional(self, state_store, combat_context):
+        """Critical success outcome_state mentions exceptional result."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "hack", "target_id": "hostile_npc", "details": "hacking"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+        options = {"force_roll": 12}
+
+        result = resolver.resolve(combat_context, validator_output, planner_output, options)
+
+        state = result.engine_events[0]["details"]["outcome_state"]
+        assert "exceptionally" in state.lower()
+
+
+class TestClockSourceTags:
+    """Tests for source tags on clock entries in state_diff."""
+
+    def test_cost_entries_tagged_as_cost(self, state_store, minimal_context):
+        """Clock entries from cost application are tagged with source='cost'."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [],
+            "blocked_actions": [],
+            "costs": {"heat": 1, "time": 1}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+
+        for entry in result.state_diff["clocks"]:
+            assert entry.get("source") == "cost"
+
+    def test_complication_entries_tagged(self, state_store, combat_context):
+        """Clock entries from mixed results are tagged with source='complication'."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "attack", "target_id": "hostile_npc", "details": "punch"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+        options = {"force_roll": 8}  # Mixed result
+
+        result = resolver.resolve(combat_context, validator_output, planner_output, options)
+
+        complication_entries = [c for c in result.state_diff["clocks"] if c.get("source") == "complication"]
+        assert len(complication_entries) > 0
+
+    def test_failure_entries_tagged(self, state_store, combat_context):
+        """Clock entries from failures are tagged with source='failure'."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "attack", "target_id": "hostile_npc", "details": "punch"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+        options = {"force_roll": 4}  # Failure
+
+        result = resolver.resolve(combat_context, validator_output, planner_output, options)
+
+        failure_entries = [c for c in result.state_diff["clocks"] if c.get("source") == "failure"]
+        assert len(failure_entries) > 0
+
+    def test_tension_entries_tagged(self, state_store, minimal_context):
+        """Clock entries from tension moves are tagged with source='tension'."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {
+            "tension_move": "Someone noticed - heat is rising"
+        }
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+
+        tension_entries = [c for c in result.state_diff["clocks"] if c.get("source") == "tension"]
+        assert len(tension_entries) > 0
+
+
+class TestDurationTracking:
+    """Tests for fictional duration estimation in resolver output."""
+
+    def test_total_estimated_minutes_on_output(self, state_store, minimal_context):
+        """ResolverOutput includes total_estimated_minutes."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking around"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+        # examine defaults to 1 minute in cyberpunk preset
+        assert result.total_estimated_minutes == 1
+
+    def test_total_estimated_minutes_in_to_dict(self, state_store, minimal_context):
+        """to_dict includes total_estimated_minutes."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "investigate", "target_id": "test_location", "details": "searching"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+        output_dict = result.to_dict()
+        assert "total_estimated_minutes" in output_dict
+        assert output_dict["total_estimated_minutes"] == 20  # investigate default
+
+    def test_llm_estimate_takes_priority(self, state_store, minimal_context):
+        """LLM-provided estimated_minutes takes priority over duration_map."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking", "estimated_minutes": 8}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+        assert result.total_estimated_minutes == 8
+
+    def test_invalid_estimate_falls_back_to_map(self, state_store, minimal_context):
+        """Out-of-range estimated_minutes falls back to duration_map."""
+        resolver = Resolver(state_store)
+
+        # 0 is out of range (min 1)
+        validator_output = {
+            "allowed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking", "estimated_minutes": 0}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+        assert result.total_estimated_minutes == 1  # examine default
+
+    def test_over_max_estimate_falls_back(self, state_store, minimal_context):
+        """estimated_minutes > 120 falls back to duration_map."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking", "estimated_minutes": 200}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+        assert result.total_estimated_minutes == 1  # examine default
+
+    def test_multiple_actions_sum_durations(self, state_store, minimal_context):
+        """Multiple actions have their durations summed."""
+        minimal_context["present_entities"].append("npc")
+        minimal_context["entities"].append({
+            "id": "npc", "type": "npc", "name": "NPC",
+            "attrs": {}, "tags": []
+        })
+
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking"},
+                {"action": "talk", "target_id": "npc", "details": "greeting"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+        # examine (1) + talk (10) = 11
+        assert result.total_estimated_minutes == 11
+
+    def test_engine_events_include_estimated_minutes(self, state_store, minimal_context):
+        """Engine events include estimated_minutes in details."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "examine", "target_id": "test_location", "details": "looking around"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+
+        assert result.engine_events[0]["type"] == "action_succeeded"
+        assert "estimated_minutes" in result.engine_events[0]["details"]
+        assert result.engine_events[0]["details"]["estimated_minutes"] == 1
+
+    def test_failed_action_includes_estimated_minutes(self, state_store, combat_context):
+        """Failed action events include estimated_minutes."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [
+                {"action": "attack", "target_id": "hostile_npc", "details": "punch"}
+            ],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+        options = {"force_roll": 4}
+
+        result = resolver.resolve(combat_context, validator_output, planner_output, options)
+
+        assert result.engine_events[0]["type"] == "action_failed"
+        assert "estimated_minutes" in result.engine_events[0]["details"]
+        assert result.engine_events[0]["details"]["estimated_minutes"] == 3  # attack default
+
+    def test_no_actions_zero_duration(self, state_store, minimal_context):
+        """No allowed actions results in zero total_estimated_minutes."""
+        resolver = Resolver(state_store)
+
+        validator_output = {
+            "allowed_actions": [],
+            "blocked_actions": [],
+            "costs": {}
+        }
+        planner_output = {}
+
+        result = resolver.resolve(minimal_context, validator_output, planner_output)
+        assert result.total_estimated_minutes == 0
 
 
 class TestConvenienceFunction:

@@ -103,6 +103,21 @@
           "role": {
             "type": "string",
             "description": "Narrative role (e.g. 'witness', 'obstacle', 'contact')"
+          },
+          "threat_level": {
+            "type": "string",
+            "description": "NPC threat level",
+            "enum": ["low", "moderate", "high", "extreme"]
+          },
+          "capabilities": {
+            "type": "array",
+            "description": "What this NPC can do",
+            "items": {"type": "string"}
+          },
+          "equipment": {
+            "type": "array",
+            "description": "What this NPC carries",
+            "items": {"type": "string"}
           }
         },
         "additionalProperties": false

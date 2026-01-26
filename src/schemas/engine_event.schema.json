@@ -22,7 +22,12 @@
         "scene_changed",
         "thread_updated",
         "harm_taken",
-        "npc_action"
+        "npc_action",
+        "time_period_changed",
+        "situation_created",
+        "situation_cleared",
+        "threat_resolved_against_player",
+        "failure_streak_warning"
       ]
     },
     "details": {

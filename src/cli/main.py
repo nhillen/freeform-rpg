@@ -145,11 +145,18 @@ def run_turn_cmd(args):
 
 
 def _format_clock_deltas(clock_deltas: list) -> str:
-    """Format clock deltas as an inline display line."""
+    """Format clock deltas as an inline display line.
+
+    Only shows consequence-driven changes (roll results, complications,
+    tension moves), not routine action costs.
+    """
     if not clock_deltas:
         return ""
+    consequence_deltas = [d for d in clock_deltas if d.get("consequence", False)]
+    if not consequence_deltas:
+        return ""
     parts = []
-    for delta in clock_deltas:
+    for delta in consequence_deltas:
         name = delta.get("name", delta.get("id", "?"))
         old = delta["old"]
         new = delta["new"]

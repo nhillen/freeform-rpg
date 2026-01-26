@@ -45,23 +45,30 @@ system:
     direction:
       time: "decrement"
     cost_map:
-      _default: {time: 1}
-      violence: {heat: 1}
-      combat: {heat: 1}
-      attack: {heat: 1}
-      social: {time: 1}
-      talk: {time: 1}
+      _default: {}                    # unknown actions cost nothing by default
       investigate: {time: 1}
       search: {time: 1}
-      examine: {time: 1}
-      travel: {time: 1}
-      move: {time: 1}
-      go: {time: 1}
-      crime: {heat: 2}
-      steal: {heat: 2, time: 1}
+      examine: {}                     # quick glance, no time cost
+      talk: {time: 1}
+      social: {time: 1}
+      persuade: {time: 1}
+      negotiate: {time: 1}
+      travel: {time: 2}              # significant movement
+      move: {}                        # repositioning is instant
+      go: {}                          # same
       hack: {heat: 1, time: 1}
+      steal: {heat: 2, time: 1}
+      combat: {heat: 1}
+      attack: {heat: 1}
+      violence: {heat: 1}
+      crime: {heat: 2}
       bribe: {cred: 50}
       buy: {cred: 0}
+      sneak: {}                       # physical, no time
+      climb: {}                       # physical, no time
+      use: {}                         # quick interaction
+      look: {}                        # instant
+      wait: {time: 1}                # deliberately spending time
     complication_clocks:
       combat:
         - {id: heat, delta: 1}
@@ -85,6 +92,33 @@ system:
     tension_keywords:
       heat: ["heat", "attention"]
       time: ["time", "deadline"]
+    duration_map:
+      _default: 5
+      look: 1
+      examine: 1
+      use: 2
+      move: 2
+      go: 2
+      sneak: 5
+      climb: 5
+      talk: 10
+      ask: 5
+      persuade: 15
+      negotiate: 15
+      intimidate: 5
+      search: 15
+      investigate: 20
+      hack: 15
+      travel: 30
+      combat: 5
+      attack: 3
+      steal: 10
+      wait: 15
+      read: 5
+    failure_severity:
+      streak_threshold: 3
+      tier2_harm_actions: [sneak, hide, flee, climb, fight, attack, chase]
+      tier3_base_harm: 2
     display:
       show_deltas: true
 
@@ -173,6 +207,10 @@ entities:
       location: "The Neon Dragon"
       agenda: "Keep his network intact, stay useful to everyone"
       knowledge: ["who hired the courier", "where the package was going"]
+      threat_level: "low"
+      capabilities: ["information_brokering", "contact_network", "bar_security"]
+      equipment: ["commlink", "hidden_pistol"]
+      limitations: ["non_combatant", "fixed_location"]
     tags: ["ally", "fixer"]
 
   - id: dead_courier
@@ -195,6 +233,10 @@ entities:
       location: "DataHaven cafe"
       agenda: "Collect secrets, sell to highest bidder"
       knowledge: ["corporate interest in the package", "who's hunting couriers"]
+      threat_level: "low"
+      capabilities: ["data_analysis", "information_brokering", "network_access"]
+      equipment: ["augmented_eyes", "encrypted_terminal"]
+      limitations: ["non_combatant", "sells_to_highest_bidder"]
     tags: ["neutral", "broker"]
 
   - id: corpo_agent
@@ -205,6 +247,21 @@ entities:
       description: "Clean suit, cold eyes, Zenith Industries badge"
       agenda: "Retrieve the package, eliminate witnesses"
       resources: ["corporate backing", "surveillance access"]
+      threat_level: "high"
+      capabilities:
+        - "armed_combat"
+        - "corporate_comms"
+        - "tactical_training"
+        - "intimidation"
+      equipment: ["sidearm", "comms_earpiece", "flashlight", "restraint_cuffs"]
+      limitations:
+        - "operates_solo"
+        - "no_netrunning"
+        - "corporate_rules_of_engagement"
+      escalation_profile:
+        soft: "Surveillance and tracking — follows, scans, makes presence known"
+        hard: "Direct confrontation — corners target, draws weapon, demands compliance"
+        lethal: "Lethal force — only if package recovery confirmed impossible"
     tags: ["threat", "corporate"]
 
   # Locations
@@ -368,6 +425,7 @@ starting_scene:
   present_entity_ids: ["player", "dead_courier"]
   time:
     hour: 23
+    minute: 0
     period: "night"
     weather: "rain"
   constraints: {}

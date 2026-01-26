@@ -192,6 +192,130 @@ class TestEntityPerception:
         assert perception["reason"] == "not_known"
 
 
+class TestNPCCapabilities:
+    """Tests for NPC capability extraction in context."""
+
+    def test_npc_capabilities_in_context(self, state_store):
+        """Context includes NPC capabilities when NPCs have capability attrs."""
+        setup_minimal_game_state(state_store, "test_campaign")
+        # Update the test_npc with capability attrs
+        state_store.update_entity("test_npc", attrs={
+            "role": "contact",
+            "description": "A helpful contact for testing",
+            "threat_level": "low",
+            "capabilities": ["information_brokering"],
+            "equipment": ["commlink"],
+            "limitations": ["non_combatant"]
+        })
+
+        builder = ContextBuilder(state_store)
+        context = builder.build_context("test_campaign", "test")
+
+        assert "npc_capabilities" in context
+        assert len(context["npc_capabilities"]) == 1
+        npc_cap = context["npc_capabilities"][0]
+        assert npc_cap["entity_id"] == "test_npc"
+        assert npc_cap["threat_level"] == "low"
+        assert "information_brokering" in npc_cap["capabilities"]
+
+    def test_no_capabilities_no_entry(self, state_store):
+        """NPCs without capability attrs are not in npc_capabilities."""
+        setup_minimal_game_state(state_store, "test_campaign")
+        builder = ContextBuilder(state_store)
+        context = builder.build_context("test_campaign", "test")
+
+        assert "npc_capabilities" in context
+        # Default test NPC has no capability attrs
+        assert len(context["npc_capabilities"]) == 0
+
+
+class TestActiveSituations:
+    """Tests for active situations in context."""
+
+    def test_active_situations_in_context(self, state_store):
+        """Context includes active situation facts."""
+        setup_minimal_game_state(state_store, "test_campaign")
+        # Create a situation fact
+        state_store.create_fact(
+            fact_id="sit_exposed",
+            subject_id="player",
+            predicate="situation",
+            obj={
+                "condition": "exposed",
+                "active": True,
+                "source_action": "sneak",
+                "severity": "soft",
+                "clears_on": ["hide_success"],
+                "narrative_hint": "Player is exposed"
+            },
+            visibility="known",
+            tags=["situation", "active"]
+        )
+
+        builder = ContextBuilder(state_store)
+        context = builder.build_context("test_campaign", "test")
+
+        assert "active_situations" in context
+        assert len(context["active_situations"]) == 1
+        assert context["active_situations"][0]["condition"] == "exposed"
+
+    def test_inactive_situation_excluded(self, state_store):
+        """Inactive situation facts are not in context."""
+        setup_minimal_game_state(state_store, "test_campaign")
+        state_store.create_fact(
+            fact_id="sit_cleared",
+            subject_id="player",
+            predicate="situation",
+            obj={
+                "condition": "exposed",
+                "active": False,
+                "source_action": "sneak",
+                "severity": "soft",
+                "clears_on": ["hide_success"],
+                "narrative_hint": "Was exposed, now cleared"
+            },
+            visibility="known",
+            tags=["situation"]
+        )
+
+        builder = ContextBuilder(state_store)
+        context = builder.build_context("test_campaign", "test")
+
+        assert "active_situations" in context
+        assert len(context["active_situations"]) == 0
+
+    def test_no_situations_empty_list(self, state_store):
+        """No situation facts results in empty list."""
+        setup_minimal_game_state(state_store, "test_campaign")
+        builder = ContextBuilder(state_store)
+        context = builder.build_context("test_campaign", "test")
+
+        assert "active_situations" in context
+        assert len(context["active_situations"]) == 0
+
+
+class TestFailureStreakContext:
+    """Tests for failure streak computation in context."""
+
+    def test_failure_streak_in_context(self, state_store):
+        """Context includes failure_streak field."""
+        setup_minimal_game_state(state_store, "test_campaign")
+        builder = ContextBuilder(state_store)
+        context = builder.build_context("test_campaign", "test")
+
+        assert "failure_streak" in context
+        assert context["failure_streak"]["count"] == 0
+        assert context["failure_streak"]["actions"] == []
+
+    def test_failure_streak_default_no_events(self, state_store):
+        """Streak is 0 when there are no events."""
+        setup_minimal_game_state(state_store, "test_campaign")
+        builder = ContextBuilder(state_store)
+        context = builder.build_context("test_campaign", "test")
+
+        assert context["failure_streak"]["count"] == 0
+
+
 class TestContextOptions:
     """Tests for context building options."""
 

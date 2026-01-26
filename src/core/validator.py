@@ -31,6 +31,7 @@ class ValidatorOutput:
     clarification_needed: bool
     clarification_question: str
     costs: dict
+    risk_flags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -38,7 +39,8 @@ class ValidatorOutput:
             "blocked_actions": self.blocked_actions,
             "clarification_needed": self.clarification_needed,
             "clarification_question": self.clarification_question,
-            "costs": self.costs
+            "costs": self.costs,
+            "risk_flags": self.risk_flags
         }
 
 
@@ -101,11 +103,14 @@ class Validator:
             )
 
             if result.allowed:
-                allowed_actions.append({
+                allowed_action = {
                     "action": result.action,
                     "target_id": result.target_id,
                     "details": action.get("details", "")
-                })
+                }
+                if "estimated_minutes" in action:
+                    allowed_action["estimated_minutes"] = action["estimated_minutes"]
+                allowed_actions.append(allowed_action)
                 # Accumulate costs
                 for cost_type, amount in result.costs.items():
                     total_costs[cost_type] = total_costs.get(cost_type, 0) + amount
@@ -130,12 +135,16 @@ class Validator:
                 clarification_needed = True
                 clarification_question = self._generate_clarification(perception_blocks)
 
+        # Pass through risk_flags from interpreter
+        risk_flags = interpreter_output.get("risk_flags", [])
+
         return ValidatorOutput(
             allowed_actions=allowed_actions,
             blocked_actions=blocked_actions,
             clarification_needed=clarification_needed,
             clarification_question=clarification_question,
-            costs=total_costs
+            costs=total_costs,
+            risk_flags=risk_flags
         )
 
     def _resolve_target_id(self, target_id: str, context_packet: dict) -> str:

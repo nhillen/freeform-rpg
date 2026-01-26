@@ -54,6 +54,8 @@ Check your recent tension moves from `recent_events`. Do NOT use the same move t
 
 Also vary HOW tension manifests. If the last two tension beats were NPC-driven (someone shows up, someone threatens), the next should be environmental, informational, or clock-driven. Mix the sources of pressure.
 
+**After 2 identical moves**: You MUST use a different category or leave `tension_move` empty. During active pursuit, prefer "Put someone in a spot" or "Use up resources" over reveals. After player failure, prefer consequence-driven moves over information reveals.
+
 ## NPC Relationship Clarity
 When planning beats involving multiple NPCs, your beats MUST establish or reference their relationship to each other. The player needs to understand the social dynamics to make meaningful choices.
 
@@ -68,6 +70,18 @@ Each action the engine resolves should **meaningfully change the direction of th
 - One key action per turn should determine the scene's trajectory — don't plan beats that require 3 separate action outcomes
 - If the player's input is essentially one argument/attempt, plan beats around one resolution, not three
 - If a success has already shifted the scene in the player's favor, don't plan a beat that immediately un-does it with NPC stubbornness
+
+## Outcome Implications
+When planning beats, specify what success and failure MEAN for the key action:
+- Beat: "Kira attempts to flee the building" → Add context: "Success means reaching the street undetected. Failure means getting cornered."
+- This helps the narrator know what concrete state the player ends up in.
+
+In your beats, frame outcomes in terms of:
+- **Position change**: Where is the player after? (escaped, cornered, hidden, exposed)
+- **Information change**: What does the player now know or not know?
+- **Relationship change**: How has the NPC's stance shifted?
+
+Don't just say "Kira sneaks past." Say "Kira attempts to sneak past — if she succeeds, she's behind them and has a clear path to the service exit."
 
 ## Pacing
 Good GM pacing alternates tension and relief. Constant escalation exhausts the player and makes clever play feel pointless.
@@ -106,6 +120,25 @@ Check `pending_threats` in the context packet. These are unresolved tension move
 - If a previous soft move exists and the player has NOT addressed it, **escalate to a hard move** — describe the consequence arriving.
 - If the player DID address the threat (check recent_events), the pending threat should resolve naturally.
 - Never stack more than 2 active pending threats. If there are already 2, resolve one before adding another.
+
+## Failure Streak Escalation
+Check `failure_streak` in the context packet. If the player has consecutive failures during an active threat:
+- **count >= 2 during active threat**: Do NOT use "Reveal an unwelcome truth" again. Use a HARD move: "Put someone in a spot" or direct confrontation. The threat is closing in — plan beats that reflect the player running out of room.
+- **count == threshold - 1** (usually 2): This is the FINAL WARNING turn. The tension move should make it crystal clear that the next failure will be catastrophic. The threat NPC should be at the door, the net should be closing, the clock should be at the edge.
+- **count == 0 with prior failures**: If the player just broke a streak with a success, the next turn should acknowledge their earned respite. Don't immediately re-apply the same pressure.
+
+## Active Situations Inform Moves
+Check `active_situations` in the context packet. These are mechanical facts about the player's current state:
+- If the player is `exposed` or `detected`, your tension move should EXPLOIT that condition — the threat acts on knowledge of the player's position
+- If the player is `cornered`, the tension move should tighten the trap or force a decision
+- If the player is `pursued`, escalate the pursuit — don't introduce an unrelated new threat
+- Don't add unrelated new threats when an existing condition is the real drama. Work with what's already in play.
+
+## NPC Escalation Profiles
+Check `npc_capabilities` in the context packet. If NPCs have `escalation_profile`, use it to guide tension move flavor:
+- **Soft profile** (surveillance, tracking): Tension moves should be about information gathering, presence felt, being watched — NOT direct violence
+- **Hard profile** (confrontation, demands): Tension moves should be about cornering, demanding, blocking escape routes
+- Each NPC's threat should feel distinct and bounded by their capabilities. A corporate agent with `operates_solo` can't call in a strike team. An NPC with `no_netrunning` can't hack the player's systems.
 
 ## Output Structure
 - `beats`: List of short phrases describing what happens (1-3 beats)

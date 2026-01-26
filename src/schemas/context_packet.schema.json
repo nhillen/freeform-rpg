@@ -112,6 +112,44 @@
           "severity": {"type": "string"}
         }
       }
+    },
+    "npc_capabilities": {
+      "type": "array",
+      "description": "Capabilities, equipment, and limitations of NPCs present in scene",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entity_id": {"type": "string"},
+          "name": {"type": "string"},
+          "threat_level": {"type": "string", "enum": ["low", "moderate", "high", "extreme"]},
+          "capabilities": {"type": "array", "items": {"type": "string"}},
+          "equipment": {"type": "array", "items": {"type": "string"}},
+          "limitations": {"type": "array", "items": {"type": "string"}},
+          "escalation_profile": {"type": "object"}
+        }
+      }
+    },
+    "active_situations": {
+      "type": "array",
+      "description": "Active mechanical situation facts affecting the player",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fact_id": {"type": "string"},
+          "condition": {"type": "string"},
+          "severity": {"type": "string"},
+          "narrative_hint": {"type": "string"}
+        }
+      }
+    },
+    "failure_streak": {
+      "type": "object",
+      "description": "Consecutive failure count computed from event log",
+      "properties": {
+        "count": {"type": "integer"},
+        "actions": {"type": "array", "items": {"type": "string"}},
+        "during_threat": {"type": "boolean"}
+      }
     }
   },
   "additionalProperties": false

@@ -546,6 +546,15 @@ class StateStore:
             )
             conn.commit()
 
+    def update_scene_time(self, time_dict: dict, scene_id: str = "current") -> None:
+        """Update the time component of the current scene."""
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE scene SET time_json = ? WHERE id = ?",
+                (json_dumps(time_dict), scene_id)
+            )
+            conn.commit()
+
     # =========================================================================
     # Thread Operations
     # =========================================================================

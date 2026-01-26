@@ -4,6 +4,7 @@ Context Builder - Constructs context packets for LLM prompts.
 Handles state loading, perception filtering, and priority-based selection.
 """
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -147,7 +148,10 @@ class ContextBuilder:
             "relationships": self._get_player_relationships(),
             "npc_agendas": self._extract_npc_agendas(entities),
             "investigation_progress": self._compute_investigation_progress(threads),
-            "pending_threats": self._get_pending_threats()
+            "pending_threats": self._get_pending_threats(),
+            "npc_capabilities": self._extract_npc_capabilities(entities),
+            "active_situations": self._get_active_situations(),
+            "failure_streak": self._compute_failure_streak(campaign_id)
         }
 
         return context_packet
@@ -334,6 +338,113 @@ class ContextBuilder:
                     "severity": obj.get("threat_type", "soft")
                 })
         return threats
+
+    def _extract_npc_capabilities(self, entities: list[dict]) -> list[dict]:
+        """Extract capability data from NPC entities present in scene."""
+        capabilities = []
+        for entity in entities:
+            if entity.get("type") != "npc":
+                continue
+            attrs = entity.get("attrs", {})
+            # Only include if the NPC has any capability-related attrs
+            if not any(k in attrs for k in ("threat_level", "capabilities", "equipment", "limitations", "escalation_profile")):
+                continue
+            capabilities.append({
+                "entity_id": entity["id"],
+                "name": entity["name"],
+                "threat_level": attrs.get("threat_level", "low"),
+                "capabilities": attrs.get("capabilities", []),
+                "equipment": attrs.get("equipment", []),
+                "limitations": attrs.get("limitations", []),
+                "escalation_profile": attrs.get("escalation_profile", {})
+            })
+        return capabilities
+
+    def _get_active_situations(self) -> list[dict]:
+        """Get active situation facts affecting the player."""
+        facts = self.store.get_facts_for_subject("player")
+        situations = []
+        for fact in facts:
+            if fact["predicate"] != "situation":
+                continue
+            obj = fact["object"] if isinstance(fact["object"], dict) else {}
+            if not obj.get("active", False):
+                continue
+            situations.append({
+                "fact_id": fact["id"],
+                "condition": obj.get("condition", "unknown"),
+                "severity": obj.get("severity", "soft"),
+                "narrative_hint": obj.get("narrative_hint", ""),
+                "source_action": obj.get("source_action", ""),
+                "source_turn": obj.get("source_turn"),
+                "clears_on": obj.get("clears_on", [])
+            })
+        return situations
+
+    def _compute_failure_streak(self, campaign_id: str) -> dict:
+        """Compute consecutive failure streak from recent event history."""
+        streak = {"count": 0, "actions": [], "during_threat": False}
+
+        campaign = self.store.get_campaign(campaign_id)
+        if not campaign:
+            return streak
+
+        current_turn = campaign.get("current_turn", 0)
+        if current_turn <= 0:
+            return streak
+
+        # Walk backwards through recent turns (up to 10)
+        start_turn = max(1, current_turn - 9)
+        events = self.store.get_events_range(campaign_id, start_turn, current_turn)
+
+        # Process in reverse chronological order
+        consecutive_failures = 0
+        failed_actions = []
+
+        for event in reversed(events):
+            engine_events_raw = event.get("engine_events_json", "[]")
+            if isinstance(engine_events_raw, str):
+                try:
+                    engine_events = json.loads(engine_events_raw)
+                except (json.JSONDecodeError, TypeError):
+                    engine_events = []
+            else:
+                engine_events = engine_events_raw
+
+            # Check if this turn had any player actions
+            player_action_events = [
+                e for e in engine_events
+                if e.get("type") in ("action_succeeded", "action_failed", "action_partial")
+            ]
+
+            if not player_action_events:
+                continue  # Skip turns with no player actions (clarification, etc.)
+
+            # Check if all player actions failed
+            has_success = any(
+                e["type"] in ("action_succeeded", "action_partial")
+                for e in player_action_events
+            )
+
+            if has_success:
+                break  # Streak broken
+
+            # All failed
+            consecutive_failures += 1
+            for e in player_action_events:
+                action = e.get("details", {}).get("action", "")
+                if action:
+                    failed_actions.append(action)
+
+        streak["count"] = consecutive_failures
+        streak["actions"] = failed_actions
+
+        # Check if currently during an active threat
+        pending_threats = self._get_pending_threats()
+        if pending_threats:
+            streak["during_threat"] = True
+
+        return streak
 
     def get_entity_perception(
         self,

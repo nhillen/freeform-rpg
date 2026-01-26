@@ -5,6 +5,7 @@ Handles dice rolls, clock updates, fact discovery, and state diffs.
 """
 
 import random
+import uuid
 from dataclasses import dataclass, field
 from typing import Optional, Tuple
 
@@ -29,6 +30,7 @@ class ResolverOutput:
     engine_events: list[dict]
     state_diff: dict
     rolls: list[RollResult]
+    total_estimated_minutes: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -44,7 +46,8 @@ class ResolverOutput:
                     "action": r.action
                 }
                 for r in self.rolls
-            ]
+            ],
+            "total_estimated_minutes": self.total_estimated_minutes
         }
 
 
@@ -56,6 +59,9 @@ class Resolver:
     - Apply costs from validator (regardless of success)
     - Execute dice rolls when outcomes are uncertain
     - Determine action outcomes (success, failure, mixed)
+    - Create/clear situation facts based on outcomes and context
+    - Apply severity-tiered failure consequences
+    - Track failure streaks and resolve threats at threshold
     - Emit engine events for narrative generation
     - Produce state diffs for database commit
     """
@@ -67,8 +73,45 @@ class Resolver:
         "success": (10, 12)
     }
 
+    # Maps action types to the situation condition created on failure
+    CONDITION_MAP = {
+        "sneak": "exposed",
+        "hide": "exposed",
+        "steal": "detected",
+        "hack": "detected",
+        "flee": "cornered",
+        "chase": "pursued",
+        "climb": "exposed",
+        "fight": "injured",
+        "attack": "injured",
+        "combat": "injured",
+        "deceive": "detected",
+    }
+
+    # Maps conditions to what success types clear them
+    CLEAR_MAP = {
+        "exposed": ["hide_success", "flee_success", "scene_change"],
+        "detected": ["scene_change", "deceive_success"],
+        "cornered": ["fight_success", "talk_success", "scene_change"],
+        "injured": ["rest_success", "medical_success"],
+        "pursued": ["flee_success", "hide_success", "fight_success"],
+    }
+
     def __init__(self, state_store: StateStore):
         self.store = state_store
+
+    def _resolve_duration(self, action: dict, action_type: str,
+                          clock_config: Optional[ClockConfig]) -> int:
+        """Resolve fictional duration in minutes for an action.
+
+        Priority: valid LLM estimate > duration_map > hardcoded 5.
+        """
+        est = action.get("estimated_minutes")
+        if isinstance(est, int) and 1 <= est <= 120:
+            return est
+        if clock_config:
+            return clock_config.get_default_duration(action_type)
+        return 5
 
     def resolve(
         self,
@@ -115,6 +158,12 @@ class Resolver:
         if clock_config.enabled:
             self._apply_costs(costs, state_diff, clock_config)
 
+        # Extract risk_flags from validator output and pass through to actions
+        risk_flags = validator_output.get("risk_flags", [])
+        resolve_options = dict(options)
+        if risk_flags:
+            resolve_options["risk_flags"] = risk_flags
+
         # Deduplicate and cap actions (max 2, no same-type+same-target dupes)
         raw_actions = validator_output.get("allowed_actions", [])
         allowed_actions = []
@@ -127,19 +176,30 @@ class Resolver:
             if len(allowed_actions) >= 2:
                 break
 
-        # Resolve each allowed action
+        # Resolve each allowed action and sum fictional durations
+        total_estimated_minutes = 0
+        outcomes = []
         for action in allowed_actions:
+            duration = self._resolve_duration(action, action.get("action", ""), clock_config)
+            total_estimated_minutes += duration
             action_events, action_rolls, action_diff = self._resolve_action(
                 action,
                 context_packet,
                 planner_output,
                 risk_settings,
-                options,
+                resolve_options,
                 clock_config
             )
             engine_events.extend(action_events)
             rolls.extend(action_rolls)
             self._merge_diff(state_diff, action_diff)
+
+            # Track outcomes for streak calculation
+            for event in action_events:
+                if event["type"] in ("action_succeeded", "action_partial"):
+                    outcomes.append("success")
+                elif event["type"] == "action_failed":
+                    outcomes.append("failure")
 
         # Process planner tension move (if any)
         tension_move = planner_output.get("tension_move")
@@ -152,10 +212,19 @@ class Resolver:
             engine_events.extend(tension_events)
             self._merge_diff(state_diff, tension_diff)
 
+        # Check failure streak and apply escalation if needed
+        if outcomes:
+            streak_events, streak_diff = self._check_failure_streak(
+                outcomes, context_packet, clock_config
+            )
+            engine_events.extend(streak_events)
+            self._merge_diff(state_diff, streak_diff)
+
         return ResolverOutput(
             engine_events=engine_events,
             state_diff=state_diff,
-            rolls=rolls
+            rolls=rolls,
+            total_estimated_minutes=total_estimated_minutes
         )
 
     def _apply_costs(self, costs: dict, state_diff: dict, clock_config: Optional[ClockConfig] = None) -> None:
@@ -169,7 +238,8 @@ class Resolver:
                 delta = clock_config.apply_direction(clock_name, delta)
                 state_diff["clocks"].append({
                     "id": clock_name,
-                    "delta": delta
+                    "delta": delta,
+                    "source": "cost"
                 })
 
     def _resolve_action(
@@ -198,8 +268,9 @@ class Resolver:
         target_id = action.get("target_id", "")
         details = action.get("details", "")
 
-        # Determine if roll is needed
-        needs_roll = self._needs_roll(action_type, context_packet)
+        # Determine if roll is needed (risk_flags passed via options)
+        risk_flags = options.get("risk_flags")
+        needs_roll = self._needs_roll(action_type, context_packet, risk_flags)
 
         if needs_roll:
             # Perform roll
@@ -214,12 +285,16 @@ class Resolver:
             outcome = "success"
 
         # Generate events based on outcome
+        estimated_minutes = self._resolve_duration(action, action_type, clock_config)
+
         if outcome == "success" or outcome == "critical":
             event_details = {
                 "action": action_type,
                 "target_id": target_id,
                 "description": details,
-                "critical": outcome == "critical"
+                "critical": outcome == "critical",
+                "outcome_state": self._describe_outcome_state(action_type, target_id, outcome, context_packet),
+                "estimated_minutes": estimated_minutes
             }
 
             # Include concrete discoveries for search/investigate
@@ -253,6 +328,12 @@ class Resolver:
                     "tags": ["social", "relationship"]
                 })
 
+            # Clear resolved situation facts on success
+            clear_events = self._clear_resolved_situations(
+                action_type, outcome, context_packet, diff
+            )
+            events.extend(clear_events)
+
         elif outcome == "mixed":
             events.append({
                 "type": "action_partial",
@@ -260,7 +341,9 @@ class Resolver:
                     "action": action_type,
                     "target_id": target_id,
                     "description": details,
-                    "complication": self._generate_complication(action_type, context_packet)
+                    "complication": self._generate_complication(action_type, context_packet),
+                    "mixed_state": "Player succeeded but at a cost — describe both the success and the complication",
+                    "estimated_minutes": estimated_minutes
                 },
                 "tags": ["player_action", "complication"]
             })
@@ -271,29 +354,55 @@ class Resolver:
             )
             self._merge_diff(diff, action_diff)
 
+            # Clear situations on mixed success too (partial counts)
+            clear_events = self._clear_resolved_situations(
+                action_type, outcome, context_packet, diff
+            )
+            events.extend(clear_events)
+
         else:  # failure
+            # Compute severity tier for this failure
+            severity_tier = self._compute_severity_tier(
+                risk_flags or [], context_packet, clock_config
+            )
+
             events.append({
                 "type": "action_failed",
                 "details": {
                     "action": action_type,
                     "target_id": target_id,
                     "description": details,
-                    "consequence": self._generate_consequence(action_type, context_packet, risk_settings)
+                    "consequence": self._generate_consequence(action_type, context_packet, risk_settings),
+                    "failure_state": self._describe_failure_state(action_type, target_id, context_packet),
+                    "estimated_minutes": estimated_minutes,
+                    "severity_tier": severity_tier
                 },
                 "tags": ["player_action", "failure"]
             })
 
-            # Failure - consequence without effect
+            # Apply severity-tiered failure effects
             action_diff = self._apply_failure_effects(
-                action_type, target_id, context_packet, risk_settings, clock_config
+                action_type, target_id, context_packet, risk_settings,
+                clock_config, severity_tier=severity_tier
             )
             self._merge_diff(diff, action_diff)
 
+            # Create situation fact for tier 1+ failures
+            if severity_tier >= 1:
+                condition = self._map_action_to_condition(action_type)
+                if condition:
+                    severity_label = "hard" if severity_tier >= 2 else "soft"
+                    situation_events = self._create_situation_fact(
+                        action_type, target_id, severity_label,
+                        context_packet, diff
+                    )
+                    events.extend(situation_events)
+
         return events, rolls, diff
 
-    def _needs_roll(self, action_type: str, context_packet: dict) -> bool:
+    def _needs_roll(self, action_type: str, context_packet: dict, risk_flags: list = None) -> bool:
         """Determine if an action needs a roll."""
-        # Safe actions that don't need rolls
+        # Safe actions that don't need rolls (in normal circumstances)
         safe_actions = {
             "look", "examine", "observe", "listen", "wait",
             "think", "remember", "talk", "ask", "say",
@@ -301,6 +410,12 @@ class Resolver:
             "use", "take", "grab", "pickup", "drop", "give", "put",
             "open", "close", "move", "go", "enter", "exit", "walk",
         }
+
+        # Risk flags from interpreter override safe classification
+        if risk_flags and action_type.lower() in safe_actions:
+            risky_flag_types = {"violence", "contested", "dangerous", "pursuit", "hostile_present"}
+            if any(flag in risky_flag_types for flag in risk_flags):
+                return True
 
         if action_type.lower() in safe_actions:
             return False
@@ -318,6 +433,47 @@ class Resolver:
 
         # Default: roll for uncertain outcomes
         return True
+
+    def _describe_outcome_state(self, action_type: str, target_id: str, outcome: str, context_packet: dict) -> str:
+        """Describe what the outcome means in concrete terms for the narrator."""
+        states = {
+            "sneak": "Player is undetected and in a concealed position",
+            "hide": "Player is hidden from view",
+            "climb": "Player has reached the higher/lower position",
+            "move": "Player has relocated successfully",
+            "flee": "Player has escaped the immediate threat",
+            "chase": "Player is gaining/closing distance",
+            "persuade": f"Target {target_id} is convinced and willing to cooperate",
+            "intimidate": f"Target {target_id} is frightened and backing down",
+            "deceive": f"Target {target_id} believes the deception",
+            "hack": f"Player has access to {target_id}'s systems",
+            "steal": f"Player has taken the item without being noticed",
+            "search": f"Player has thoroughly examined {target_id}",
+            "investigate": f"Player has gathered information from {target_id}",
+        }
+        base = states.get(action_type.lower(), f"Player's {action_type} on {target_id} succeeded")
+        if outcome == "critical":
+            base += " — exceptionally well"
+        return base
+
+    def _describe_failure_state(self, action_type: str, target_id: str, context_packet: dict) -> str:
+        """Describe what failure means in concrete terms for the narrator."""
+        states = {
+            "sneak": "Player's sneak attempt was detected — they are now exposed",
+            "hide": "Player failed to find cover — they are visible",
+            "climb": "Player couldn't make the climb — still at original position",
+            "move": "Player was unable to reach their destination",
+            "flee": "Player failed to escape — still trapped",
+            "chase": "Player lost ground in the pursuit",
+            "persuade": f"Target {target_id} is unconvinced and may be more guarded",
+            "intimidate": f"Target {target_id} is unimpressed and may be hostile",
+            "deceive": f"Target {target_id} saw through the deception",
+            "hack": f"Player failed to breach {target_id}'s systems — may have triggered alerts",
+            "steal": f"Player's theft attempt was noticed",
+            "search": f"Player found nothing useful on {target_id}",
+            "investigate": f"Player's investigation of {target_id} came up empty",
+        }
+        return states.get(action_type.lower(), f"Player's {action_type} on {target_id} failed")
 
     def _roll(self, forced_total: Optional[int] = None) -> RollResult:
         """Perform a 2d6 roll."""
@@ -475,7 +631,7 @@ class Resolver:
             clock_id = effect["id"]
             delta = effect["delta"] * multiplier
             delta = clock_config.apply_direction(clock_id, delta)
-            diff["clocks"].append({"id": clock_id, "delta": delta})
+            diff["clocks"].append({"id": clock_id, "delta": delta, "source": "complication"})
 
         return diff
 
@@ -485,9 +641,15 @@ class Resolver:
         target_id: str,
         context_packet: dict,
         risk_settings: dict,
-        clock_config: Optional[ClockConfig] = None
+        clock_config: Optional[ClockConfig] = None,
+        severity_tier: int = 0
     ) -> dict:
-        """Apply effects for failed action."""
+        """Apply effects for failed action, scaled by severity tier.
+
+        Tier 0 (SAFE): Current behavior — clock effects only from failure_effects config
+        Tier 1 (RISKY): Clock effects + situation fact (soft)
+        Tier 2 (DANGEROUS): Clock effects + harm for physical actions + situation fact (hard) + extra heat for stealth
+        """
         if clock_config is None:
             clock_config = load_clock_config(context_packet.get("system", {}))
 
@@ -514,14 +676,35 @@ class Resolver:
         if not clock_config.enabled:
             return diff
 
-        # Failures have consequences based on risk settings
+        # Standard failure clock effects (all tiers)
         failure_mode = risk_settings.get("failure_mode", "consequential")
 
         for effect in clock_config.get_failure_clock_effects(action_type, failure_mode):
             clock_id = effect["id"]
             delta = effect["delta"]
             delta = clock_config.apply_direction(clock_id, delta)
-            diff["clocks"].append({"id": clock_id, "delta": delta})
+            diff["clocks"].append({"id": clock_id, "delta": delta, "source": "failure"})
+
+        # Tier 2: Physical failures during danger cause harm
+        if severity_tier >= 2:
+            tier2_actions = clock_config.failure_severity.get(
+                "tier2_harm_actions",
+                ["sneak", "hide", "flee", "climb", "fight", "attack", "chase"]
+            )
+            if action_type.lower() in tier2_actions:
+                # Add harm if not already applied by standard failure effects
+                existing_harm = any(c["id"] == "harm" for c in diff["clocks"])
+                if not existing_harm:
+                    diff["clocks"].append({
+                        "id": "harm", "delta": 1, "source": "failure"
+                    })
+
+            # Extra heat for stealth failures during danger
+            stealth_actions = {"sneak", "hide", "steal"}
+            if action_type.lower() in stealth_actions:
+                diff["clocks"].append({
+                    "id": "heat", "delta": 1, "source": "failure"
+                })
 
         return diff
 
@@ -591,7 +774,7 @@ class Resolver:
 
         if matched_clock:
             delta = clock_config.apply_direction(matched_clock, 1)
-            diff["clocks"].append({"id": matched_clock, "delta": delta})
+            diff["clocks"].append({"id": matched_clock, "delta": delta, "source": "tension"})
             events.append({
                 "type": "clock_advanced",
                 "details": {"clock": matched_clock, "reason": tension_move},
@@ -604,6 +787,312 @@ class Resolver:
                 "details": {"description": tension_move},
                 "tags": ["tension", "gm_move"]
             })
+
+        return events, diff
+
+    def _map_action_to_condition(self, action_type: str) -> Optional[str]:
+        """Return the situation condition that results from failing this action type."""
+        return self.CONDITION_MAP.get(action_type.lower())
+
+    def _get_clear_conditions(self, condition: str) -> list[str]:
+        """Return what success types clear this condition."""
+        return self.CLEAR_MAP.get(condition, [])
+
+    def _create_situation_fact(
+        self,
+        action_type: str,
+        target_id: str,
+        severity: str,
+        context_packet: dict,
+        diff: dict
+    ) -> list[dict]:
+        """Create a situation fact for a failed action. Returns engine events."""
+        condition = self._map_action_to_condition(action_type)
+        if not condition:
+            return []
+
+        events = []
+        clears_on = self._get_clear_conditions(condition)
+
+        # Check for existing active situation with same condition
+        active_situations = context_packet.get("active_situations", [])
+        existing = None
+        for sit in active_situations:
+            if sit.get("condition") == condition:
+                existing = sit
+                break
+
+        if existing:
+            # If upgrading soft -> hard, update existing
+            if existing.get("severity") == "soft" and severity == "hard":
+                diff["facts_update"].append({
+                    "id": existing["fact_id"],
+                    "object": {
+                        "condition": condition,
+                        "active": True,
+                        "source_action": action_type,
+                        "severity": "hard",
+                        "clears_on": clears_on,
+                        "narrative_hint": f"Situation worsened — player's {action_type} failure escalated exposure"
+                    }
+                })
+                events.append({
+                    "type": "situation_created",
+                    "details": {
+                        "condition": condition,
+                        "severity": "hard",
+                        "upgraded_from": "soft",
+                        "source_action": action_type,
+                        "narrative_hint": f"Situation worsened — player's {action_type} failure escalated exposure"
+                    },
+                    "tags": ["situation", "escalation"]
+                })
+            # Same or higher severity already exists — don't duplicate
+            return events
+
+        # Create new situation fact
+        fact_id = f"situation_{uuid.uuid4().hex[:12]}"
+        narrative_hint = self._describe_failure_state(action_type, target_id, context_packet)
+
+        diff["facts_add"].append({
+            "subject_id": "player",
+            "predicate": "situation",
+            "object": {
+                "condition": condition,
+                "active": True,
+                "source_action": action_type,
+                "severity": severity,
+                "clears_on": clears_on,
+                "narrative_hint": narrative_hint
+            },
+            "visibility": "known",
+            "tags": ["situation", "active"],
+            "id": fact_id
+        })
+
+        events.append({
+            "type": "situation_created",
+            "details": {
+                "condition": condition,
+                "severity": severity,
+                "source_action": action_type,
+                "narrative_hint": narrative_hint
+            },
+            "tags": ["situation"]
+        })
+
+        return events
+
+    def _clear_resolved_situations(
+        self,
+        action_type: str,
+        outcome: str,
+        context_packet: dict,
+        diff: dict
+    ) -> list[dict]:
+        """On success, clear active situation facts whose clears_on matches."""
+        events = []
+        success_key = f"{action_type.lower()}_success"
+
+        active_situations = context_packet.get("active_situations", [])
+        for sit in active_situations:
+            clears_on = sit.get("clears_on", [])
+            if success_key in clears_on:
+                diff["facts_update"].append({
+                    "id": sit["fact_id"],
+                    "object": {
+                        "condition": sit["condition"],
+                        "active": False,
+                        "source_action": sit.get("source_action", ""),
+                        "severity": sit.get("severity", "soft"),
+                        "clears_on": clears_on,
+                        "narrative_hint": sit.get("narrative_hint", "")
+                    }
+                })
+                events.append({
+                    "type": "situation_cleared",
+                    "details": {
+                        "condition": sit["condition"],
+                        "cleared_by": f"{action_type}_{outcome}",
+                        "fact_id": sit["fact_id"]
+                    },
+                    "tags": ["situation", "resolved"]
+                })
+
+        return events
+
+    def _compute_severity_tier(
+        self,
+        risk_flags: list,
+        context_packet: dict,
+        clock_config: Optional[ClockConfig] = None
+    ) -> int:
+        """Compute severity tier based on risk flags, active situations, and threats.
+
+        Tier 0 (SAFE): No risk flags, no active threats
+        Tier 1 (RISKY): Risk flags present, no active threat in scene
+        Tier 2 (DANGEROUS): Active threat in scene (hostile NPC or pending_threat)
+        """
+        risky_flags = {"violence", "contested", "dangerous", "pursuit", "hostile_present"}
+        has_risk_flags = bool(set(risk_flags or []) & risky_flags)
+
+        # Check for active threats
+        has_threat = self._has_active_threat(context_packet)
+
+        if has_threat:
+            return 2
+        elif has_risk_flags:
+            return 1
+        else:
+            return 0
+
+    def _has_active_threat(self, context_packet: dict) -> bool:
+        """Check if there's an active threat in the current context."""
+        # Check pending threats
+        pending_threats = context_packet.get("pending_threats", [])
+        if pending_threats:
+            return True
+
+        # Check NPC capabilities for high+ threat NPCs
+        npc_caps = context_packet.get("npc_capabilities", [])
+        high_threat_levels = {"high", "extreme"}
+        if any(npc.get("threat_level") in high_threat_levels for npc in npc_caps):
+            return True
+
+        # Check active situations with hard severity
+        active_situations = context_packet.get("active_situations", [])
+        if any(sit.get("severity") == "hard" for sit in active_situations):
+            return True
+
+        return False
+
+    def _check_failure_streak(
+        self,
+        outcomes: list[str],
+        context_packet: dict,
+        clock_config: Optional[ClockConfig] = None
+    ) -> Tuple[list[dict], dict]:
+        """Check failure streak after resolving all actions. Returns (events, diff)."""
+        events = []
+        diff = {
+            "clocks": [],
+            "facts_add": [],
+            "facts_update": [],
+            "inventory_changes": [],
+            "scene_update": {},
+            "threads_update": [],
+            "relationship_changes": []
+        }
+
+        all_failed = all(o == "failure" for o in outcomes) and len(outcomes) > 0
+        any_succeeded = any(o == "success" for o in outcomes)
+
+        if not all_failed:
+            return events, diff
+
+        # Current turn adds to streak
+        streak = context_packet.get("failure_streak", {"count": 0})
+        new_count = streak.get("count", 0) + 1
+        has_active_threat = self._has_active_threat(context_packet)
+
+        threshold = 3  # default
+        if clock_config and clock_config.failure_severity:
+            threshold = clock_config.failure_severity.get("streak_threshold", 3)
+
+        if new_count >= threshold and has_active_threat:
+            # Threat resolves against player
+            resolve_events, resolve_diff = self._resolve_threat_against_player(
+                context_packet, clock_config
+            )
+            events.extend(resolve_events)
+            self._merge_diff(diff, resolve_diff)
+        elif new_count == threshold - 1 and has_active_threat:
+            # Warning: next failure will be catastrophic
+            events.append({
+                "type": "failure_streak_warning",
+                "details": {
+                    "streak_count": new_count,
+                    "next_failure_critical": True
+                },
+                "tags": ["warning", "escalation"]
+            })
+
+        return events, diff
+
+    def _resolve_threat_against_player(
+        self,
+        context_packet: dict,
+        clock_config: Optional[ClockConfig] = None
+    ) -> Tuple[list[dict], dict]:
+        """Resolve an active threat against the player at streak threshold."""
+        events = []
+        diff = {
+            "clocks": [],
+            "facts_add": [],
+            "facts_update": [],
+            "inventory_changes": [],
+            "scene_update": {},
+            "threads_update": [],
+            "relationship_changes": []
+        }
+
+        # Find primary threat NPC (highest threat_level)
+        npc_caps = context_packet.get("npc_capabilities", [])
+        threat_order = {"extreme": 4, "high": 3, "moderate": 2, "low": 1}
+        primary_threat = None
+        for npc in sorted(
+            npc_caps,
+            key=lambda n: threat_order.get(n.get("threat_level", "low"), 0),
+            reverse=True
+        ):
+            primary_threat = npc
+            break
+
+        npc_id = primary_threat["entity_id"] if primary_threat else "unknown_threat"
+        npc_name = primary_threat["name"] if primary_threat else "the threat"
+        escalation = primary_threat.get("escalation_profile", {}) if primary_threat else {}
+        consequence_desc = escalation.get("hard", f"{npc_name} has caught up with the player")
+
+        # Determine harm from config
+        base_harm = 2
+        if clock_config and clock_config.failure_severity:
+            base_harm = clock_config.failure_severity.get("tier3_base_harm", 2)
+
+        events.append({
+            "type": "threat_resolved_against_player",
+            "details": {
+                "threat_entity_id": npc_id,
+                "threat_entity_name": npc_name,
+                "consequence_type": "capture",
+                "consequence_description": consequence_desc,
+                "harm_delta": base_harm,
+                "binding": True
+            },
+            "tags": ["threat_resolution", "binding", "critical"]
+        })
+
+        # Apply harm
+        diff["clocks"].append({
+            "id": "harm", "delta": base_harm, "source": "threat_resolution"
+        })
+
+        # Create cornered situation fact
+        fact_id = f"situation_{uuid.uuid4().hex[:12]}"
+        diff["facts_add"].append({
+            "subject_id": "player",
+            "predicate": "situation",
+            "object": {
+                "condition": "cornered",
+                "active": True,
+                "source_action": "threat_resolution",
+                "severity": "hard",
+                "clears_on": ["fight_success", "talk_success", "scene_change"],
+                "narrative_hint": f"{npc_name} has the player cornered — direct confrontation or surrender"
+            },
+            "visibility": "known",
+            "tags": ["situation", "active"],
+            "id": fact_id
+        })
 
         return events, diff
 

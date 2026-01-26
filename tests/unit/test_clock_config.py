@@ -100,11 +100,34 @@ class TestCyberpunkNoirPreset:
         assert config.get_cost("combat") == {"heat": 1}
 
     def test_preset_default_cost_fallback(self):
-        """Unknown actions fall back to _default cost in preset."""
+        """Unknown actions fall back to _default cost in preset (now empty)."""
         rules = cyberpunk_noir_clock_rules()
         config = load_clock_config({"clock_rules": rules})
         costs = config.get_cost("totally_unknown_action")
-        assert costs == {"time": 1}
+        assert costs == {}
+
+    def test_preset_physical_actions_no_time_cost(self):
+        """Physical actions (move, sneak, climb, use, look, examine) cost no time."""
+        rules = cyberpunk_noir_clock_rules()
+        config = load_clock_config({"clock_rules": rules})
+        for action in ["move", "go", "sneak", "climb", "use", "look", "examine"]:
+            costs = config.get_cost(action)
+            assert costs.get("time", 0) == 0, f"{action} should not cost time"
+
+    def test_preset_info_actions_cost_time(self):
+        """Information-gathering actions cost time."""
+        rules = cyberpunk_noir_clock_rules()
+        config = load_clock_config({"clock_rules": rules})
+        for action in ["investigate", "search", "talk", "hack"]:
+            costs = config.get_cost(action)
+            assert costs.get("time", 0) >= 1, f"{action} should cost time"
+
+    def test_preset_travel_costs_more_time(self):
+        """Travel costs more time than other actions."""
+        rules = cyberpunk_noir_clock_rules()
+        config = load_clock_config({"clock_rules": rules})
+        costs = config.get_cost("travel")
+        assert costs.get("time", 0) == 2
 
 
 class TestLoadClockConfig:
@@ -174,10 +197,10 @@ class TestGetCost:
         assert costs["heat"] == 1
 
     def test_unknown_action_uses_default_key(self):
-        """Unknown action type falls back to _default cost map entry."""
+        """Unknown action type falls back to _default cost map entry (now empty)."""
         config = self._cyberpunk_config()
         costs = config.get_cost("totally_unknown_action")
-        assert costs == {"time": 1}
+        assert costs == {}
 
     def test_cost_filtered_to_active_clocks(self):
         """Costs are filtered to only include active clocks."""
@@ -343,3 +366,103 @@ class TestTensionClock:
         """Empty config matches nothing."""
         config = ClockConfig()
         assert config.get_tension_clock("The heat is rising") is None
+
+
+class TestDurationMap:
+    """Tests for duration_map and get_default_duration()."""
+
+    def _cyberpunk_config(self):
+        return load_clock_config({"clock_rules": cyberpunk_noir_clock_rules()})
+
+    def test_known_action_returns_duration(self):
+        """Known action type returns configured duration."""
+        config = self._cyberpunk_config()
+        assert config.get_default_duration("examine") == 1
+        assert config.get_default_duration("investigate") == 20
+        assert config.get_default_duration("travel") == 30
+
+    def test_unknown_action_returns_default(self):
+        """Unknown action type falls back to _default duration."""
+        config = self._cyberpunk_config()
+        assert config.get_default_duration("totally_unknown_action") == 5
+
+    def test_empty_config_returns_hardcoded_default(self):
+        """Empty config with no duration_map returns hardcoded 5."""
+        config = ClockConfig()
+        assert config.get_default_duration("examine") == 5
+        assert config.get_default_duration("anything") == 5
+
+    def test_custom_duration_map(self):
+        """Custom duration_map is respected."""
+        config = ClockConfig(duration_map={"_default": 10, "look": 2})
+        assert config.get_default_duration("look") == 2
+        assert config.get_default_duration("unknown") == 10
+
+    def test_preset_has_duration_map(self):
+        """Cyberpunk noir preset includes duration_map."""
+        rules = cyberpunk_noir_clock_rules()
+        assert "duration_map" in rules
+        assert rules["duration_map"]["_default"] == 5
+        assert rules["duration_map"]["talk"] == 10
+
+    def test_duration_map_loaded_from_system_json(self):
+        """duration_map is loaded from system_json clock_rules."""
+        system = {"clock_rules": {"duration_map": {"_default": 3, "hack": 25}}}
+        config = load_clock_config(system)
+        assert config.get_default_duration("hack") == 25
+        assert config.get_default_duration("unknown") == 3
+
+    def test_no_duration_map_in_rules(self):
+        """Missing duration_map in rules results in empty map."""
+        system = {"clock_rules": {"enabled": True}}
+        config = load_clock_config(system)
+        # Falls through to hardcoded 5
+        assert config.get_default_duration("anything") == 5
+
+
+class TestFailureSeverity:
+    """Tests for failure_severity config field."""
+
+    def _cyberpunk_config(self):
+        return load_clock_config({"clock_rules": cyberpunk_noir_clock_rules()})
+
+    def test_preset_has_failure_severity(self):
+        """Cyberpunk noir preset includes failure_severity config."""
+        rules = cyberpunk_noir_clock_rules()
+        assert "failure_severity" in rules
+        assert rules["failure_severity"]["streak_threshold"] == 3
+        assert rules["failure_severity"]["tier3_base_harm"] == 2
+
+    def test_failure_severity_loaded_from_system_json(self):
+        """failure_severity is loaded from system_json clock_rules."""
+        system = {"clock_rules": {
+            "failure_severity": {
+                "streak_threshold": 5,
+                "tier2_harm_actions": ["fight"],
+                "tier3_base_harm": 3
+            }
+        }}
+        config = load_clock_config(system)
+        assert config.failure_severity["streak_threshold"] == 5
+        assert config.failure_severity["tier3_base_harm"] == 3
+        assert config.failure_severity["tier2_harm_actions"] == ["fight"]
+
+    def test_missing_failure_severity_returns_empty_dict(self):
+        """Missing failure_severity in rules results in empty dict."""
+        system = {"clock_rules": {"enabled": True}}
+        config = load_clock_config(system)
+        assert config.failure_severity == {}
+
+    def test_default_config_empty_failure_severity(self):
+        """Default ClockConfig has empty failure_severity."""
+        config = ClockConfig()
+        assert config.failure_severity == {}
+
+    def test_cyberpunk_preset_tier2_harm_actions(self):
+        """Cyberpunk preset defines physical harm actions for tier 2."""
+        config = self._cyberpunk_config()
+        tier2_actions = config.failure_severity["tier2_harm_actions"]
+        assert "sneak" in tier2_actions
+        assert "fight" in tier2_actions
+        assert "attack" in tier2_actions
+        assert "climb" in tier2_actions
