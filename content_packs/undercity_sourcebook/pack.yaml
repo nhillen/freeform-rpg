@@ -1,0 +1,16 @@
+id: undercity_sourcebook
+name: "Undercity Sourcebook"
+version: "1.0"
+description: "Setting sourcebook for the Undercity district. Deep background on locations, NPCs, factions, and street culture in a cyberpunk noir setting."
+layer: setting
+author: "Freeform RPG"
+tags:
+  - cyberpunk
+  - noir
+  - undercity
+  - setting
+dependencies: []
+metadata:
+  genre: cyberpunk_noir
+  region: undercity
+  estimated_chunks: 45

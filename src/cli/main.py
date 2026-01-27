@@ -25,6 +25,13 @@ from src.llm.gateway import MockGateway, ClaudeGateway
 from src.llm.prompt_registry import PromptRegistry
 from src.setup import SetupPipeline, ScenarioLoader, load_template, list_templates
 from src.eval.replay import format_replay_report, rerun_turns
+from src.content.pack_loader import PackLoader
+from src.content.chunker import Chunker
+from src.content.indexer import LoreIndexer
+from src.content.retriever import LoreRetriever
+from src.content.scene_cache import SceneLoreCacheManager
+from src.content.session_manager import SessionManager
+from src.content.vector_store import create_vector_store
 
 
 def _load_json(value):
@@ -273,16 +280,44 @@ def play_cmd(args):
     prompt_registry = PromptRegistry(prompts_dir)
     gateway = ClaudeGateway(api_key=api_key)
 
+    # Setup content pack components from campaign record
+    lore_retriever = None
+    scene_cache = None
+    session_mgr = None
+    pack_ids = campaign.get("pack_ids", [])
+    lore_manifest = campaign.get("lore_manifest", {})
+
+    # Fall back to all installed packs if campaign has none declared
+    if not pack_ids:
+        packs = store.list_content_packs()
+        if packs:
+            pack_ids = [p["id"] for p in packs]
+
+    if pack_ids:
+        vector_store = create_vector_store()
+        lore_retriever = LoreRetriever(store, vector_store, entity_manifest=lore_manifest)
+        scene_cache = SceneLoreCacheManager(store)
+
+    # Session manager (always active)
+    session_mgr = SessionManager(store)
+    active_session = session_mgr.start_session(args.campaign)
+
     orchestrator = Orchestrator(
         state_store=store,
         llm_gateway=gateway,
         prompt_registry=prompt_registry,
-        on_stage=on_stage
+        on_stage=on_stage,
+        lore_retriever=lore_retriever,
+        scene_cache=scene_cache,
+        session_manager=session_mgr,
+        pack_ids=pack_ids
     )
 
     print(f"\n{'='*60}")
     print(f"Freeform RPG - Interactive Mode")
     print(f"Campaign: {campaign.get('name', args.campaign)}")
+    if pack_ids:
+        print(f"Content packs: {', '.join(pack_ids)}")
     print(f"{'='*60}")
     print("Type your actions, or 'quit' to exit.")
     print("Commands: /status, /clocks, /scene, /debug, /help\n")
@@ -311,13 +346,17 @@ def play_cmd(args):
         try:
             user_input = input("> ").strip()
         except (EOFError, KeyboardInterrupt):
+            if session_mgr and active_session:
+                session_mgr.end_session(active_session["id"])
             print("\nGoodbye!")
             break
 
         if not user_input:
             continue
 
-        if user_input.lower() in ['quit', 'exit', 'q']:
+        if user_input.lower() in ['quit', 'exit', 'q', '/quit']:
+            if session_mgr and active_session:
+                session_mgr.end_session(active_session["id"])
             print("Goodbye!")
             break
 
@@ -644,6 +683,57 @@ def list_scenarios_cmd(args):
     print()
 
 
+def install_pack_cmd(args):
+    """Install (index) a content pack into the database."""
+    store = StateStore(args.db)
+    store.ensure_schema()
+
+    pack_path = Path(args.path)
+    loader = PackLoader()
+    chunker = Chunker()
+    vector_store = create_vector_store()
+    indexer = LoreIndexer(store, vector_store)
+
+    try:
+        manifest, files = loader.load_pack(pack_path)
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    chunks = chunker.chunk_files(files, manifest.id)
+    stats = indexer.index_pack(manifest, chunks)
+
+    print(f"\nInstalled content pack: {manifest.name}")
+    print(f"  ID: {manifest.id}")
+    print(f"  Version: {manifest.version}")
+    print(f"  Layer: {manifest.layer}")
+    print(f"  Files: {len(files)}")
+    print(f"  Chunks indexed: {stats.chunks_indexed}")
+    print(f"  FTS5 indexed: {stats.fts_indexed}")
+    print(f"  Vector indexed: {stats.vector_indexed}")
+
+
+def list_packs_cmd(args):
+    """List installed content packs."""
+    store = StateStore(args.db)
+    store.ensure_schema()
+
+    packs = store.list_content_packs()
+    if not packs:
+        print("No content packs installed.")
+        print("Use 'install-pack <path>' to install one.")
+        return
+
+    print(f"\nInstalled Content Packs ({len(packs)}):")
+    print("-" * 50)
+    for pack in packs:
+        print(f"  {pack['id']}: {pack['name']} v{pack['version']}")
+        print(f"    Layer: {pack['layer']}, Chunks: {pack['chunk_count']}")
+        if pack['description']:
+            print(f"    {pack['description'][:60]}")
+    print()
+
+
 def build_parser():
     parser = argparse.ArgumentParser(
         description="Freeform RPG Engine CLI - AI-driven narrative RPG"
@@ -698,6 +788,15 @@ def build_parser():
     # list-scenarios
     list_parser = sub.add_parser("list-scenarios", help="List available scenarios")
     list_parser.set_defaults(func=list_scenarios_cmd)
+
+    # install-pack
+    install_pack_parser = sub.add_parser("install-pack", help="Install a content pack")
+    install_pack_parser.add_argument("path", help="Path to content pack directory")
+    install_pack_parser.set_defaults(func=install_pack_cmd)
+
+    # list-packs
+    list_packs_parser = sub.add_parser("list-packs", help="List installed content packs")
+    list_packs_parser.set_defaults(func=list_packs_cmd)
 
     # run-turn
     run_turn_parser = sub.add_parser("run-turn", help="Execute a single turn")

@@ -63,12 +63,22 @@ class Orchestrator:
         llm_gateway: LLMGateway,
         prompt_registry: PromptRegistry,
         prompt_versions: Optional[dict] = None,
-        on_stage: Optional[Callable[[str], None]] = None
+        on_stage: Optional[Callable[[str], None]] = None,
+        lore_retriever=None,
+        scene_cache=None,
+        session_manager=None,
+        pack_ids: Optional[list] = None
     ):
         self.store = state_store
         self.gateway = llm_gateway
         self.prompts = prompt_registry
         self.on_stage = on_stage
+
+        # Optional content pack components (None = v0 behavior)
+        self.lore_retriever = lore_retriever
+        self.scene_cache = scene_cache
+        self.session_manager = session_manager
+        self.pack_ids = pack_ids or []
 
         self.versions = DEFAULT_PROMPT_VERSIONS.copy()
         if prompt_versions:
@@ -157,8 +167,16 @@ class Orchestrator:
         context_options = ContextOptions(
             include_world_facts=options.get("include_world_facts", False)
         )
+        # Fetch lore context from scene cache if available
+        lore_context = None
+        if self.scene_cache:
+            scene = self.store.get_scene()
+            if scene:
+                lore_context = self.scene_cache.get(
+                    campaign_id, scene.get("location_id", "current")
+                )
         context_packet = self.context_builder.build_context(
-            campaign_id, player_input, context_options
+            campaign_id, player_input, context_options, lore_context
         )
 
         # Add player input to context for LLM stages
@@ -600,6 +618,32 @@ class Orchestrator:
                 constraints=current_scene.get("constraints") if current_scene else None,
             )
 
+            # Trigger lore retrieval for new scene (if content packs loaded)
+            # Skip if we already have cached lore for this location (revisit)
+            if self.lore_retriever and self.scene_cache:
+                existing_lore = self.scene_cache.get(campaign_id, location_id)
+                if not existing_lore:
+                    try:
+                        scene_state = {"location_id": location_id}
+                        active_threads = self.store.get_active_threads()
+                        present_ents = self.store.get_entities_by_ids(present_entities)
+                        lore_result = self.lore_retriever.retrieve_for_scene(
+                            scene_state=scene_state,
+                            active_threads=active_threads,
+                            campaign_id=campaign_id,
+                            present_entities=present_ents,
+                            pack_ids=self.pack_ids
+                        )
+                        session = None
+                        if self.session_manager:
+                            active = self.session_manager.get_active_session(campaign_id)
+                            session = active["id"] if active else None
+                        self.scene_cache.materialize(
+                            lore_result, location_id, session, campaign_id
+                        )
+                    except Exception as e:
+                        print(f"[engine] Lore retrieval for scene failed: {e}", file=sys.stderr)
+
         # Record planner tension moves as pending threats for escalation tracking
         tension_move = planner_output.get("tension_move", "")
         if tension_move:
@@ -663,6 +707,26 @@ class Orchestrator:
                 self.store.create_relationship(
                     "player", npc_id, "contact", intensity=0
                 )
+
+            # Fetch lore for newly introduced NPC (if content packs loaded)
+            # Skip if NPC already has briefing in the scene cache
+            if self.lore_retriever and self.scene_cache:
+                current_scene = self.store.get_scene()
+                scene_id = current_scene["location_id"] if current_scene else "current"
+                cached_lore = self.scene_cache.get(campaign_id, scene_id)
+                npc_already_cached = (
+                    cached_lore
+                    and npc_id in cached_lore.get("npc_briefings", {})
+                )
+                if not npc_already_cached:
+                    try:
+                        npc_lore = self.lore_retriever.retrieve_for_entity(
+                            npc_id, pack_ids=self.pack_ids
+                        )
+                        if npc_lore.chunks:
+                            self.scene_cache.append_npc(scene_id, campaign_id, npc_lore)
+                    except Exception as e:
+                        print(f"[engine] NPC lore retrieval failed for {npc_id}: {e}", file=sys.stderr)
 
         # Commit narrator-declared thread updates
         thread_updates = narrator_output.get("thread_updates", [])

@@ -1,0 +1,9 @@
+id: test_pack
+name: Test Pack
+version: "1.0"
+description: Minimal test content pack for unit tests
+layer: adventure
+author: Test Suite
+tags:
+  - test
+  - cyberpunk

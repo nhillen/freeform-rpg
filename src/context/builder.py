@@ -20,6 +20,7 @@ class ContextOptions:
     max_recent_events: int = 5
     include_world_facts: bool = False  # Include facts player hasn't discovered
     include_obscured: bool = False  # Include obscured entities
+    include_lore: bool = True  # Include lore_context if available
 
 
 class ContextBuilder:
@@ -37,7 +38,8 @@ class ContextBuilder:
         self,
         campaign_id: str,
         player_input: str,
-        options: Optional[ContextOptions] = None
+        options: Optional[ContextOptions] = None,
+        lore_context: Optional[dict] = None
     ) -> dict:
         """
         Build a context packet for the current game state.
@@ -151,7 +153,9 @@ class ContextBuilder:
             "pending_threats": self._get_pending_threats(),
             "npc_capabilities": self._extract_npc_capabilities(entities),
             "active_situations": self._get_active_situations(),
-            "failure_streak": self._compute_failure_streak(campaign_id)
+            "failure_streak": self._compute_failure_streak(campaign_id),
+            # Lore context from content packs (empty when no packs loaded)
+            "lore_context": lore_context if (options.include_lore and lore_context) else {}
         }
 
         return context_packet
@@ -505,8 +509,9 @@ def build_context(
     state_store: StateStore,
     campaign_id: str,
     player_input: str,
-    options: Optional[ContextOptions] = None
+    options: Optional[ContextOptions] = None,
+    lore_context: Optional[dict] = None
 ) -> dict:
     """Convenience function to build context packet."""
     builder = ContextBuilder(state_store)
-    return builder.build_context(campaign_id, player_input, options)
+    return builder.build_context(campaign_id, player_input, options, lore_context)

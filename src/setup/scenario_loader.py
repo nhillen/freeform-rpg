@@ -2,6 +2,8 @@
 Scenario Loader - Loads scenario YAML files and populates initial game state.
 
 Handles campaign creation, entity population, and initial state setup.
+When a scenario declares content_packs, the loader builds a lore manifest
+mapping entity IDs to relevant chunk IDs for fast retrieval during play.
 """
 
 from pathlib import Path
@@ -62,13 +64,17 @@ class ScenarioLoader:
         campaign_id = campaign_id or new_id()
         campaign_name = campaign_name or scenario.get("name", scenario_id)
 
+        # Read declared content packs
+        pack_ids = scenario.get("content_packs", [])
+
         # Create campaign
         campaign = self.store.create_campaign(
             campaign_id=campaign_id,
             name=campaign_name,
             calibration=scenario.get("calibration", {}),
             system=scenario.get("system", {}),
-            genre_rules=scenario.get("genre_rules", {})
+            genre_rules=scenario.get("genre_rules", {}),
+            pack_ids=pack_ids
         )
 
         # Load clocks
@@ -83,6 +89,7 @@ class ScenarioLoader:
             )
 
         # Load entities
+        entity_ids = []
         for entity_data in scenario.get("entities", []):
             self.store.create_entity(
                 entity_id=entity_data["id"],
@@ -91,6 +98,7 @@ class ScenarioLoader:
                 attrs=entity_data.get("attrs", {}),
                 tags=entity_data.get("tags", [])
             )
+            entity_ids.append(entity_data["id"])
 
         # Load facts
         for fact_data in scenario.get("facts", []):
@@ -151,6 +159,13 @@ class ScenarioLoader:
             if cred_clock:
                 self.store.add_inventory("player", "credstick", 1, {"value": cred_clock["value"]})
 
+        # Build lore manifest if content packs are declared and installed
+        manifest = {}
+        if pack_ids:
+            manifest = self._build_lore_manifest(entity_ids, pack_ids)
+            if manifest:
+                self.store.set_campaign_lore_manifest(campaign_id, manifest)
+
         return {
             "campaign_id": campaign_id,
             "campaign_name": campaign_name,
@@ -159,8 +174,40 @@ class ScenarioLoader:
             "opening_text": scenario.get("opening_text", ""),
             "entities_loaded": len(scenario.get("entities", [])),
             "facts_loaded": len(scenario.get("facts", [])),
-            "clocks_loaded": len(scenario.get("clocks", []))
+            "clocks_loaded": len(scenario.get("clocks", [])),
+            "pack_ids": pack_ids,
+            "manifest_entries": len(manifest)
         }
+
+    def _build_lore_manifest(
+        self,
+        entity_ids: list[str],
+        pack_ids: list[str]
+    ) -> dict[str, list[str]]:
+        """Build entity→chunk_ids manifest from installed packs.
+
+        For each entity in the scenario, finds content pack chunks whose
+        entity_refs include that entity ID. Returns a mapping of
+        entity_id → [chunk_id, ...] for fast retrieval during play.
+        """
+        entity_set = set(entity_ids)
+        manifest: dict[str, list[str]] = {}
+
+        for pack_id in pack_ids:
+            pack = self.store.get_content_pack(pack_id)
+            if not pack:
+                continue  # Pack not installed yet — skip silently
+
+            chunks = self.store.get_pack_chunks(pack_id)
+            for chunk in chunks:
+                chunk_refs = set(chunk.get("entity_refs", []))
+                matching_entities = chunk_refs & entity_set
+                for eid in matching_entities:
+                    manifest.setdefault(eid, [])
+                    if chunk["id"] not in manifest[eid]:
+                        manifest[eid].append(chunk["id"])
+
+        return manifest
 
     def _find_scenario(self, scenario_id: str) -> Path:
         """Find scenario file by ID or path."""

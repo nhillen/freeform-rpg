@@ -12,7 +12,6 @@ Genre-flexible (v0 targets a cyberpunk noir case, 2-4 hours gameplay). Python 3,
 
 **v0 core: complete.** All pipeline stages implemented and working. No stubs or TODOs.
 
-- ~8,300 lines production Python, ~4,300 lines tests
 - Full 7-stage turn pipeline (Interpreter → Validator → Planner → Resolver → Narrator → Commit)
 - SQLite state store with append-only event log
 - 2d6 dice mechanics with consequence escalation and failure streaks
@@ -21,9 +20,11 @@ Genre-flexible (v0 targets a cyberpunk noir case, 2-4 hours gameplay). Python 3,
 - Narrator-declared facts, items, NPCs, scene transitions
 - Interactive CLI with guided setup, REPL, debug panel
 - Evaluation framework with A/B testing harness
-- One complete scenario (Dead Drop - cyberpunk noir)
-
-**Next: content pack system (RAG-based world sourcebooks) and session lifecycle.**
+- Content pack system (RAG-based world sourcebooks via FTS5 + optional ChromaDB)
+- Session lifecycle management
+- Entity lore manifest (pre-computed entity→chunk mapping at scenario load)
+- Cache-aware lore retrieval (skip re-fetch on revisits)
+- One complete scenario (Dead Drop) + one setting sourcebook (Undercity Sourcebook)
 
 ## Commands
 
@@ -35,6 +36,10 @@ freeform-rpg
 freeform-rpg --db game.db --campaign default init-db
 freeform-rpg --db game.db --campaign default new-game --scenario dead_drop
 freeform-rpg --db game.db --campaign default play
+
+# Content packs
+freeform-rpg --db game.db install-pack content_packs/undercity_sourcebook
+freeform-rpg --db game.db list-packs
 
 # Dev tools
 freeform-rpg --db game.db --campaign default show-event --turn 1 --field final_text
@@ -78,16 +83,16 @@ Content Pack (the world — large, static, authored sourcebook)
 - `src/schemas/` - JSON schemas for all LLM inputs/outputs
 - `src/setup/` - Session zero pipeline, scenario loader, calibration
 - `src/eval/` - Replay harness, evaluation metrics, snapshots
-- `src/content/` - (planned) Content pack loader, lore indexer, RAG retriever
+- `src/content/` - Content pack loader, chunker, lore indexer, RAG retriever, scene cache
 - `scenarios/` - Scenario YAML files
-- `content_packs/` - (planned) Authored world sourcebooks for RAG retrieval
+- `content_packs/` - Authored world sourcebooks for RAG retrieval
 - `docs/` - HLD, PRD, TDD, and GM reference materials
 
 ## Core Data Model
 
 SQLite tables: `entities`, `facts`, `scene`, `threads`, `clocks`, `inventory`, `relationships`, `events`, `campaigns`, `summaries`. Schema in `src/db/schema.sql`.
 
-**Planned additions:** `sessions`, `content_packs`, `pack_chunks`, `scene_lore`.
+**v1 tables (schema_v1.sql):** `sessions`, `content_packs`, `pack_chunks`, `pack_chunks_fts` (FTS5), `scene_lore`. Provenance columns (`origin`, `pack_id`) added to entities, facts, threads, clocks, relationships. Campaign-level `pack_ids_json` and `lore_manifest_json` columns.
 
 **Clocks**: Heat, Time, Cred, Harm, Rep - each with value/max and trigger thresholds.
 

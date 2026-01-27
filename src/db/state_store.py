@@ -30,11 +30,48 @@ class StateStore:
         return conn
 
     def ensure_schema(self) -> None:
-        """Initialize database schema from schema.sql."""
+        """Initialize database schema from schema.sql, then apply v1 additions."""
         schema_path = Path(__file__).with_name("schema.sql")
         sql = schema_path.read_text(encoding="utf-8")
         with self.connect() as conn:
             conn.executescript(sql)
+            conn.commit()
+        self.ensure_schema_v1()
+
+    def ensure_schema_v1(self) -> None:
+        """Apply v1 schema additions (content packs, sessions, lore).
+
+        Idempotent: safe to call multiple times.
+        """
+        schema_path = Path(__file__).with_name("schema_v1.sql")
+        sql = schema_path.read_text(encoding="utf-8")
+        with self.connect() as conn:
+            conn.executescript(sql)
+            conn.commit()
+
+        # Add provenance columns to existing tables (idempotent ALTERs)
+        alter_statements = [
+            ("entities", "origin", "TEXT DEFAULT 'campaign'"),
+            ("entities", "pack_id", "TEXT"),
+            ("entities", "pack_entity_id", "TEXT"),
+            ("facts", "origin", "TEXT DEFAULT 'campaign'"),
+            ("facts", "pack_id", "TEXT"),
+            ("threads", "origin", "TEXT DEFAULT 'campaign'"),
+            ("threads", "pack_id", "TEXT"),
+            ("clocks", "origin", "TEXT DEFAULT 'campaign'"),
+            ("clocks", "pack_id", "TEXT"),
+            ("relationships", "origin", "TEXT DEFAULT 'campaign'"),
+            ("relationships", "pack_id", "TEXT"),
+            # Campaign-level content pack tracking
+            ("campaigns", "pack_ids_json", "TEXT DEFAULT '[]'"),
+            ("campaigns", "lore_manifest_json", "TEXT DEFAULT '{}'"),
+        ]
+        with self.connect() as conn:
+            for table, column, col_type in alter_statements:
+                try:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
             conn.commit()
 
     # =========================================================================
@@ -47,7 +84,8 @@ class StateStore:
         name: str,
         calibration: Optional[dict] = None,
         system: Optional[dict] = None,
-        genre_rules: Optional[dict] = None
+        genre_rules: Optional[dict] = None,
+        pack_ids: Optional[list] = None
     ) -> dict:
         """Create a new campaign."""
         now = datetime.utcnow().isoformat()
@@ -55,8 +93,9 @@ class StateStore:
             conn.execute(
                 """
                 INSERT INTO campaigns (id, name, created_at, updated_at,
-                    calibration_json, system_json, genre_rules_json, current_turn)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                    calibration_json, system_json, genre_rules_json, current_turn,
+                    pack_ids_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
                 """,
                 (
                     campaign_id,
@@ -65,11 +104,25 @@ class StateStore:
                     now,
                     json_dumps(calibration or {}),
                     json_dumps(system or {}),
-                    json_dumps(genre_rules or {})
+                    json_dumps(genre_rules or {}),
+                    json_dumps(pack_ids or [])
                 )
             )
             conn.commit()
         return self.get_campaign(campaign_id)
+
+    def set_campaign_lore_manifest(
+        self,
+        campaign_id: str,
+        manifest: dict
+    ) -> None:
+        """Store the entity→chunk_ids lore manifest for a campaign."""
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE campaigns SET lore_manifest_json = ? WHERE id = ?",
+                (json_dumps(manifest), campaign_id)
+            )
+            conn.commit()
 
     def get_campaign(self, campaign_id: str) -> Optional[dict]:
         """Get campaign by ID."""
@@ -886,6 +939,298 @@ class StateStore:
 
         return triggered
 
+    # =========================================================================
+    # Session Operations
+    # =========================================================================
+
+    def create_session(
+        self,
+        session_id: str,
+        campaign_id: str,
+        started_at: Optional[str] = None
+    ) -> dict:
+        """Create a new session."""
+        started = started_at or datetime.utcnow().isoformat()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO sessions (id, campaign_id, started_at)
+                VALUES (?, ?, ?)
+                """,
+                (session_id, campaign_id, started)
+            )
+            conn.commit()
+        return self.get_session(session_id)
+
+    def get_session(self, session_id: str) -> Optional[dict]:
+        """Get session by ID."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM sessions WHERE id = ?",
+                (session_id,)
+            ).fetchone()
+        if not row:
+            return None
+        return _parse_session_row(row)
+
+    def get_active_session(self, campaign_id: str) -> Optional[dict]:
+        """Get the most recent session without an ended_at timestamp."""
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM sessions
+                WHERE campaign_id = ? AND ended_at IS NULL
+                ORDER BY started_at DESC LIMIT 1
+                """,
+                (campaign_id,)
+            ).fetchone()
+        if not row:
+            return None
+        return _parse_session_row(row)
+
+    def end_session(
+        self,
+        session_id: str,
+        ended_at: Optional[str] = None,
+        recap_text: str = ""
+    ) -> None:
+        """End a session by setting ended_at and optional recap."""
+        ended = ended_at or datetime.utcnow().isoformat()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE sessions SET ended_at = ?, recap_text = ?
+                WHERE id = ?
+                """,
+                (ended, recap_text, session_id)
+            )
+            conn.commit()
+
+    # =========================================================================
+    # Content Pack Operations
+    # =========================================================================
+
+    def create_content_pack(
+        self,
+        pack_id: str,
+        name: str,
+        path: str,
+        description: str = "",
+        version: str = "1.0",
+        layer: str = "adventure",
+        chunk_count: int = 0,
+        metadata: Optional[dict] = None
+    ) -> dict:
+        """Register a content pack."""
+        now = datetime.utcnow().isoformat()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO content_packs
+                    (id, name, description, version, layer, path,
+                     installed_at, chunk_count, metadata_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    pack_id, name, description, version, layer, path,
+                    now, chunk_count, json_dumps(metadata or {})
+                )
+            )
+            conn.commit()
+        return self.get_content_pack(pack_id)
+
+    def get_content_pack(self, pack_id: str) -> Optional[dict]:
+        """Get content pack by ID."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM content_packs WHERE id = ?",
+                (pack_id,)
+            ).fetchone()
+        if not row:
+            return None
+        return _parse_content_pack_row(row)
+
+    def list_content_packs(self) -> list[dict]:
+        """List all installed content packs."""
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM content_packs ORDER BY installed_at DESC"
+            ).fetchall()
+        return [_parse_content_pack_row(row) for row in rows]
+
+    # =========================================================================
+    # Pack Chunk Operations
+    # =========================================================================
+
+    def insert_pack_chunk(
+        self,
+        chunk_id: str,
+        pack_id: str,
+        file_path: str,
+        section_title: str,
+        content: str,
+        chunk_type: str = "general",
+        entity_refs: Optional[list] = None,
+        tags: Optional[list] = None,
+        metadata: Optional[dict] = None,
+        token_estimate: int = 0
+    ) -> None:
+        """Insert a content chunk and its FTS5 index entry."""
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO pack_chunks
+                    (id, pack_id, file_path, section_title, content,
+                     chunk_type, entity_refs_json, tags_json, metadata_json,
+                     token_estimate)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    chunk_id, pack_id, file_path, section_title, content,
+                    chunk_type,
+                    json_dumps(entity_refs or []),
+                    json_dumps(tags or []),
+                    json_dumps(metadata or {}),
+                    token_estimate
+                )
+            )
+            # Insert into FTS5 index (column 'body' avoids FTS5 content= conflict)
+            tags_text = " ".join(tags or [])
+            conn.execute(
+                """
+                INSERT INTO pack_chunks_fts (chunk_id, section_title, body, chunk_type, tags)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (chunk_id, section_title, content, chunk_type, tags_text)
+            )
+            conn.commit()
+
+    def get_pack_chunks(self, pack_id: str) -> list[dict]:
+        """Get all chunks for a pack."""
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM pack_chunks WHERE pack_id = ? ORDER BY file_path, id",
+                (pack_id,)
+            ).fetchall()
+        return [_parse_pack_chunk_row(row) for row in rows]
+
+    def get_chunks_by_ids(self, chunk_ids: list[str]) -> list[dict]:
+        """Fetch specific chunks by their IDs."""
+        if not chunk_ids:
+            return []
+        with self.connect() as conn:
+            placeholders = ",".join("?" * len(chunk_ids))
+            rows = conn.execute(
+                f"SELECT * FROM pack_chunks WHERE id IN ({placeholders})",
+                chunk_ids
+            ).fetchall()
+        return [_parse_pack_chunk_row(row) for row in rows]
+
+    def search_chunks_fts(
+        self,
+        query: str,
+        pack_id: Optional[str] = None,
+        chunk_type: Optional[str] = None,
+        limit: int = 20
+    ) -> list[dict]:
+        """Search pack chunks using FTS5 full-text search.
+
+        Returns chunks matching the query, optionally filtered by pack_id
+        and chunk_type.
+        """
+        with self.connect() as conn:
+            # Get matching chunk IDs from FTS5
+            fts_rows = conn.execute(
+                """
+                SELECT chunk_id, rank
+                FROM pack_chunks_fts
+                WHERE pack_chunks_fts MATCH ?
+                ORDER BY rank
+                LIMIT ?
+                """,
+                (query, limit * 2)  # Over-fetch for post-filtering
+            ).fetchall()
+
+            if not fts_rows:
+                return []
+
+            # Fetch full chunk data for matched IDs
+            chunk_ids = [row["chunk_id"] for row in fts_rows]
+            placeholders = ",".join("?" * len(chunk_ids))
+
+            filters = [f"id IN ({placeholders})"]
+            params = list(chunk_ids)
+
+            if pack_id:
+                filters.append("pack_id = ?")
+                params.append(pack_id)
+            if chunk_type:
+                filters.append("chunk_type = ?")
+                params.append(chunk_type)
+
+            where = " AND ".join(filters)
+            rows = conn.execute(
+                f"SELECT * FROM pack_chunks WHERE {where} LIMIT ?",
+                params + [limit]
+            ).fetchall()
+
+        return [_parse_pack_chunk_row(row) for row in rows]
+
+    # =========================================================================
+    # Scene Lore Cache Operations
+    # =========================================================================
+
+    def set_scene_lore(
+        self,
+        lore_id: str,
+        campaign_id: str,
+        lore: dict,
+        scene_id: str = "current",
+        session_id: Optional[str] = None,
+        chunk_ids: Optional[list] = None
+    ) -> dict:
+        """Set or replace the lore cache for a scene."""
+        now = datetime.utcnow().isoformat()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO scene_lore
+                    (id, campaign_id, scene_id, session_id, lore_json,
+                     created_at, chunk_ids_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    lore_id, campaign_id, scene_id, session_id,
+                    json_dumps(lore), now,
+                    json_dumps(chunk_ids or [])
+                )
+            )
+            conn.commit()
+        return self.get_scene_lore(campaign_id, scene_id)
+
+    def get_scene_lore(
+        self,
+        campaign_id: str,
+        scene_id: str = "current"
+    ) -> Optional[dict]:
+        """Get the lore cache for a scene."""
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM scene_lore
+                WHERE campaign_id = ? AND scene_id = ?
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                (campaign_id, scene_id)
+            ).fetchone()
+        if not row:
+            return None
+        return _parse_scene_lore_row(row)
+
+    # =========================================================================
+    # Event Log Operations
+    # =========================================================================
+
     def get_next_turn_no(self, campaign_id):
         with self.connect() as conn:
             row = conn.execute(
@@ -982,7 +1327,7 @@ def json_loads(value: str) -> Any:
 
 def _parse_campaign_row(row: sqlite3.Row) -> dict:
     """Parse a campaign row to dict."""
-    return {
+    result = {
         "id": row["id"],
         "name": row["name"],
         "created_at": row["created_at"],
@@ -990,8 +1335,18 @@ def _parse_campaign_row(row: sqlite3.Row) -> dict:
         "calibration": json_loads(row["calibration_json"]),
         "system": json_loads(row["system_json"]),
         "genre_rules": json_loads(row["genre_rules_json"]),
-        "current_turn": row["current_turn"]
+        "current_turn": row["current_turn"],
     }
+    # v1 columns (may not exist in older databases)
+    try:
+        result["pack_ids"] = json_loads(row["pack_ids_json"])
+    except (IndexError, KeyError):
+        result["pack_ids"] = []
+    try:
+        result["lore_manifest"] = json_loads(row["lore_manifest_json"])
+    except (IndexError, KeyError):
+        result["lore_manifest"] = {}
+    return result
 
 
 def _parse_entity_row(row: sqlite3.Row) -> dict:
@@ -1076,4 +1431,62 @@ def _parse_relationship_row(row: sqlite3.Row) -> dict:
         "rel_type": row["rel_type"],
         "intensity": row["intensity"],
         "notes": json_loads(row["notes_json"])
+    }
+
+
+def _parse_session_row(row: sqlite3.Row) -> dict:
+    """Parse a session row to dict."""
+    return {
+        "id": row["id"],
+        "campaign_id": row["campaign_id"],
+        "started_at": row["started_at"],
+        "ended_at": row["ended_at"],
+        "turn_range_start": row["turn_range_start"],
+        "turn_range_end": row["turn_range_end"],
+        "recap_text": row["recap_text"],
+        "lore_cache": json_loads(row["lore_cache_json"]) if row["lore_cache_json"] else {}
+    }
+
+
+def _parse_content_pack_row(row: sqlite3.Row) -> dict:
+    """Parse a content_packs row to dict."""
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "description": row["description"],
+        "version": row["version"],
+        "layer": row["layer"],
+        "path": row["path"],
+        "installed_at": row["installed_at"],
+        "chunk_count": row["chunk_count"],
+        "metadata": json_loads(row["metadata_json"]) if row["metadata_json"] else {}
+    }
+
+
+def _parse_pack_chunk_row(row: sqlite3.Row) -> dict:
+    """Parse a pack_chunks row to dict."""
+    return {
+        "id": row["id"],
+        "pack_id": row["pack_id"],
+        "file_path": row["file_path"],
+        "section_title": row["section_title"],
+        "content": row["content"],
+        "chunk_type": row["chunk_type"],
+        "entity_refs": json_loads(row["entity_refs_json"]) if row["entity_refs_json"] else [],
+        "tags": json_loads(row["tags_json"]) if row["tags_json"] else [],
+        "metadata": json_loads(row["metadata_json"]) if row["metadata_json"] else {},
+        "token_estimate": row["token_estimate"]
+    }
+
+
+def _parse_scene_lore_row(row: sqlite3.Row) -> dict:
+    """Parse a scene_lore row to dict."""
+    return {
+        "id": row["id"],
+        "campaign_id": row["campaign_id"],
+        "scene_id": row["scene_id"],
+        "session_id": row["session_id"],
+        "lore": json_loads(row["lore_json"]) if row["lore_json"] else {},
+        "created_at": row["created_at"],
+        "chunk_ids": json_loads(row["chunk_ids_json"]) if row["chunk_ids_json"] else []
     }

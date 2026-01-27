@@ -7,6 +7,10 @@ description: "A simple courier job goes wrong when you find your contact dead."
 genre: cyberpunk_noir
 estimated_length: "2-4 hours"
 
+# Content packs providing setting lore for this scenario
+content_packs:
+  - undercity_sourcebook
+
 # Default game system for this scenario
 default_system: noir_standard
 
