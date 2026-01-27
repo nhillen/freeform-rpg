@@ -4,22 +4,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Freeform RPG Engine - an AI-driven narrative RPG with strong continuity mechanics, real consequences, and GM-like pacing. Chat-first, genre-flexible (v0 targets a cyberpunk noir case, 2-4 hours gameplay). Python 3, SQLite backend.
+Freeform RPG Engine - a virtual Game Master that runs tabletop-style RPG sessions. AI-driven narrative with strong continuity mechanics, real consequences, and GM-like pacing. The experience should feel like a prepared GM running a game night, not a chatbot — with session structure, scene-based pacing, and deep world knowledge drawn from content packs.
+
+Genre-flexible (v0 targets a cyberpunk noir case, 2-4 hours gameplay). Python 3, SQLite backend. Content packs provide large-scale world-building (sourcebook-equivalent) via RAG retrieval.
+
+## Development Status
+
+**v0 core: complete.** All pipeline stages implemented and working. No stubs or TODOs.
+
+- ~8,300 lines production Python, ~4,300 lines tests
+- Full 7-stage turn pipeline (Interpreter → Validator → Planner → Resolver → Narrator → Commit)
+- SQLite state store with append-only event log
+- 2d6 dice mechanics with consequence escalation and failure streaks
+- Clock system (Heat, Time, Harm, Cred, Rep) with configurable triggers
+- NPC escalation profiles and threat resolution
+- Narrator-declared facts, items, NPCs, scene transitions
+- Interactive CLI with guided setup, REPL, debug panel
+- Evaluation framework with A/B testing harness
+- One complete scenario (Dead Drop - cyberpunk noir)
+
+**Next: content pack system (RAG-based world sourcebooks) and session lifecycle.**
 
 ## Commands
 
 ```bash
-# Initialize database
-python -m src.cli.main --db game.db --campaign default init-db
+# Run the guided flow (handles API key, scenario, game setup)
+freeform-rpg
 
-# Execute one game turn
-python -m src.cli.main --db game.db --campaign default run-turn --input "I approach the bartender"
+# Or manual setup
+freeform-rpg --db game.db --campaign default init-db
+freeform-rpg --db game.db --campaign default new-game --scenario dead_drop
+freeform-rpg --db game.db --campaign default play
 
-# Inspect a specific turn's output
-python -m src.cli.main --db game.db --campaign default show-event --turn 1 --field final_text
+# Dev tools
+freeform-rpg --db game.db --campaign default show-event --turn 1 --field final_text
+freeform-rpg --db game.db --campaign default replay --start-turn 1 --end-turn 5
 
-# Replay turn range (for A/B testing prompts)
-python -m src.cli.main --db game.db --campaign default replay --start-turn 1 --end-turn 5
+# Tests
+pytest
+pytest --cov=src
 ```
 
 ## Architecture
@@ -35,21 +58,36 @@ Player Input → Interpreter → Validator → Planner → Resolver → Narrator
 - **Resolver**: Executes actions, updates clocks, emits engine events
 - **Narrator**: Produces final prose from validated context only
 
-**State Model**: Append-only event log pattern. All state mutations go through `state_diff` structures. Events table is immutable audit trail.
+**Content hierarchy:**
+```
+Content Pack (the world — large, static, authored sourcebook)
+  └── Scenario (an adventure — entities, clocks, threads, mechanical state)
+        └── Session (one game night of play)
+              └── Scene (a location/situation)
+                    └── Turn (one player action)
+```
+
+**State Model**: Append-only event log pattern. All state mutations go through `state_diff` structures. Events table is immutable audit trail. Content packs are always immutable — campaign play creates overlay state, never modifies pack content.
 
 **Key Directories:**
-- `src/core/` - Turn orchestration pipeline
+- `src/core/` - Turn orchestration pipeline (orchestrator, validator, resolver)
 - `src/db/` - SQLite state store and schema
 - `src/context/` - Context packet builder (what gets sent to LLM)
-- `src/llm/` - LLM provider gateway
+- `src/llm/` - LLM provider gateway and prompt registry
 - `src/prompts/` - Versioned prompt templates (interpreter_v0.txt, etc.)
 - `src/schemas/` - JSON schemas for all LLM inputs/outputs
-- `src/eval/` - Replay harness for testing
+- `src/setup/` - Session zero pipeline, scenario loader, calibration
+- `src/eval/` - Replay harness, evaluation metrics, snapshots
+- `src/content/` - (planned) Content pack loader, lore indexer, RAG retriever
+- `scenarios/` - Scenario YAML files
+- `content_packs/` - (planned) Authored world sourcebooks for RAG retrieval
 - `docs/` - HLD, PRD, TDD, and GM reference materials
 
 ## Core Data Model
 
-Eight SQLite tables: `entities`, `facts`, `scene`, `threads`, `clocks`, `inventory`, `relationships`, `events`, `summaries`. Schema in `src/db/schema.sql`.
+SQLite tables: `entities`, `facts`, `scene`, `threads`, `clocks`, `inventory`, `relationships`, `events`, `campaigns`, `summaries`. Schema in `src/db/schema.sql`.
+
+**Planned additions:** `sessions`, `content_packs`, `pack_chunks`, `scene_lore`.
 
 **Clocks**: Heat, Time, Cred, Harm, Rep - each with value/max and trigger thresholds.
 
@@ -60,10 +98,26 @@ Eight SQLite tables: `entities`, `facts`, `scene`, `threads`, `clocks`, `invento
 3. **One-question max** - At most 1 clarification question per turn to avoid stalling
 4. **Immutable state** - No destructive mutations; all changes via event log append
 5. **Structured outputs** - All LLM responses must conform to JSON schemas
+6. **Content pack immutability** - Campaign play never modifies pack content; all play-generated state is overlay
+7. **Provenance tracking** - All entities, facts, and events track their origin (pack, campaign, or world)
+8. **Namespaced IDs** - Entity IDs include pack/campaign namespace to prevent collisions across shared content
+
+## Layer 3-Forward Design (future: shared evolving worlds)
+
+These constraints apply now to avoid costly retrofits when multi-campaign shared worlds are built:
+
+- **Origin fields on all state**: entities, facts, events carry `origin` (pack/campaign/world) and optional `pack_id`
+- **Event scope tagging**: engine events carry `scope` (campaign/world_affecting) for future world ticker consumption
+- **Fact visibility is extensible**: don't hardcode to known/world — future values include `canonical` (shared world truth)
+- **Sessions are first-class**: session records group turns and store materialized lore caches
+- **Pack entities are seeded copies**: scenarios copy pack entities into campaign state with back-references, allowing divergence
 
 ## Documentation
 
-- `docs/PRD.md` - Product requirements and design principles
+- `docs/PRD.md` - Product requirements, vision, and roadmap
 - `docs/HLD.md` - High-level architecture and data flow
 - `docs/TDD.md` - Technical implementation details
+- `docs/SESSION_ZERO_DESIGN.md` - Game setup and calibration system
+- `docs/PERCEPTION_DESIGN.md` - Perception and information visibility model
+- `docs/USAGE.md` - CLI commands and how to play
 - `docs/gm_reference/` - GM guidance for mechanics design (clocks, NPCs, scenes, etc.)

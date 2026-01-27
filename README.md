@@ -1,6 +1,14 @@
 # Freeform RPG Engine
 
-An AI-driven narrative RPG engine that uses LLMs to create dynamic, responsive storytelling with strong continuity mechanics.
+A virtual Game Master that runs tabletop-style RPG sessions with AI-driven narrative, real consequences, and deep world knowledge.
+
+## Vision
+
+Freeform RPG recreates the experience of a prepared GM running a game night. Not a chatbot — a game engine that understands session structure, scene-based pacing, and world lore at sourcebook depth. The GM preps before the session, sets the stage when a scene opens, and runs the table from memory during play.
+
+**Content packs** are the GM's sourcebooks — large-scale authored world content (locations, NPCs, factions, history, culture, technology) retrieved via RAG at session and scene boundaries. Multiple packs can be loaded simultaneously (core rules + setting + supplement + homebrew overlay), supporting both custom worlds and licensed game settings.
+
+The long-term goal is **shared evolving worlds** where multiple groups play in the same setting and their collective actions change the baseline reality between sessions.
 
 ## Overview
 
@@ -14,6 +22,15 @@ Freeform RPG is a text-based RPG engine where an AI Game Master responds to free
 - Multi-pass LLM pipeline (Interpreter → Validator → Planner → Resolver → Narrator)
 - Guided setup flow with scenario selection and character introduction
 - Narrative yes-and: the narrator can introduce items and facts that persist to game state
+
+## Status
+
+**v0 core: complete.** All pipeline stages implemented and working (~8,300 lines production Python, ~4,300 lines tests). One playable scenario (Dead Drop — cyberpunk noir, 2-4 hours).
+
+**Roadmap:**
+- **v1** — Content pack system (RAG-based world sourcebooks) and session lifecycle
+- **v2** — Multi-pack support, licensed content format, pack layering
+- **v3** — Shared evolving worlds (multi-campaign, world ticker, event propagation)
 
 ## Quick Start
 
@@ -78,13 +95,24 @@ freeform-rpg --db game.db --campaign default show-event --turn 1 --field final_t
 | Document | Description |
 |----------|-------------|
 | [USAGE.md](docs/USAGE.md) | CLI commands, testing, and how to play |
-| [HLD.md](docs/HLD.md) | High-level design and architecture |
-| [PRD.md](docs/PRD.md) | Product requirements |
+| [PRD.md](docs/PRD.md) | Product requirements, vision, and roadmap |
+| [HLD.md](docs/HLD.md) | High-level architecture and data flow |
 | [TDD.md](docs/TDD.md) | Technical design details |
 | [SESSION_ZERO_DESIGN.md](docs/SESSION_ZERO_DESIGN.md) | Game setup and calibration system |
+| [PERCEPTION_DESIGN.md](docs/PERCEPTION_DESIGN.md) | Perception and information visibility model |
 
 ## Architecture
 
+**Content hierarchy:**
+```
+Content Pack (the world — sourcebook-scale authored content, retrieved via RAG)
+  └── Scenario (an adventure — entities, clocks, threads, mechanical state)
+        └── Session (one game night of play)
+              └── Scene (a location/situation, lore cached at boundary)
+                    └── Turn (one player action)
+```
+
+**Turn pipeline:**
 ```
 Player Input
      ↓
