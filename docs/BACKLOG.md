@@ -6,29 +6,45 @@ Open issues, technical debt, and planned improvements. Items are grouped by area
 
 ---
 
-## Ingest Pipeline — Technical Debt
+## Ingest Pipeline — Remaining Work
 
-The systems extraction pipeline has hardcoded patterns that violate the "generic structural detection" principle. These work for WoD/Mage but will fail on other game systems.
+System extraction configs are now implemented (`systems/_base.yaml`, `systems/world_of_darkness.yaml`). See `docs/TDD.md` → "System Extraction Configuration" for usage.
 
-See `docs/TDD.md` → "Systems Extraction Philosophy" for the target architecture.
+### Schema Fixes (High Priority)
+
+LLM sometimes returns `null` for required integer/string fields, causing validation failures:
+
+| Priority | Extractor | Issue | Fix |
+|----------|-----------|-------|-----|
+| 🔴 | `stat_schema` | `None is not of type 'integer'` | Make integer fields nullable in schema or add defaults |
+| 🔴 | `health` | `None is not of type 'string'` | Make string fields nullable in schema |
+| 🔴 | `magic` | `None is not of type 'string'` | Make string fields nullable in schema |
+
+### Polish Items (Medium Priority)
+
+| Priority | Item | Description |
+|----------|------|-------------|
+| 🟡 | `review-guidance` command | Interactive CLI for reviewing universal GM guidance candidates |
+| 🟡 | Low-confidence warnings | Alert when extractions have < 70% confidence |
+| 🟡 | Pack override testing | Test with `extraction.yaml` in a content pack |
+
+### Technical Debt (Low Priority)
 
 | Priority | File | Issue | Recommended Fix |
 |----------|------|-------|-----------------|
-| 🟡 | `src/ingest/sphere_extract.py` | Hardcoded Mage sphere names in `find_sphere_page_ranges()` | Rename to `ranked_abilities_extract.py`, detect "section header + ranked bullets (•)" generically |
+| 🟢 | `src/ingest/sphere_extract.py` | Hardcoded Mage sphere names in `find_sphere_page_ranges()` | Rename to `ranked_abilities_extract.py`, use config patterns |
 | 🟢 | `src/ingest/systems_refine.py` | Only refines 2 of 9 extractors (`magic`, `stat_schema`) | Expand LLM refinement to all extractors |
 
-### Future: System Detection Module
+### Future System Configs (Low Priority)
 
-When the above cleanup is done, consider adding optional system detection:
+Additional system configs for other game families:
 
-```
-src/ingest/system_configs/
-  wod.yaml       # World of Darkness family
-  dnd5e.yaml     # D&D 5e
-  pbta.yaml      # Powered by the Apocalypse
-```
-
-This is NOT blocking — the pipeline should work without knowing the game system.
+| Config | Game Family | Status |
+|--------|-------------|--------|
+| `world_of_darkness.yaml` | WoD (Vampire, Werewolf, Mage) | ✅ Implemented |
+| `pbta.yaml` | Powered by the Apocalypse | Not started |
+| `osr.yaml` | Old School Revival | Not started |
+| `dnd5e.yaml` | D&D 5th Edition | Not started |
 
 ---
 
@@ -108,6 +124,12 @@ _None currently._
 
 | Date | Item | Notes |
 |------|------|-------|
+| 2026-01-29 | System extraction config inheritance | `_base.yaml` → `world_of_darkness.yaml` with `deep_merge()` |
+| 2026-01-29 | GM guidance extraction | New stage extracts storytelling advice to `storytelling/` |
+| 2026-01-29 | Draft mode with review markers | `--draft` flag, `REVIEW_NEEDED.md`, `promote-draft` command |
+| 2026-01-29 | `--system-hint` CLI flag | Apply system-specific patterns during ingest |
+| 2026-01-29 | `list-systems` CLI command | List available system configs |
+| 2026-01-29 | Confidence scoring | All extractors report confidence in `extraction_report.json` |
 | 2026-01-29 | `_extract_equipment()` generic structural detection | Replaced hardcoded weapon names with table/stat pattern detection |
 | 2026-01-29 | `_extract_health()` generic structural detection | Replaced hardcoded health levels with penalty ladder detection |
 | 2026-01-29 | Ingest pipeline philosophy documentation | Added to CLAUDE.md, TDD.md, SYSTEM_ADAPTER_DESIGN.md |
