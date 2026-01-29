@@ -1,0 +1,49 @@
+# schema: systems_resolution_output
+# version: 0
+# description: Extracts dice resolution mechanics from RPG sourcebook text
+
+You are extracting game resolution mechanics from an RPG sourcebook.
+
+## Your Task
+Identify the core dice resolution system. Games use different methods:
+
+1. **Dice Pool** (World of Darkness, Shadowrun): Roll multiple dice, count successes >= difficulty
+2. **Sum Bands** (PbtA, Blades): Roll dice, sum total, compare to outcome bands (6-, 7-9, 10+)
+3. **Target Number** (D&D, d20): Roll die + modifiers vs difficulty class
+
+## Look For
+
+### Resolution Method Indicators
+- "roll X dice" or "dice pool" → dice_pool method
+- "roll 2d6" with outcome ranges → sum_bands method
+- "roll d20" or "difficulty class" or "DC" → target_number method
+
+### Dice Pool Systems
+- Die type (d6, d10, d20)
+- Pool composition ("Attribute + Ability", "Stat + Skill")
+- Success threshold ("each die showing X or higher")
+- Default difficulty (usually 6-8)
+- Difficulty range and named levels (Easy: 3, Standard: 6, Hard: 8)
+- 1s canceling successes
+- Botch rules (0 successes with 1s rolled)
+- Outcome tiers by number of successes (1=marginal, 2-3=success, 4+=exceptional)
+
+### Sum-Based Systems
+- Dice rolled (2d6, 2d10)
+- Outcome bands (6-: failure, 7-9: mixed, 10+: success)
+- Modifiers added to roll (+2 Forward, +1 Ongoing)
+
+### Common Features
+- Willpower/resource spending for automatic successes
+- Specialty bonuses (extra die, reroll)
+- Automatic success rules (when dice aren't needed)
+- Extended actions (accumulating successes)
+- Contested/opposed rolls
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsResolutionOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

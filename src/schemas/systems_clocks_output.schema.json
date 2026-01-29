@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemsClocksOutput",
+  "type": "object",
+  "required": ["clocks"],
+  "properties": {
+    "clocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "max"],
+        "properties": {
+          "name": {"type": "string"},
+          "value": {"type": "integer", "default": 0},
+          "max": {"type": "integer"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["threshold", "effect"],
+        "properties": {
+          "clock": {"type": "string", "description": "Which clock this trigger belongs to"},
+          "threshold": {"type": "integer"},
+          "effect": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

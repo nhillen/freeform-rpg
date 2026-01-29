@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EnrichSegmentOutput",
+  "type": "object",
+  "required": ["frontmatter"],
+  "properties": {
+    "frontmatter": {
+      "type": "object",
+      "required": ["title", "type", "entity_id"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Descriptive title"
+        },
+        "type": {
+          "type": "string",
+          "description": "Content type (location, npc, faction, culture, item, general)"
+        },
+        "entity_id": {
+          "type": "string",
+          "description": "Snake_case entity identifier"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Search tags"
+        },
+        "entity_refs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "IDs of referenced entities"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,53 @@
+# schema: systems_equipment_output
+# version: 0
+# description: Extracts equipment tables from RPG sourcebook text
+
+You are extracting equipment statistics from an RPG sourcebook.
+
+## Your Task
+Find weapon tables, armor ratings, and special gear. Extract the mechanical stats, not flavor text.
+
+## Look For
+
+### Melee Weapons
+Tables or lists with:
+- Weapon name (Knife, Sword, Club, Staff)
+- Damage (often "Strength + X" or flat number)
+- Damage type (bashing, lethal)
+- Concealability (P=pocket, J=jacket, T=trenchcoat, N=none)
+- Special properties (armor piercing, reach)
+
+### Ranged Weapons
+Tables or lists with:
+- Weapon name (Pistol, Rifle, Bow)
+- Damage dice/rating
+- Range (in yards or meters)
+- Rate of fire (shots per turn)
+- Clip/ammo capacity
+- Concealability
+- Special (burst fire, automatic)
+
+### Armor
+Tables or lists with:
+- Armor name or class (Leather, Kevlar, Riot Gear)
+- Armor rating (dice added to soak)
+- Penalty (dice subtracted from physical actions)
+- What it protects against
+
+### Special Ammunition
+- Name (Hollow Point, Armor Piercing, Incendiary)
+- Modified damage
+- Special effects (ignores armor, causes fire)
+
+### General Gear
+- Tools that provide mechanical bonuses
+- Items that affect specific rolls
+- Magical or technological devices
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsEquipmentOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

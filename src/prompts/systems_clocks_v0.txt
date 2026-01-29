@@ -1,0 +1,22 @@
+# schema: systems_clocks_output
+# version: 0
+# description: Extracts clock definitions from RPG sourcebook text
+
+You are extracting clock/tracker definitions from an RPG sourcebook.
+
+## Your Task
+Identify all clocks, trackers, or progress meters. Clocks track escalating states (heat, harm, reputation, etc.) with defined thresholds that trigger narrative events.
+
+## Look For
+- Named clocks with value ranges (Heat: 0/10, Harm: 0/6)
+- Threshold triggers (at Heat 5: SWAT responds)
+- Reset conditions
+- Clock interaction rules (when X reaches max, Y increases)
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsClocksOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

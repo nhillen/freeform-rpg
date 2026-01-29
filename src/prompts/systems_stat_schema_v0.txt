@@ -1,0 +1,47 @@
+# schema: systems_stat_schema_output
+# version: 0
+# description: Extracts character stat structure from RPG sourcebook text
+
+You are extracting the character statistics structure from an RPG sourcebook.
+
+## Your Task
+Find and categorize all character traits: attributes, abilities/skills, special traits, and backgrounds.
+
+## Look For
+
+### Attributes (innate capabilities)
+- Usually 6-9 attributes in 2-3 categories
+- Categories like: Physical/Social/Mental, Body/Mind/Spirit, Might/Finesse/Resolve
+- Example: "Strength, Dexterity, Stamina" under "Physical Attributes"
+- Rating scales (typically 1-5 or 1-10)
+
+### Abilities/Skills (learned capabilities)
+- Often 20-40 abilities in 2-4 categories
+- Categories like: Talents/Skills/Knowledges, Combat/Social/Mental
+- Example: "Alertness, Athletics, Brawl" under "Talents"
+- May have different max ratings than attributes
+
+### Special Traits (unique to the game system)
+- Resources: Willpower, Mana, Essence, Quintessence
+- Power ratings: Arete, Gnosis, Blood Pool, Humanity
+- Supernatural stats unique to the game
+- Look for non-standard scales (0-10, 0-20, 1-10)
+
+### Backgrounds (social/material advantages)
+- Allies, Contacts, Resources, Status, Fame
+- Connections to organizations or places
+- Usually rated 1-5
+
+### Point Allocation (character creation)
+- "Prioritize categories: 7/5/3" patterns
+- "Spend X points on abilities"
+- Freebie point costs per trait type
+- Starting values for special traits
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsStatSchemaOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

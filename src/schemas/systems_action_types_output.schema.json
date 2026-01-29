@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemsActionTypesOutput",
+  "type": "object",
+  "required": ["action_types"],
+  "properties": {
+    "action_types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string"},
+          "description": {"type": "string"},
+          "risk_level": {
+            "type": "string",
+            "enum": ["safe", "risky", "dangerous"],
+            "description": "Whether this action requires a roll"
+          },
+          "time_cost": {"type": "string", "description": "Typical duration"},
+          "prerequisites": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

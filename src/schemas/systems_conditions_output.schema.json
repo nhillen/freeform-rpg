@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemsConditionsOutput",
+  "type": "object",
+  "required": ["conditions"],
+  "properties": {
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "effect"],
+        "properties": {
+          "name": {"type": "string"},
+          "effect": {"type": "string", "description": "Mechanical effect of this condition"},
+          "gained_by": {"type": "string", "description": "How this condition is applied"},
+          "removed_by": {"type": "string", "description": "How this condition is removed"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

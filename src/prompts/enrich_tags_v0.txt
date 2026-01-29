@@ -1,0 +1,23 @@
+# schema: enrich_tags_output
+# version: 0
+# description: Generates search tags for content files
+
+You are generating search tags for RPG sourcebook content files.
+
+## Your Task
+For each file below, generate 3-8 descriptive tags that would help a retrieval system find this content when relevant. Tags should be specific, not generic.
+
+## Guidelines
+- Use lowercase, hyphenated tags (e.g., "neon-district", "criminal-underworld")
+- Include setting-specific terms, themes, and mood words
+- Include practical tags: the kind of scene this would be relevant for
+- Do NOT use generic tags like "rpg", "game", "content"
+- Do NOT duplicate the content type as a tag
+
+## Files to Tag
+
+{{files}}
+
+OUTPUT_JSON_SCHEMA: EnrichTagsOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

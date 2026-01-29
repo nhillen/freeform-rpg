@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EnrichEntitiesOutput",
+  "type": "object",
+  "required": ["entities"],
+  "properties": {
+    "entities": {
+      "type": "array",
+      "description": "Extracted entities",
+      "items": {
+        "type": "object",
+        "required": ["name", "entity_type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Entity name"
+          },
+          "entity_type": {
+            "type": "string",
+            "description": "Entity type",
+            "enum": ["npc", "location", "faction", "culture", "item"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description (1-2 sentences)"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Alternate names"
+          },
+          "related_entities": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Names of related entities"
+          },
+          "source_segments": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Segment IDs where this entity appears"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,26 @@
+# schema: structure_output
+# version: 0
+# description: Detects document hierarchy from extracted PDF text
+
+You are analyzing the structure of a tabletop RPG sourcebook that has been extracted from PDF.
+
+## Your Task
+Identify the hierarchical structure of this document: chapters, sections, and subsections. The document is a worldbuilding sourcebook — expect sections covering locations, NPCs, factions, history, culture, rules/mechanics, and similar RPG content.
+
+## Guidelines
+- Identify chapter-level divisions (level 1) and section-level divisions (level 2)
+- Use the page numbers provided to mark where each section starts and ends
+- Chapter titles are often in ALL CAPS, larger font, or preceded by "Chapter N:"
+- Section titles are often bold, underlined, or use a smaller heading size
+- Ignore headers, footers, and page numbers
+- If you see a Table of Contents, use it to confirm your analysis
+
+## Document Text (first pages shown)
+
+{{document_text}}
+
+Total pages in document: {{total_pages}}
+
+OUTPUT_JSON_SCHEMA: StructureOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

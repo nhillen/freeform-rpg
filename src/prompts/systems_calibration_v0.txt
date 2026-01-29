@@ -1,0 +1,22 @@
+# schema: systems_calibration_output
+# version: 0
+# description: Extracts difficulty calibration and preset data
+
+You are extracting difficulty calibration data from an RPG sourcebook.
+
+## Your Task
+Find difficulty presets, calibration values, and tuning parameters that control game difficulty.
+
+## Look For
+- Difficulty levels or presets (easy, normal, hard, deadly)
+- Base target numbers
+- Modifier ranges
+- Recommended values for different play styles
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsCalibrationOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EnrichTagsOutput",
+  "type": "object",
+  "required": ["tags"],
+  "properties": {
+    "tags": {
+      "type": "array",
+      "description": "Tag results for each file",
+      "items": {
+        "type": "object",
+        "required": ["tags"],
+        "properties": {
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Generated tags for this file"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

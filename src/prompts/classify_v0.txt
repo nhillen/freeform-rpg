@@ -1,0 +1,33 @@
+# schema: classify_output
+# version: 0
+# description: Classifies content segments by type and processing route
+
+You are classifying segments of an RPG sourcebook for a content indexing system.
+
+## Your Task
+For each segment below, determine:
+1. **content_type**: What kind of content this is (location, npc, faction, culture, item, event, history, rules, table, general)
+2. **route**: How it should be processed:
+   - "lore" — Narrative worldbuilding content (descriptions, backstories, flavor)
+   - "systems" — Mechanical content (dice rolls, stat blocks, rules, triggers)
+   - "both" — Contains both narrative and mechanical content
+
+## Classification Guidelines
+- **location**: Describes a place, building, district, or area
+- **npc**: Describes a character (personality, background, appearance, goals)
+- **faction**: Describes a group, organization, gang, or corporation
+- **culture**: Describes customs, traditions, social norms, slang, lifestyle
+- **item**: Describes equipment, weapons, gear, cyberware
+- **event**: Describes a past or ongoing event, incident, or situation
+- **history**: Describes historical background or timeline
+- **rules**: Defines game mechanics, resolution procedures, action types
+- **table**: Random tables, lookup tables, result tables
+- **general**: Doesn't clearly fit any specific category
+
+## Segments to Classify
+
+{{segments}}
+
+OUTPUT_JSON_SCHEMA: ClassifyOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

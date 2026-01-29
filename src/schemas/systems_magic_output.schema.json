@@ -1,0 +1,232 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Magic System Schema",
+  "description": "Schema for extracting magic/spellcasting systems from RPG source material",
+  "type": "object",
+  "properties": {
+    "magic_system": {
+      "type": "object",
+      "properties": {
+        "system_name": {
+          "type": "string",
+          "description": "Name of the magic system (e.g., 'Sphere Magic', 'Vancian', 'Mana-based')"
+        },
+        "casting_stat": {
+          "type": "string",
+          "description": "The primary stat/trait used for casting rolls (e.g., 'Arete', 'Willpower', 'Intelligence')"
+        },
+        "casting_mechanic": {
+          "type": "string",
+          "description": "How casting works (e.g., 'roll casting_stat vs difficulty', 'spend mana', 'prepared slots')"
+        },
+        "difficulty_modifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": {
+                "type": "string",
+                "description": "The condition that applies this modifier"
+              },
+              "modifier": {
+                "type": "string",
+                "description": "The difficulty modifier formula or value"
+              }
+            },
+            "required": ["condition", "modifier"]
+          }
+        },
+        "spell_schools": {
+          "type": "array",
+          "description": "Schools, spheres, or categories of magic",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the school/sphere"
+              },
+              "description": {
+                "type": "string",
+                "description": "What this school governs"
+              },
+              "specialties": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Sub-specializations within this school"
+              },
+              "ranks": {
+                "type": "array",
+                "description": "Ranked levels of mastery (1-5 dots, etc.)",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "rank": {
+                      "type": "integer",
+                      "description": "Numeric rank level (1-5)"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of this rank's primary ability"
+                    },
+                    "alternate_names": {
+                      "type": "array",
+                      "items": {"type": "string"},
+                      "description": "Alternative ability names at this rank (e.g., 'Touch Space' as alternate to 'Sense Space')"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Full description of what this rank allows"
+                    },
+                    "capabilities": {
+                      "type": "array",
+                      "items": {"type": "string"},
+                      "description": "Specific things you can do at this rank"
+                    },
+                    "limitations": {
+                      "type": "array",
+                      "items": {"type": "string"},
+                      "description": "What you cannot do at this rank"
+                    },
+                    "conjunctional_uses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "combined_with": {"type": "string"},
+                          "effect": {"type": "string"}
+                        }
+                      },
+                      "description": "Effects when combined with other schools/spheres"
+                    }
+                  },
+                  "required": ["rank"]
+                }
+              },
+              "sample_rotes": {
+                "type": "array",
+                "description": "Named example effects/spells for this school",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"type": "string"},
+                    "rank_required": {"type": "integer"},
+                    "description": {"type": "string"}
+                  }
+                }
+              }
+            },
+            "required": ["name"]
+          }
+        },
+        "resource_pools": {
+          "type": "array",
+          "description": "Magical resources like mana, quintessence, spell slots",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "max_formula": {
+                "type": "string",
+                "description": "How maximum is calculated"
+              },
+              "recovery": {
+                "type": "string",
+                "description": "How the resource recovers"
+              },
+              "use_effects": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "What spending this resource does"
+              }
+            },
+            "required": ["name"]
+          }
+        },
+        "backlash_system": {
+          "type": "object",
+          "description": "System for magical failure consequences (Paradox, Wild Magic, etc.)",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "trigger": {
+              "type": "string",
+              "description": "What causes backlash"
+            },
+            "accumulation": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "condition": {"type": "string"},
+                  "amount": {"type": "string"}
+                }
+              },
+              "description": "How backlash accumulates"
+            },
+            "dissipation": {
+              "type": "string",
+              "description": "How backlash dissipates over time"
+            },
+            "effects": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "severity": {"type": "string"},
+                  "effect": {"type": "string"}
+                }
+              },
+              "description": "Effects at different severity levels"
+            }
+          }
+        },
+        "foci": {
+          "type": "object",
+          "description": "Requirements for magical tools/implements",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "exemption": {
+              "type": "string",
+              "description": "When foci are no longer required"
+            }
+          }
+        },
+        "conjunctional_effects": {
+          "type": "string",
+          "description": "How combining schools/spheres works"
+        }
+      },
+      "required": ["system_name"]
+    },
+    "sample_effects": {
+      "type": "array",
+      "description": "Example spells/effects from the source",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "school": {"type": "string"},
+          "rank_required": {"type": "integer"},
+          "description": {"type": "string"},
+          "conjunctional_spheres": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+  "required": ["magic_system"]
+}

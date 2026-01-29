@@ -1,0 +1,22 @@
+# schema: systems_action_types_output
+# version: 0
+# description: Extracts action type definitions
+
+You are extracting action type definitions from an RPG sourcebook.
+
+## Your Task
+Identify all defined action types with their mechanical properties (cost, risk level, default resolution, etc.).
+
+## Look For
+- Named action types (examine, search, fight, sneak, persuade, etc.)
+- Whether each action is safe (auto-success) or risky (requires roll)
+- Time costs or resource costs
+- Prerequisites or conditions
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsActionTypesOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

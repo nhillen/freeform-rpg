@@ -1,0 +1,30 @@
+# schema: enrich_entities_output
+# version: 0
+# description: Extracts named entities from RPG sourcebook segments
+
+You are extracting entities from segments of an RPG sourcebook for a world-building knowledge base.
+
+## Your Task
+Identify all named entities (NPCs, locations, factions, items, etc.) mentioned in the following segments. For each entity, provide:
+- A unique name
+- The entity type (npc, location, faction, culture, item)
+- A brief description (1-2 sentences)
+- Any aliases or alternate names
+- Related entities (other entities this one is connected to)
+- Which segment IDs reference this entity
+
+## Guidelines
+- Only extract entities that are explicitly named or described
+- Do not invent entities not present in the text
+- Use the entity type that best fits the primary description
+- An NPC who leads a faction is type "npc", not "faction"
+- A building is type "location", even if a faction operates there
+- List aliases only when the text uses multiple names for the same entity
+
+## Segments
+
+{{segments}}
+
+OUTPUT_JSON_SCHEMA: EnrichEntitiesOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

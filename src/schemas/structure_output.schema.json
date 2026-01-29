@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StructureOutput",
+  "type": "object",
+  "required": ["title", "sections"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The document title"
+    },
+    "sections": {
+      "type": "array",
+      "description": "Top-level sections (chapters)",
+      "items": {
+        "type": "object",
+        "required": ["title", "page_start", "page_end"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Section title"
+          },
+          "page_start": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "First page of this section"
+          },
+          "page_end": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Last page of this section"
+          },
+          "children": {
+            "type": "array",
+            "description": "Subsections within this section",
+            "items": {
+              "type": "object",
+              "required": ["title", "page_start", "page_end"],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "page_start": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "page_end": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

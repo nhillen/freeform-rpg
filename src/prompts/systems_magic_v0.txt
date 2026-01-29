@@ -1,0 +1,52 @@
+You are extracting magic/spellcasting system mechanics from RPG source material.
+
+Look for:
+1. MAGIC SYSTEM OVERVIEW:
+   - Name of the magic system
+   - Primary casting stat/trait (Arete, Willpower, Intelligence, etc.)
+   - How casting rolls work (dice pool, target number, etc.)
+
+2. DIFFICULTY MODIFIERS:
+   - Coincidental vs vulgar magic
+   - Witnessed vs unwitnessed
+   - Environmental or situational modifiers
+   - Using tools/foci
+
+3. SCHOOLS/SPHERES/DISCIPLINES:
+   - Named categories of magic (Correspondence, Forces, Life, etc.)
+   - What each school governs
+   - Specialties within each school
+   - Ranked levels of mastery (usually 1-5 dots)
+   - What capabilities each rank unlocks
+
+4. RESOURCE POOLS:
+   - Quintessence, Mana, Spell Points, etc.
+   - How maximum is determined
+   - How resources recover
+   - What spending them does (lower difficulty, fuel effects, etc.)
+
+5. BACKLASH/PARADOX SYSTEM:
+   - What triggers magical backlash
+   - How it accumulates (botches, vulgar magic, etc.)
+   - How it dissipates
+   - Effects at different severity levels
+
+6. FOCI REQUIREMENTS:
+   - Whether magical tools are required
+   - When foci can be discarded (high mastery, etc.)
+
+7. SAMPLE EFFECTS/ROTES:
+   - Named example spells
+   - What spheres/ranks they require
+   - Brief descriptions
+
+Common patterns to recognize:
+- "Arete" or similar enlightenment stats
+- "Sphere" ranked 1-5 with capabilities at each level
+- "Paradox" or backlash mechanics
+- "Quintessence" or mana-like resources
+- "Coincidental" vs "Vulgar" magic categories
+- Difficulty formulas like "highest Sphere + 3"
+
+Extract ONLY what is explicitly stated in the source material.
+Do not infer or add rules not present in the text.

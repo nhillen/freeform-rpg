@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemsHealthOutput",
+  "description": "Extracted health/damage system - health levels, damage types, healing",
+  "type": "object",
+  "required": [],
+  "properties": {
+    "health_track_type": {
+      "type": "string",
+      "enum": ["levels", "hit_points", "stress_boxes", "other"],
+      "description": "Type of health tracking system"
+    },
+    "health_levels": {
+      "type": "array",
+      "description": "Named health levels in order from healthy to dead",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "dice_penalty": {"type": "integer"},
+          "movement_penalty": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "damage_types": {
+      "type": "array",
+      "description": "Types of damage (bashing, lethal, aggravated, etc.)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "description": {"type": "string"},
+          "healing_rate": {"type": "string"},
+          "special_rules": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "soak": {
+      "type": "object",
+      "description": "Rules for damage resistance/soaking",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "stat_used": {"type": "string"},
+        "applies_to": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "healing": {
+      "type": "object",
+      "description": "Natural healing rules",
+      "properties": {
+        "rates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "damage_type": {"type": "string"},
+              "level": {"type": "string"},
+              "time": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "magical_healing": {"type": "string"},
+        "medical_treatment": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "incapacitation": {
+      "type": "object",
+      "properties": {
+        "threshold": {"type": "string"},
+        "effect": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "death": {
+      "type": "object",
+      "properties": {
+        "threshold": {"type": "string"},
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "raw_excerpts": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

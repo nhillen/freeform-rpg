@@ -1,0 +1,32 @@
+# schema: enrich_segment_output
+# version: 0
+# description: Generates enriched frontmatter for a content segment
+
+You are preparing an RPG sourcebook segment for a structured knowledge base.
+
+## Your Task
+Given a content segment and a list of known entities, generate enriched YAML frontmatter that will help the retrieval system find and contextualize this content.
+
+## Current Segment
+Title: {{title}}
+Content Type: {{content_type}}
+
+Content:
+{{content}}
+
+## Known Entities
+{{known_entities}}
+
+## Current Frontmatter
+{{current_frontmatter}}
+
+## Guidelines
+- Preserve the existing frontmatter fields, updating where you have better information
+- Add entity_refs for any known entities mentioned or implied in the content
+- The title should be descriptive but concise
+- Tags should be specific and useful for search (e.g., "underground", "criminal", "neon-district")
+- entity_id should be a snake_case identifier derived from the title
+
+OUTPUT_JSON_SCHEMA: EnrichSegmentOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

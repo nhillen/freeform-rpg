@@ -1,0 +1,22 @@
+# schema: systems_conditions_output
+# version: 0
+# description: Extracts status conditions and effects
+
+You are extracting status conditions and state effects from an RPG sourcebook.
+
+## Your Task
+Identify all defined conditions, status effects, and states that can apply to characters or the scene.
+
+## Look For
+- Named conditions (exposed, hidden, pursued, wounded, etc.)
+- Effects of each condition on gameplay
+- How conditions are gained and removed
+- Condition interactions (e.g., "exposed + hostile = pursued")
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsConditionsOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemsEquipmentOutput",
+  "description": "Extracted equipment tables - weapons, armor, gear",
+  "type": "object",
+  "required": [],
+  "properties": {
+    "melee_weapons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "damage": {"type": "string"},
+          "damage_type": {"type": "string"},
+          "conceal": {"type": "string"},
+          "special": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "ranged_weapons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "damage": {"type": "string"},
+          "damage_type": {"type": "string"},
+          "range": {"type": "string"},
+          "rate": {"type": "string"},
+          "clip": {"type": "string"},
+          "conceal": {"type": "string"},
+          "special": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "armor": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "class": {"type": "string"},
+          "rating": {"type": "integer"},
+          "penalty": {"type": "integer"},
+          "covers": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "special_ammunition": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "damage": {"type": "string"},
+          "damage_type": {"type": "string"},
+          "special": {"type": "string"},
+          "availability": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "gear": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "category": {"type": "string"},
+          "effect": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "raw_excerpts": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

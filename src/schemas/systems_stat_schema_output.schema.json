@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemsStatSchemaOutput",
+  "description": "Extracted character stat structure - attributes, abilities, special traits",
+  "type": "object",
+  "required": [],
+  "properties": {
+    "attributes": {
+      "type": "object",
+      "description": "Attribute categories and their members",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"type": "string"}
+      }
+    },
+    "abilities": {
+      "type": "object",
+      "description": "Ability/skill categories and their members",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"type": "string"}
+      }
+    },
+    "special_traits": {
+      "type": "object",
+      "description": "Special traits with their ranges (e.g., Arete, Willpower)",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "min": {"type": "integer"},
+          "max": {"type": "integer"},
+          "description": {"type": "string"},
+          "starting_value": {"type": "integer"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "backgrounds": {
+      "type": "array",
+      "description": "Background traits (social connections, resources, etc.)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "rating_scale": {
+      "type": "object",
+      "description": "How ratings are interpreted",
+      "properties": {
+        "min": {"type": "integer"},
+        "max": {"type": "integer"},
+        "labels": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "point_allocation": {
+      "type": "object",
+      "description": "Character creation point pools",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "primary": {"type": "integer"},
+            "secondary": {"type": "integer"},
+            "tertiary": {"type": "integer"}
+          },
+          "additionalProperties": false
+        },
+        "abilities": {
+          "type": "object",
+          "properties": {
+            "primary": {"type": "integer"},
+            "secondary": {"type": "integer"},
+            "tertiary": {"type": "integer"}
+          },
+          "additionalProperties": false
+        },
+        "backgrounds": {"type": "integer"},
+        "freebie_points": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "freebie_costs": {
+      "type": "object",
+      "description": "Cost in freebie points per dot for each trait type",
+      "additionalProperties": {"type": "integer"}
+    },
+    "raw_excerpts": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

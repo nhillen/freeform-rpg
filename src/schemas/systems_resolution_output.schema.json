@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SystemsResolutionOutput",
+  "description": "Extracted resolution mechanics - supports dice pools, sum-based, and target number systems",
+  "type": "object",
+  "required": ["method"],
+  "properties": {
+    "method": {
+      "type": "string",
+      "enum": ["dice_pool", "sum_bands", "target_number", "other"],
+      "description": "Primary resolution method: dice_pool (count successes), sum_bands (2d6 PbtA style), target_number (d20 vs DC)"
+    },
+    "die_type": {
+      "type": "integer",
+      "description": "Die type used (6, 10, 20, etc.)"
+    },
+    "pool_composition": {
+      "type": "string",
+      "description": "How dice pool is formed (e.g., 'Attribute + Ability', 'Stat + Skill', 'fixed 2d6')"
+    },
+    "default_difficulty": {
+      "type": "integer",
+      "description": "Default target number or difficulty"
+    },
+    "difficulty_range": {
+      "type": "object",
+      "properties": {
+        "min": {"type": "integer"},
+        "max": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "difficulty_scale": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "value": {"type": "integer"},
+          "label": {"type": "string"}
+        },
+        "additionalProperties": false
+      },
+      "description": "Named difficulty levels (e.g., Easy: 3, Standard: 6, Hard: 8)"
+    },
+    "ones_cancel_successes": {
+      "type": "boolean",
+      "description": "Whether 1s cancel successes (WoD style)"
+    },
+    "botch_on_ones": {
+      "type": "boolean",
+      "description": "Whether 0 successes + 1s = botch/critical failure"
+    },
+    "outcome_thresholds": {
+      "type": "object",
+      "description": "For dice pools: net successes mapped to outcome tiers",
+      "properties": {
+        "botch": {"type": "integer"},
+        "failure": {"type": "integer"},
+        "marginal": {"type": "integer"},
+        "success": {"type": "integer"},
+        "exceptional": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "outcome_bands": {
+      "type": "array",
+      "description": "For sum-based: roll ranges mapped to outcomes",
+      "items": {
+        "type": "object",
+        "required": ["range", "label"],
+        "properties": {
+          "range": {"type": "string"},
+          "label": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "modifiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "value": {"type": "string"},
+          "target": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "willpower": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "resource_name": {"type": "string"},
+        "effect": {"type": "string"},
+        "max_per_turn": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "specialties": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "trigger": {"type": "string"},
+        "effect": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "automatic_success_rule": {
+      "type": "string",
+      "description": "When rolls can be skipped (e.g., 'pool >= difficulty')"
+    },
+    "extended_actions": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "contested_rolls": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "raw_excerpts": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Key text excerpts describing resolution"
+    }
+  },
+  "additionalProperties": false
+}

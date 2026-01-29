@@ -1,0 +1,22 @@
+# schema: systems_entity_stats_output
+# version: 0
+# description: Extracts NPC stat blocks and threat levels
+
+You are extracting entity stat blocks and threat profiles from an RPG sourcebook.
+
+## Your Task
+Find NPC stat blocks, threat levels, capability ratings, and any mechanical data attached to characters or entities.
+
+## Look For
+- Threat levels (low, medium, high, extreme)
+- Combat capabilities
+- Special abilities or skills with mechanical effects
+- Escalation profiles (how NPCs react to increasing tension)
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsEntityStatsOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

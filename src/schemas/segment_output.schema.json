@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SegmentOutput",
+  "type": "object",
+  "required": ["segments"],
+  "properties": {
+    "segments": {
+      "type": "array",
+      "description": "The content segments",
+      "items": {
+        "type": "object",
+        "required": ["title", "content"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Descriptive title for this segment"
+          },
+          "content": {
+            "type": "string",
+            "description": "The segment content text"
+          },
+          "topic": {
+            "type": "string",
+            "description": "Brief topic description"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

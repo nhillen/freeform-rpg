@@ -1,0 +1,29 @@
+# schema: segment_output
+# version: 0
+# description: Splits mixed-content sections into coherent segments
+
+You are segmenting a section of an RPG sourcebook into distinct content chunks for a retrieval system.
+
+## Your Task
+Split the following section into coherent segments. Each segment should:
+- Cover a single topic, entity, or concept
+- Be between {{target_words}} and {{max_words}} words
+- Have a descriptive title
+- Be self-contained enough to be useful when retrieved independently
+
+## Guidelines
+- Prefer natural topic boundaries over arbitrary word-count splits
+- Keep descriptions of a single location, NPC, or faction together
+- Separate mechanical rules from narrative lore when possible
+- Tables and stat blocks should be their own segment
+- If a passage transitions between topics, split at the transition
+
+## Section to Segment
+
+Title: {{section_title}}
+
+{{section_content}}
+
+OUTPUT_JSON_SCHEMA: SegmentOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.

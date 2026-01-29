@@ -1,0 +1,58 @@
+# schema: systems_health_output
+# version: 0
+# description: Extracts health and damage systems from RPG sourcebook text
+
+You are extracting the health and damage system from an RPG sourcebook.
+
+## Your Task
+Find how characters track injury, take damage, and heal.
+
+## Look For
+
+### Health Track Type
+- **Levels**: Named wound states (Bruised, Hurt, Wounded, Incapacitated)
+- **Hit Points**: Numeric pool that depletes
+- **Stress Boxes**: Checkboxes that fill up
+- **Conditions**: Specific injuries applied
+
+### Health Levels (if used)
+For each level, find:
+- Name (Bruised, Hurt, Injured, Wounded, Mauled, Crippled, Incapacitated)
+- Dice pool penalty (-1, -2, -5)
+- Movement penalty (half speed, hobble, crawl)
+- What happens at that level
+
+### Damage Types
+Common types:
+- **Bashing/Stun**: Non-lethal (fists, clubs)
+- **Lethal**: Deadly (blades, bullets)
+- **Aggravated**: Supernatural/hard to heal (fire, claws)
+
+For each type, find:
+- How it's marked differently
+- Healing rate differences
+- What causes it
+
+### Soak/Resistance
+- Which stat resists damage (Stamina, Toughness)
+- What damage types can be soaked
+- Whether armor adds to soak
+
+### Healing
+- Natural healing rates per damage type
+- Effect of medical treatment
+- Magical/supernatural healing
+- Whether wounds can worsen if untreated
+
+### Incapacitation & Death
+- What happens at 0 health
+- Conditions for death
+- Death saves or bleeding out
+
+## Systems Text
+
+{{systems_text}}
+
+OUTPUT_JSON_SCHEMA: SystemsHealthOutput
+
+Respond with valid JSON only. No markdown, no explanation, no text before or after the JSON.
