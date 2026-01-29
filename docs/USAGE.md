@@ -128,12 +128,75 @@ freeform-rpg run-turn [OPTIONS]
 --json                         # Output JSON instead of narrative
 ```
 
+### Content Packs
+
+| Command | Description |
+|---------|-------------|
+| `install-pack` | Install a content pack from a directory |
+| `list-packs` | List installed content packs |
+| `pack-ingest` | Convert a PDF sourcebook to a content pack (interactive) |
+| `promote-draft` | Promote a draft pack to content_packs/ |
+| `list-systems` | List available system extraction configs |
+
+#### install-pack options
+```bash
+freeform-rpg install-pack PATH
+
+PATH    # Path to content pack directory (must contain pack.yaml)
+```
+
+#### pack-ingest
+Interactive guided flow that converts PDF sourcebooks into content packs:
+1. Dependency check (pymupdf, optional pytesseract for OCR)
+2. API key verification
+3. PDF file selection
+4. Pack metadata prompts (id, name, version, layer, author)
+5. Options (OCR, image extraction, systems extraction)
+6. Output directory selection
+7. 8-stage pipeline execution with progress display
+8. Validation and optional install
+
+```bash
+# Interactive mode
+freeform-rpg pack-ingest
+
+# Direct mode with system hint and draft output
+freeform-rpg pack-ingest input.pdf \
+  --system-hint world_of_darkness \
+  --draft \
+  -o output_dir/
+```
+
+**pack-ingest options:**
+| Option | Description |
+|--------|-------------|
+| `--system-hint SYSTEM` | Use system-specific extraction patterns (e.g., `world_of_darkness`) |
+| `--draft` | Output to draft mode with review markers |
+| `-o, --output DIR` | Output directory |
+| `--from-stage STAGE` | Resume from a specific stage |
+| `--skip-systems` | Skip systems extraction phase |
+| `--ocr` | Enable OCR for scanned PDFs |
+
+#### promote-draft
+Promote a reviewed draft pack to the content_packs/ directory:
+```bash
+freeform-rpg promote-draft draft/mage_traditions
+```
+
+#### list-systems
+List available system extraction configurations:
+```bash
+freeform-rpg list-systems
+```
+
+See `docs/TDD.md` → "PDF Ingest Pipeline" and "System Extraction Configuration" for technical details.
+
 ### Evaluation & Debugging
 
 | Command | Description |
 |---------|-------------|
 | `eval` | Show evaluation report for current game |
-| `show-event` | Show a stored event by ID |
+| `show-event` | Show a stored event by turn number |
 | `replay` | Replay turns for A/B testing |
 
 #### eval options
@@ -141,6 +204,14 @@ freeform-rpg run-turn [OPTIONS]
 freeform-rpg eval [OPTIONS]
 
 --json    # Output as JSON
+```
+
+#### show-event options
+```bash
+freeform-rpg show-event [OPTIONS]
+
+--turn TURN           # Turn number to show (required)
+--field FIELD         # Specific field to display (e.g., final_text, context_packet_json)
 ```
 
 #### replay options
@@ -175,6 +246,47 @@ freeform-rpg --db my_game.db play
 freeform-rpg --db my_game.db run-turn -i "I examine the body carefully"
 freeform-rpg --db my_game.db run-turn -i "I search his pockets"
 ```
+
+## Content Packs
+
+Content packs are sourcebook-scale world content (locations, NPCs, factions, history) that the engine retrieves via RAG during play.
+
+### Installing Content Packs
+
+```bash
+# Install the included Undercity Sourcebook
+freeform-rpg --db my_game.db install-pack content_packs/undercity_sourcebook
+
+# List installed packs
+freeform-rpg --db my_game.db list-packs
+```
+
+### Creating Content Packs from PDFs
+
+The ingest pipeline converts existing PDF sourcebooks into content packs:
+
+```bash
+freeform-rpg pack-ingest
+```
+
+This launches an interactive flow that extracts text, detects structure, classifies content, and generates the pack directory.
+
+### Authoring Content Packs
+
+Content packs are directories with markdown files and YAML frontmatter:
+
+```
+my_pack/
+  pack.yaml           # Manifest (id, name, version, description)
+  locations/
+    tavern.md         # Location with frontmatter
+  npcs/
+    bartender.md      # NPC with frontmatter
+  factions/
+    guild.md          # Faction with frontmatter
+```
+
+See `docs/TDD.md` → "Content pack authoring spec" for the full format.
 
 ## Testing
 

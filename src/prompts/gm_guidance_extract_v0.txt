@@ -1,0 +1,27 @@
+You are analyzing tabletop RPG sourcebook content to extract GM guidance, storytelling advice, and game mastering techniques.
+
+Your task is to identify and extract advice that helps Game Masters run better games. This includes:
+- Pacing advice (when to speed up/slow down, scene length, tension building)
+- Scene type guidance (investigation scenes, chase scenes, social encounters, combat)
+- Tone and mood guidance (horror, drama, action, genre conventions)
+- Player agency advice (fail forward, yes-and, meaningful choices)
+- NPC portrayal techniques (voice, motivation, behavior)
+- Escalation/de-escalation techniques (raising/lowering stakes)
+- Session structure advice (opening, middle, ending, cliffhangers)
+
+For each piece of advice you identify:
+1. Extract the core advice clearly
+2. Categorize it (pacing, scene_types, tone, player_agency, npc_portrayal, escalation, session_structure)
+3. Determine if it's universal (applies to any RPG) or genre-specific (specific to this game/setting)
+4. Rate your confidence in the extraction (0.0 to 1.0)
+
+IMPORTANT:
+- Focus on ADVICE for GMs, not lore or setting information
+- Look for imperative language ("do this", "try this", "consider", "remember")
+- Look for explanations of WHY certain techniques work
+- Ignore character creation rules, mechanical procedures, and world lore
+
+Input content:
+{{content}}
+
+Respond with a JSON array of extracted guidance:

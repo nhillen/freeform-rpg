@@ -171,6 +171,149 @@ class SystemsExtractionManifest:
 
 
 # ---------------------------------------------------------------------------
+# Extraction Configuration (System Profiles)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class MechanicalIndicator:
+    """A pattern that indicates mechanical content on a page."""
+    pattern: str  # Regex pattern
+    meaning: str  # What this pattern indicates (rating_dots, dice_notation, etc.)
+    confidence: float = 0.5  # Base confidence when matched
+
+
+@dataclass
+class SectionPattern:
+    """Pattern for detecting system-specific sections."""
+    header_pattern: str  # Regex for section header
+    content_type: str  # ranked_ability, equipment_list, rules, etc.
+    rating_type: str = "dots"  # How ratings are expressed
+    confidence: float = 0.7
+
+
+@dataclass
+class RatingScale:
+    """How to interpret a rating scale."""
+    symbol: str = ""
+    empty_symbol: str = ""
+    max: int = 5
+    symbols: list[str] = field(default_factory=list)
+    filled: list[str] = field(default_factory=list)
+    empty: list[str] = field(default_factory=list)
+    typical_max: int = 5
+    range: tuple[int, int] = (1, 10)
+    default: int = 5
+    descriptions: dict[int, str] = field(default_factory=dict)
+    applies_to: list[str] = field(default_factory=list)
+
+
+@dataclass
+class StatBlockHints:
+    """Hints for parsing stat blocks."""
+    npc_format: str = ""  # Template showing expected format
+    markers: list[str] = field(default_factory=list)  # Regex patterns for stat block lines
+
+
+@dataclass
+class HealthConfig:
+    """Health track configuration."""
+    track_type: str = "levels"  # levels, hit_points, stress_boxes
+    levels: list[dict] = field(default_factory=list)  # {name, penalty}
+    damage_types: list[str] = field(default_factory=list)
+
+
+@dataclass
+class GuidancePattern:
+    """Pattern for detecting GM guidance content."""
+    pattern: str  # Regex pattern
+    meaning: str  # gm_technique, player_experience, pacing_advice, etc.
+    confidence: float = 0.5
+
+
+@dataclass
+class GuidanceConfig:
+    """Configuration for GM guidance extraction."""
+    chapter_indicators: list[str] = field(default_factory=list)
+    content_patterns: list[GuidancePattern] = field(default_factory=list)
+    categories: list[str] = field(default_factory=list)
+
+
+@dataclass
+class ExtractionHints:
+    """Extraction hints portion of system config."""
+    mechanical_indicators: list[MechanicalIndicator] = field(default_factory=list)
+    section_patterns: dict[str, SectionPattern] = field(default_factory=dict)
+    rating_scales: dict[str, RatingScale] = field(default_factory=dict)
+    stat_blocks: StatBlockHints = field(default_factory=StatBlockHints)
+    health: HealthConfig = field(default_factory=HealthConfig)
+    gm_guidance: GuidanceConfig = field(default_factory=GuidanceConfig)
+
+
+@dataclass
+class ExtractionConfig:
+    """Complete extraction configuration for a system.
+
+    Built by merging: _base.yaml -> system.yaml -> pack/extraction.yaml
+    Used by systems extractors to apply system-specific patterns.
+    """
+    id: str = "_base"
+    name: str = "Base TTRPG Patterns"
+    inherits: Optional[str] = None
+
+    # Extraction hints
+    extraction: ExtractionHints = field(default_factory=ExtractionHints)
+
+    # Source info (for debugging)
+    sources: list[str] = field(default_factory=list)  # Config files that were merged
+
+    def get_mechanical_indicators(self) -> list[MechanicalIndicator]:
+        """Get all mechanical indicator patterns."""
+        return self.extraction.mechanical_indicators
+
+    def get_section_patterns(self) -> dict[str, SectionPattern]:
+        """Get all section patterns."""
+        return self.extraction.section_patterns
+
+    def get_rating_scale(self, name: str) -> Optional[RatingScale]:
+        """Get a specific rating scale by name."""
+        return self.extraction.rating_scales.get(name)
+
+    def get_health_config(self) -> HealthConfig:
+        """Get health track configuration."""
+        return self.extraction.health
+
+    def get_guidance_config(self) -> GuidanceConfig:
+        """Get GM guidance extraction config."""
+        return self.extraction.gm_guidance
+
+
+# ---------------------------------------------------------------------------
+# GM Guidance Extraction
+# ---------------------------------------------------------------------------
+
+@dataclass
+class GuidanceChunk:
+    """A chunk of extracted GM guidance content."""
+    id: str
+    category: str  # pacing, scene_types, tone, player_agency, etc.
+    content: str
+    source_page: int
+    source_section: str
+    is_universal: bool = False  # True = candidate for core prompt refinement
+    confidence: float = 0.5
+    tags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class GuidanceExtractionResult:
+    """Output of GM guidance extraction stage."""
+    chunks: list[GuidanceChunk] = field(default_factory=list)
+    universal_candidates: list[GuidanceChunk] = field(default_factory=list)
+    genre_specific: list[GuidanceChunk] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
 # Pipeline Configuration
 # ---------------------------------------------------------------------------
 
@@ -190,6 +333,10 @@ class IngestConfig:
     use_ocr: bool = False
     extract_images: bool = False
     skip_systems: bool = False
+    draft_mode: bool = False  # Output to draft/ with review markers instead of content_packs/
+
+    # System extraction config
+    system_hint: str = ""  # System ID for extraction config (e.g., "world_of_darkness")
 
     # LLM settings
     sonnet_model: str = "claude-sonnet-4-20250514"

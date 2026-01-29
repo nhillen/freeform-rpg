@@ -1,0 +1,169 @@
+# systems/_base.yaml
+# Generic structural patterns for all TTRPGs.
+# Detects STRUCTURE (tables, ratings, stat blocks) - not game-specific content.
+# All system configs inherit from this base.
+
+id: _base
+name: "Base TTRPG Patterns"
+
+# No runtime resolution - subclasses must define
+resolution: null
+
+# Extraction configuration - generic structural detection
+extraction:
+  # Indicators that a page has mechanical content (structure-based, not game-specific)
+  mechanical_indicators:
+    # Rating dots (common in many systems)
+    - pattern: "[●○◯◉]+"
+      meaning: rating_dots
+      confidence: 0.7
+
+    # Tables with numbers
+    - pattern: "\\|.*\\d+.*\\|"
+      meaning: table_with_numbers
+      confidence: 0.6
+
+    # Dice notation (Xd6, d20, 2d10, etc.)
+    - pattern: "\\b\\d*d\\d+\\b"
+      meaning: dice_notation
+      confidence: 0.8
+
+    # Numbered lists with mechanics (1., 2., 3. followed by text)
+    - pattern: "^\\d+\\.\\s+.{10,}"
+      meaning: numbered_list
+      confidence: 0.4
+
+    # Stat blocks (Name: Number or Name (Number))
+    - pattern: "^[A-Z][a-z]+:\\s*\\d+"
+      meaning: stat_line
+      confidence: 0.5
+
+    # Level/rank indicators
+    - pattern: "\\b(Level|Rank|Tier)\\s*\\d+"
+      meaning: level_indicator
+      confidence: 0.6
+
+    # Point costs
+    - pattern: "\\(\\d+\\s*(pts?|points?|xp|cp)\\)"
+      meaning: point_cost
+      confidence: 0.7
+
+    # Difficulty numbers
+    - pattern: "\\b(DC|TN|Difficulty)\\s*\\d+"
+      meaning: difficulty_number
+      confidence: 0.8
+
+    # Bonus/penalty notation
+    - pattern: "[+-]\\d+\\s*(bonus|penalty|modifier)?"
+      meaning: modifier
+      confidence: 0.5
+
+  # Generic section header patterns
+  section_patterns:
+    # Character creation sections
+    character_creation:
+      header_pattern: "^(Character Creation|Making a Character|Creating Your Character|Step \\d+:)$"
+      content_type: rules
+      confidence: 0.7
+
+    # Equipment/gear sections
+    equipment:
+      header_pattern: "^(Equipment|Gear|Weapons|Armor|Items)$"
+      content_type: equipment_list
+      confidence: 0.7
+
+    # Combat/conflict sections
+    combat:
+      header_pattern: "^(Combat|Fighting|Conflict|Battle|Action)$"
+      content_type: rules
+      confidence: 0.7
+
+    # Magic/powers sections
+    powers:
+      header_pattern: "^(Magic|Powers|Abilities|Spells|Special Abilities)$"
+      content_type: ability_list
+      confidence: 0.6
+
+  # How to interpret rating scales (generic)
+  rating_scales:
+    # Dot ratings (1-5 or 1-10)
+    dots:
+      symbols: ["●", "○", "◯", "◉"]
+      filled: ["●", "◉"]
+      empty: ["○", "◯"]
+      typical_max: 5
+
+    # Numeric ratings
+    numeric:
+      typical_range: [1, 20]
+
+  # Generic stat block structure hints
+  stat_blocks:
+    # Common stat block markers
+    markers:
+      - "^[A-Z][A-Za-z\\s]+$"  # Name line (capitalized)
+      - "^(HP|Health|Hits?):"
+      - "^(AC|Armor|Defense):"
+      - "^(Attack|Atk):"
+      - "^(Damage|Dmg):"
+      - "^(Speed|Move|Movement):"
+
+  # GM Guidance detection (generic patterns)
+  gm_guidance:
+    # Chapter titles that indicate storytelling advice
+    chapter_indicators:
+      - "Storytelling"
+      - "Running the Game"
+      - "Game Mastering"
+      - "For the GM"
+      - "Referee"
+      - "Dungeon Master"
+      - "Narrator"
+      - "The Story"
+      - "Chronicle"
+      - "Campaign"
+      - "Adventures"
+      - "Scenarios"
+      - "Playing the Game"
+
+    # Content patterns that indicate GM advice (vs lore)
+    content_patterns:
+      # Direct GM address
+      - pattern: "(GM|DM|Storyteller|Referee|Narrator)\\s+(should|can|might|may|must)"
+        meaning: gm_technique
+        confidence: 0.8
+
+      # Player experience language
+      - pattern: "(players|characters)\\s+(feel|experience|encounter|discover)"
+        meaning: player_experience
+        confidence: 0.7
+
+      # Pacing language
+      - pattern: "\\b(pacing|tension|escalat|de-escalat|rhythm|flow)\\b"
+        meaning: pacing_advice
+        confidence: 0.7
+
+      # Tone/mood language
+      - pattern: "\\b(mood|tone|atmosphere|ambiance|feel|genre)\\b"
+        meaning: tone_guidance
+        confidence: 0.6
+
+      # Scene structure
+      - pattern: "\\b(scene|encounter|session|chapter)\\s+(type|kind|example|structure)"
+        meaning: scene_archetype
+        confidence: 0.7
+
+      # Advice verbs
+      - pattern: "\\b(consider|try|avoid|remember|don't forget|keep in mind)\\b"
+        meaning: advice_language
+        confidence: 0.5
+
+    # Extraction categories
+    categories:
+      - pacing           # Narrative rhythm, scene length
+      - scene_types      # Investigation, chase, social, combat
+      - tone             # Genre mood, atmosphere
+      - player_agency    # Fail forward, yes-and, consequences
+      - npc_portrayal    # How to play NPCs convincingly
+      - escalation       # Raising/lowering stakes
+      - session_structure # Beginning, middle, end of sessions

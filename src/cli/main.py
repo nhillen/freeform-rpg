@@ -8,6 +8,22 @@ Commands:
   play        Interactive play mode (REPL)
   show-event  Show a stored event
   replay      Replay turns for A/B testing
+
+Content Pack Commands:
+  pack-test         Test a content pack (analyze, probe, report)
+
+Ingest Commands:
+  pack-ingest       Full PDF-to-content-pack pipeline
+  ingest-extract    Stage 1: PDF text extraction
+  ingest-structure  Stage 2: Document structure detection
+  ingest-segment    Stage 3: Content segmentation
+  ingest-classify   Stage 4: Content classification
+  ingest-enrich     Stage 5: Lore enrichment
+  ingest-assemble   Stage 6: Content pack assembly
+  ingest-validate   Stage 7: Pack validation
+  ingest-systems-extract   Stage S1: Systems extraction
+  ingest-systems-assemble  Stage S2: Systems assembly
+  ingest-systems-validate  Stage S3: Systems validation
 """
 
 import argparse
@@ -683,6 +699,18 @@ def list_scenarios_cmd(args):
     print()
 
 
+def pack_test_cmd(args):
+    """Test a content pack: analyze, generate scenario, run retrieval probes."""
+    from src.ingest.pack_test import PackTester
+
+    tester = PackTester(args.pack_dir)
+    report = tester.test(
+        generate_scenario=not args.no_scenario,
+        scenario_dir=args.scenario_dir,
+    )
+    print(report.format())
+
+
 def install_pack_cmd(args):
     """Install (index) a content pack into the database."""
     store = StateStore(args.db)
@@ -732,6 +760,572 @@ def list_packs_cmd(args):
         if pack['description']:
             print(f"    {pack['description'][:60]}")
     print()
+
+
+# =============================================================================
+# Ingest Pipeline Commands
+# =============================================================================
+
+def _make_ingest_config(args):
+    """Build IngestConfig from CLI args."""
+    from src.ingest.models import IngestConfig
+
+    pdf_path = getattr(args, "input", "") or ""
+    # Derive pack_id and pack_name from PDF filename when not provided
+    pdf_stem = Path(pdf_path).stem if pdf_path else "unknown"
+    pack_id = getattr(args, "pack_id", None) or pdf_stem.lower().replace(" ", "_").replace("-", "_")
+    pack_name = getattr(args, "pack_name", None) or pdf_stem.replace("_", " ").replace("-", " ").title()
+
+    return IngestConfig(
+        pdf_path=pdf_path,
+        output_dir=getattr(args, "output", "") or "",
+        pack_id=pack_id,
+        pack_name=pack_name,
+        pack_version=getattr(args, "pack_version", None) or "1.0",
+        pack_layer=getattr(args, "pack_layer", None) or "sourcebook",
+        pack_author=getattr(args, "pack_author", None) or "",
+        pack_description=getattr(args, "pack_description", None) or "",
+        use_ocr=getattr(args, "ocr", False),
+        extract_images=getattr(args, "extract_images", False),
+        skip_systems=getattr(args, "skip_systems", False),
+        draft_mode=getattr(args, "draft", False),
+        system_hint=getattr(args, "system_hint", "") or "",
+        work_dir=getattr(args, "output", "") or "",
+    )
+
+
+def _make_gateways(args):
+    """Create LLM gateways for ingest pipeline."""
+    api_key = check_auth_or_prompt()
+    if not api_key:
+        print("Cannot run ingest without an API key.")
+        print("Run 'login' to set one up, or set ANTHROPIC_API_KEY.")
+        sys.exit(1)
+
+    sonnet = ClaudeGateway(api_key=api_key)
+    haiku = ClaudeGateway(api_key=api_key, model="claude-3-5-haiku-20241022")
+    prompts_dir = Path(__file__).parent.parent / "prompts"
+    registry = PromptRegistry(prompts_dir)
+    return sonnet, haiku, registry
+
+
+def pack_ingest_cmd(args):
+    """Full PDF-to-content-pack pipeline."""
+    # No args → interactive mode
+    if getattr(args, "input", None) is None:
+        from src.cli.ingest_flow import ingest_flow
+        ingest_flow(db_path=args.db)
+        return
+    if getattr(args, "output", None) is None:
+        print("Error: --output is required in non-interactive mode.")
+        sys.exit(1)
+
+    from src.ingest.pipeline import IngestPipeline
+    from src.cli.ingest_flow import InstrumentedPipeline
+
+    config = _make_ingest_config(args)
+    sonnet, haiku, registry = _make_gateways(args)
+
+    # Get system hint from args or config
+    system_hint = getattr(args, "system_hint", None) or config.system_hint or None
+
+    pipeline = IngestPipeline(
+        config=config,
+        sonnet_gateway=sonnet,
+        haiku_gateway=haiku,
+        prompt_registry=registry,
+        system_hint=system_hint,
+    )
+    instrumented = InstrumentedPipeline(pipeline)
+    summary = instrumented.run(
+        resume=not getattr(args, "no_resume", False),
+        from_stage=getattr(args, "from_stage", None),
+    )
+
+    print(f"\nPipeline complete!")
+    print(f"  Pack directory: {summary['pack_dir']}")
+    print(f"  Valid: {summary['pack_valid']}")
+    if summary.get("validation_errors"):
+        print(f"  Errors: {len(summary['validation_errors'])}")
+        for err in summary["validation_errors"][:5]:
+            print(f"    - {err}")
+    if summary.get("timings"):
+        total_ms = sum(summary["timings"].values())
+        print(f"  Total time: {total_ms / 1000:.1f}s")
+
+
+def ingest_extract_cmd(args):
+    """Stage 1: PDF text extraction."""
+    from src.ingest.extract import PDFExtractor
+
+    extractor = PDFExtractor()
+    result = extractor.extract(
+        pdf_path=args.input,
+        output_dir=args.output,
+        use_ocr=getattr(args, "ocr", False),
+        pages=getattr(args, "pages", None),
+        extract_images=getattr(args, "extract_images", False),
+    )
+    print(f"Extracted {len(result.pages)} pages to {args.output}")
+    print(f"  Total pages in PDF: {result.total_pages}")
+    print(f"  OCR used: {result.metadata.get('ocr_used', False)}")
+
+
+def ingest_structure_cmd(args):
+    """Stage 2: Document structure detection."""
+    from src.ingest.structure import StructureDetector
+    from src.ingest.extract import PDFExtractor
+    from src.ingest.utils import read_stage_meta
+
+    # Load extraction result from stage 1 output
+    extraction = _load_extraction(args.input)
+
+    sonnet, haiku, registry = _make_gateways(args)
+    detector = StructureDetector(llm_gateway=haiku, prompt_registry=registry)
+    structure = detector.detect(
+        extraction=extraction,
+        output_dir=args.output,
+        pdf_path=getattr(args, "pdf", None),
+    )
+    print(f"Detected {len(structure.sections)} top-level sections")
+    print(f"  Title: {structure.title}")
+    print(f"  Method: {structure.metadata.get('detection_method', 'unknown')}")
+
+
+def ingest_segment_cmd(args):
+    """Stage 3: Content segmentation."""
+    from src.ingest.segment import ContentSegmenter
+
+    structure = _load_structure(args.input)
+
+    sonnet, haiku, registry = _make_gateways(args)
+    segmenter = ContentSegmenter(
+        llm_gateway=haiku, prompt_registry=registry,
+    )
+    manifest = segmenter.segment(structure=structure, output_dir=args.output)
+    print(f"Created {len(manifest.segments)} segments")
+    print(f"  Total words: {manifest.total_words}")
+
+
+def ingest_classify_cmd(args):
+    """Stage 4: Content classification."""
+    from src.ingest.classify import ContentClassifier
+
+    manifest = _load_segment_manifest(args.input)
+
+    sonnet, haiku, registry = _make_gateways(args)
+    classifier = ContentClassifier(llm_gateway=haiku, prompt_registry=registry)
+    manifest = classifier.classify(manifest=manifest, output_dir=args.output)
+
+    lore = sum(1 for s in manifest.segments if s.route and s.route.value == "lore")
+    systems = sum(1 for s in manifest.segments if s.route and s.route.value == "systems")
+    both = sum(1 for s in manifest.segments if s.route and s.route.value == "both")
+    print(f"Classified {len(manifest.segments)} segments")
+    print(f"  Lore: {lore}, Systems: {systems}, Both: {both}")
+
+
+def ingest_enrich_cmd(args):
+    """Stage 5: Lore enrichment."""
+    from src.ingest.enrich import LoreEnricher
+
+    manifest = _load_segment_manifest(args.input)
+
+    sonnet, haiku, registry = _make_gateways(args)
+    enricher = LoreEnricher(
+        llm_gateway=sonnet, prompt_registry=registry, tag_gateway=haiku,
+    )
+    enriched_files, registry_data = enricher.enrich(
+        manifest=manifest, output_dir=args.output,
+    )
+    print(f"Enriched {len(enriched_files)} files")
+    print(f"  Entities found: {len(registry_data.entities)}")
+
+
+def ingest_assemble_cmd(args):
+    """Stage 6: Content pack assembly."""
+    from src.ingest.assemble import PackAssembler
+
+    config = _make_ingest_config(args)
+    enriched_files = _load_enriched_manifest(args.input)
+    entity_registry = _load_entity_registry(args.input)
+
+    assembler = PackAssembler()
+    pack_dir = assembler.assemble(
+        enriched_files=enriched_files,
+        config=config,
+        output_dir=args.output,
+        entity_registry=entity_registry,
+    )
+    print(f"Assembled pack at: {pack_dir}")
+
+
+def ingest_audit_cmd(args):
+    """Post-ingest audit of pipeline output."""
+    from src.ingest.audit import IngestAuditor
+
+    auditor = IngestAuditor(args.input)
+    report = auditor.audit(samples=args.samples)
+
+    if args.json:
+        print(json.dumps(report.to_dict(), indent=2))
+    else:
+        print(auditor.format_report(report))
+
+
+def ingest_validate_cmd(args):
+    """Stage 7: Pack validation."""
+    from src.ingest.validate import PackValidator
+
+    validator = PackValidator()
+    report = validator.validate(
+        pack_dir=args.input,
+        output_dir=getattr(args, "output", None),
+    )
+
+    status = "PASSED" if report.valid else "FAILED"
+    print(f"Validation: {status}")
+    if report.errors:
+        print(f"  Errors ({len(report.errors)}):")
+        for err in report.errors:
+            print(f"    - {err}")
+    if report.warnings:
+        print(f"  Warnings ({len(report.warnings)}):")
+        for w in report.warnings:
+            print(f"    - {w}")
+    if report.stats.get("installation"):
+        inst = report.stats["installation"]
+        print(f"  Files loaded: {inst.get('files_loaded', 0)}")
+        print(f"  Chunks created: {inst.get('chunks_created', 0)}")
+
+
+def ingest_systems_extract_cmd(args):
+    """Stage S1: Systems extraction."""
+    from src.ingest.systems_extract import SystemsExtractor
+
+    manifest = _load_segment_manifest(args.input)
+
+    sonnet, haiku, registry = _make_gateways(args)
+    extractor = SystemsExtractor(llm_gateway=haiku, prompt_registry=registry)
+    result = extractor.extract(manifest=manifest, output_dir=args.output)
+    print(f"Ran {len(result.extractions)} sub-extractors")
+    print(f"  Keys: {', '.join(result.extractions.keys())}")
+
+
+def ingest_systems_assemble_cmd(args):
+    """Stage S2: Systems assembly."""
+    from src.ingest.systems_assemble import SystemsAssembler
+    from src.ingest.models import SystemsExtractionManifest
+
+    extraction = _load_systems_extraction(args.input)
+
+    assembler = SystemsAssembler()
+    outputs = assembler.assemble(extraction=extraction, output_dir=args.output)
+    print(f"Generated {len(outputs)} config files:")
+    for name, path in outputs.items():
+        print(f"  {name}: {path}")
+
+
+def ingest_systems_validate_cmd(args):
+    """Stage S3: Systems validation."""
+    from src.ingest.systems_validate import SystemsValidator
+
+    validator = SystemsValidator()
+    report = validator.validate(
+        configs_dir=args.input,
+        output_dir=getattr(args, "output", None),
+    )
+
+    status = "PASSED" if report.valid else "FAILED"
+    print(f"Systems validation: {status}")
+    if report.errors:
+        for err in report.errors:
+            print(f"  ERROR: {err}")
+    if report.warnings:
+        for w in report.warnings:
+            print(f"  WARNING: {w}")
+
+
+def promote_draft_cmd(args):
+    """Promote a draft pack to content_packs/."""
+    import shutil
+
+    draft_path = Path(args.draft_path)
+    if not draft_path.exists():
+        print(f"Error: Draft not found at {draft_path}")
+        sys.exit(1)
+
+    # Check for draft markers
+    if not (draft_path / "REVIEW_NEEDED.md").exists():
+        print(f"Warning: {draft_path} doesn't appear to be a draft pack (no REVIEW_NEEDED.md)")
+        response = input("Promote anyway? [y/N] ").strip().lower()
+        if response != "y":
+            print("Cancelled.")
+            return
+
+    # Determine target directory
+    target_dir = Path(args.target) if args.target else Path("content_packs")
+    pack_name = draft_path.name
+    target_path = target_dir / pack_name
+
+    if target_path.exists():
+        if not args.force:
+            print(f"Error: {target_path} already exists. Use --force to overwrite.")
+            sys.exit(1)
+        shutil.rmtree(target_path)
+
+    # Copy draft to target, excluding draft markers
+    target_path.mkdir(parents=True)
+
+    excluded_files = {"REVIEW_NEEDED.md", "DRAFT_README.md", "EXTRACTION_REPORT.md"}
+
+    for item in draft_path.iterdir():
+        if item.name in excluded_files:
+            continue
+        if item.is_dir():
+            shutil.copytree(item, target_path / item.name)
+        else:
+            shutil.copy2(item, target_path / item.name)
+
+    print(f"Promoted draft to: {target_path}")
+    print(f"\nTo install the pack:")
+    print(f"  freeform-rpg --db {args.db} install-pack {target_path}")
+
+
+def list_systems_cmd(args):
+    """List available system configs."""
+    from src.ingest.systems_config import get_available_systems, SYSTEMS_DIR
+
+    systems = get_available_systems()
+
+    print(f"\nAvailable System Configs ({SYSTEMS_DIR}):")
+    print("-" * 40)
+
+    if not systems:
+        print("  (none found)")
+    else:
+        for system_id in systems:
+            print(f"  {system_id}")
+
+    print("\nUse --system-hint <id> with pack-ingest to apply system-specific patterns.")
+    print()
+
+
+# Helpers for loading intermediate pipeline outputs
+
+def _load_extraction(input_dir):
+    """Load ExtractionResult from a stage 1 output directory."""
+    from src.ingest.models import ExtractionResult, PageEntry
+    from src.ingest.utils import read_manifest
+
+    input_dir = Path(input_dir)
+    page_map = read_manifest(input_dir / "page_map.json")
+    meta = read_manifest(input_dir / "stage_meta.json") if (input_dir / "stage_meta.json").exists() else {}
+
+    pages = []
+    pages_dir = input_dir / "pages"
+    if pages_dir.exists():
+        for page_file in sorted(pages_dir.glob("page_*.md")):
+            page_num = int(page_file.stem.split("_")[1])
+            text = page_file.read_text(encoding="utf-8")
+            info = page_map.get(str(page_num), {})
+            pages.append(PageEntry(
+                page_num=page_num,
+                text=text,
+                char_count=info.get("char_count", len(text)),
+                has_images=info.get("has_images", False),
+                ocr_used=info.get("ocr_used", False),
+            ))
+
+    return ExtractionResult(
+        pdf_path=meta.get("pdf_path", ""),
+        total_pages=meta.get("total_pages", len(pages)),
+        pages=pages,
+        output_dir=str(input_dir),
+    )
+
+
+def _load_structure(input_dir):
+    """Load DocumentStructure from a stage 2 output directory."""
+    from src.ingest.models import ChapterIntent, DocumentStructure, SectionNode
+    from src.ingest.utils import read_manifest
+
+    input_dir = Path(input_dir)
+    data = read_manifest(input_dir / "structure.json")
+
+    def parse_node(d, default_level=1):
+        intent = None
+        if d.get("intent"):
+            try:
+                intent = ChapterIntent(d["intent"])
+            except ValueError:
+                pass
+        children = [parse_node(c, 2) for c in d.get("children", [])]
+        return SectionNode(
+            title=d.get("title", "Untitled"),
+            level=d.get("level", default_level),
+            page_start=d.get("page_start", 1),
+            page_end=d.get("page_end", 1),
+            children=children,
+            content=d.get("content", ""),
+            intent=intent,
+        )
+
+    # Load chapter content from files
+    sections = [parse_node(s) for s in data.get("sections", [])]
+    chapters_dir = input_dir / "chapters"
+    if chapters_dir.exists():
+        for i, section in enumerate(sections):
+            # Try to load chapter content from file
+            for chapter_file in chapters_dir.glob(f"{i + 1:02d}_*.md"):
+                section.content = chapter_file.read_text(encoding="utf-8")
+                break
+
+    return DocumentStructure(
+        title=data.get("title", "Untitled"),
+        sections=sections,
+        metadata=data.get("metadata", {}),
+    )
+
+
+def _load_segment_manifest(input_dir):
+    """Load SegmentManifest from a stage 3/4 output directory."""
+    from src.ingest.models import ChapterIntent, ContentType, Route, SegmentEntry, SegmentManifest
+    from src.ingest.utils import read_manifest
+
+    input_dir = Path(input_dir)
+    data = read_manifest(input_dir / "segment_manifest.json")
+
+    segments = []
+    segments_dir = input_dir / "segments"
+    for s in data.get("segments", []):
+        # Load content from segment file
+        content = ""
+        if segments_dir.exists():
+            for seg_file in segments_dir.glob(f"{s['id']}_*.md"):
+                raw = seg_file.read_text(encoding="utf-8")
+                # Strip leading H1 title
+                lines = raw.split("\n")
+                if lines and lines[0].startswith("# "):
+                    content = "\n".join(lines[1:]).strip()
+                else:
+                    content = raw.strip()
+                break
+
+        content_type = None
+        if s.get("content_type"):
+            try:
+                content_type = ContentType(s["content_type"])
+            except ValueError:
+                pass
+
+        route = None
+        if s.get("route"):
+            try:
+                route = Route(s["route"])
+            except ValueError:
+                pass
+
+        chapter_intent = None
+        if s.get("chapter_intent"):
+            try:
+                chapter_intent = ChapterIntent(s["chapter_intent"])
+            except ValueError:
+                pass
+
+        segments.append(SegmentEntry(
+            id=s["id"],
+            title=s.get("title", ""),
+            content=content,
+            source_section=s.get("source_section", ""),
+            page_start=s.get("page_start", 0),
+            page_end=s.get("page_end", 0),
+            word_count=s.get("word_count", 0),
+            content_type=content_type,
+            route=route,
+            classification_confidence=s.get("classification_confidence", 0.0),
+            tags=s.get("tags", []),
+            chapter_intent=chapter_intent,
+        ))
+
+    return SegmentManifest(
+        segments=segments,
+        total_words=data.get("total_words", 0),
+        metadata=data.get("metadata", {}),
+    )
+
+
+def _load_entity_registry(input_dir):
+    """Load EntityRegistry from an enrich output directory, or None if absent."""
+    from src.ingest.models import EntityEntry, EntityRegistry
+    from src.ingest.utils import read_manifest
+
+    input_dir = Path(input_dir)
+    registry_path = input_dir / "entity_registry.json"
+    if not registry_path.exists():
+        return None
+
+    registry = EntityRegistry()
+    reg_data = read_manifest(registry_path)
+    for e in reg_data.get("entities", []):
+        registry.add(EntityEntry(
+            id=e.get("id", ""),
+            name=e.get("name", ""),
+            entity_type=e.get("entity_type", "general"),
+            description=e.get("description", ""),
+            aliases=e.get("aliases", []),
+            related_entities=e.get("related_entities", []),
+            source_segments=e.get("source_segments", []),
+        ))
+    return registry
+
+
+def _load_enriched_manifest(input_dir):
+    """Load enriched files list from an enrich output directory."""
+    from src.ingest.utils import read_manifest
+
+    input_dir = Path(input_dir)
+    # Read entity registry for reference
+    enriched_dir = input_dir / "enriched"
+    if not enriched_dir.exists():
+        print(f"Error: No enriched directory found at {enriched_dir}")
+        sys.exit(1)
+
+    files = []
+    for type_dir in enriched_dir.iterdir():
+        if type_dir.is_dir():
+            for md_file in sorted(type_dir.glob("*.md")):
+                from src.ingest.utils import read_markdown_with_frontmatter
+                fm, body = read_markdown_with_frontmatter(md_file)
+                files.append({
+                    "path": str(md_file),
+                    "title": fm.get("title", md_file.stem),
+                    "file_type": fm.get("type", "general"),
+                    "entity_id": fm.get("entity_id", md_file.stem),
+                    "frontmatter": fm,
+                })
+    return files
+
+
+def _load_systems_extraction(input_dir):
+    """Load SystemsExtractionManifest from a systems extract output."""
+    from src.ingest.models import SystemsExtractionManifest
+    from src.ingest.utils import read_manifest
+
+    import yaml
+
+    input_dir = Path(input_dir)
+    manifest_data = read_manifest(input_dir / "extraction_manifest.json")
+
+    extractions = {}
+    for key in manifest_data.get("extractors_run", []):
+        yaml_path = input_dir / f"{key}.yaml"
+        if yaml_path.exists():
+            extractions[key] = yaml.safe_load(yaml_path.read_text())
+
+    return SystemsExtractionManifest(
+        extractions=extractions,
+        source_segments=manifest_data.get("source_segments", []),
+    )
 
 
 def build_parser():
@@ -798,6 +1392,13 @@ def build_parser():
     list_packs_parser = sub.add_parser("list-packs", help="List installed content packs")
     list_packs_parser.set_defaults(func=list_packs_cmd)
 
+    # pack-test
+    pack_test_parser = sub.add_parser("pack-test", help="Test a content pack")
+    pack_test_parser.add_argument("pack_dir", help="Path to assembled pack directory")
+    pack_test_parser.add_argument("--no-scenario", action="store_true", help="Skip scenario generation")
+    pack_test_parser.add_argument("--scenario-dir", default="scenarios", help="Where to save test scenario")
+    pack_test_parser.set_defaults(func=pack_test_cmd)
+
     # run-turn
     run_turn_parser = sub.add_parser("run-turn", help="Execute a single turn")
     run_turn_parser.add_argument("--input", "-i", required=True, help="Player input text")
@@ -836,6 +1437,129 @@ def build_parser():
         help='JSON object, e.g. {"narrator":"v2"}',
     )
     replay_parser.set_defaults(func=replay_cmd)
+
+    # =================================================================
+    # Ingest Pipeline Commands
+    # =================================================================
+
+    # pack-ingest (full pipeline)
+    ingest_parser = sub.add_parser("pack-ingest", help="Full PDF-to-content-pack pipeline")
+    ingest_parser.add_argument("input", nargs="?", default=None, help="Path to PDF file")
+    ingest_parser.add_argument("--output", "-o", default=None, help="Output directory")
+    ingest_parser.add_argument("--pack-id", help="Content pack ID")
+    ingest_parser.add_argument("--pack-name", help="Content pack name")
+    ingest_parser.add_argument("--pack-version", default="1.0", help="Pack version")
+    ingest_parser.add_argument("--pack-layer", default="sourcebook", help="Pack layer")
+    ingest_parser.add_argument("--pack-author", default="", help="Pack author")
+    ingest_parser.add_argument("--pack-description", default="", help="Pack description")
+    ingest_parser.add_argument("--ocr", action="store_true", help="Use OCR for image-heavy pages")
+    ingest_parser.add_argument("--extract-images", action="store_true", help="Extract images")
+    ingest_parser.add_argument("--skip-systems", action="store_true", help="Skip systems extraction")
+    ingest_parser.add_argument("--no-resume", action="store_true", help="Don't resume from checkpoints")
+    ingest_parser.add_argument(
+        "--system-hint",
+        help="System ID for extraction config (e.g., world_of_darkness). Use 'list-systems' to see available.",
+    )
+    ingest_parser.add_argument(
+        "--draft",
+        action="store_true",
+        help="Output to draft/ with review markers instead of content_packs/",
+    )
+    ingest_parser.add_argument(
+        "--from-stage",
+        choices=["extract", "structure", "segment", "classify",
+                 "enrich", "assemble", "validate", "systems"],
+        help="Re-run from this stage onwards (clears it + downstream, resumes upstream)",
+    )
+    ingest_parser.set_defaults(func=pack_ingest_cmd)
+
+    # ingest-extract (stage 1)
+    extract_parser = sub.add_parser("ingest-extract", help="Stage 1: PDF text extraction")
+    extract_parser.add_argument("input", help="Path to PDF file")
+    extract_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    extract_parser.add_argument("--ocr", action="store_true", help="Use OCR fallback")
+    extract_parser.add_argument("--pages", help="Page range (e.g. '1-5,8')")
+    extract_parser.add_argument("--extract-images", action="store_true", help="Extract images")
+    extract_parser.set_defaults(func=ingest_extract_cmd)
+
+    # ingest-structure (stage 2)
+    structure_parser = sub.add_parser("ingest-structure", help="Stage 2: Document structure detection")
+    structure_parser.add_argument("input", help="Stage 1 output directory")
+    structure_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    structure_parser.add_argument("--pdf", help="Original PDF path (for font analysis)")
+    structure_parser.set_defaults(func=ingest_structure_cmd)
+
+    # ingest-segment (stage 3)
+    segment_parser = sub.add_parser("ingest-segment", help="Stage 3: Content segmentation")
+    segment_parser.add_argument("input", help="Stage 2 output directory")
+    segment_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    segment_parser.set_defaults(func=ingest_segment_cmd)
+
+    # ingest-classify (stage 4)
+    classify_parser = sub.add_parser("ingest-classify", help="Stage 4: Content classification")
+    classify_parser.add_argument("input", help="Stage 3 output directory")
+    classify_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    classify_parser.set_defaults(func=ingest_classify_cmd)
+
+    # ingest-enrich (stage 5)
+    enrich_parser = sub.add_parser("ingest-enrich", help="Stage 5: Lore enrichment")
+    enrich_parser.add_argument("input", help="Stage 4 output directory")
+    enrich_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    enrich_parser.set_defaults(func=ingest_enrich_cmd)
+
+    # ingest-assemble (stage 6)
+    assemble_parser = sub.add_parser("ingest-assemble", help="Stage 6: Content pack assembly")
+    assemble_parser.add_argument("input", help="Stage 5 output directory")
+    assemble_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    assemble_parser.add_argument("--pack-id", default="", help="Pack ID")
+    assemble_parser.add_argument("--pack-name", default="", help="Pack name")
+    assemble_parser.add_argument("--pack-version", default="1.0", help="Pack version")
+    assemble_parser.add_argument("--pack-layer", default="sourcebook", help="Pack layer")
+    assemble_parser.add_argument("--pack-author", default="", help="Pack author")
+    assemble_parser.add_argument("--pack-description", default="", help="Pack description")
+    assemble_parser.set_defaults(func=ingest_assemble_cmd)
+
+    # ingest-validate (stage 7)
+    validate_parser = sub.add_parser("ingest-validate", help="Stage 7: Pack validation")
+    validate_parser.add_argument("input", help="Content pack directory")
+    validate_parser.add_argument("--output", "-o", help="Output directory for report")
+    validate_parser.set_defaults(func=ingest_validate_cmd)
+
+    # ingest-systems-extract (stage S1)
+    sys_extract_parser = sub.add_parser("ingest-systems-extract", help="Stage S1: Systems extraction")
+    sys_extract_parser.add_argument("input", help="Stage 4 output directory")
+    sys_extract_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    sys_extract_parser.set_defaults(func=ingest_systems_extract_cmd)
+
+    # ingest-systems-assemble (stage S2)
+    sys_assemble_parser = sub.add_parser("ingest-systems-assemble", help="Stage S2: Systems assembly")
+    sys_assemble_parser.add_argument("input", help="Stage S1 output directory")
+    sys_assemble_parser.add_argument("--output", "-o", required=True, help="Output directory")
+    sys_assemble_parser.set_defaults(func=ingest_systems_assemble_cmd)
+
+    # ingest-systems-validate (stage S3)
+    sys_validate_parser = sub.add_parser("ingest-systems-validate", help="Stage S3: Systems validation")
+    sys_validate_parser.add_argument("input", help="Stage S2 output directory")
+    sys_validate_parser.add_argument("--output", "-o", help="Output directory for report")
+    sys_validate_parser.set_defaults(func=ingest_systems_validate_cmd)
+
+    # Audit tool
+    audit_parser = sub.add_parser("ingest-audit", help="Audit pipeline output quality")
+    audit_parser.add_argument("input", help="Pipeline work directory")
+    audit_parser.add_argument("--samples", type=int, default=5, help="Pages to spot-check (default 5)")
+    audit_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    audit_parser.set_defaults(func=ingest_audit_cmd)
+
+    # promote-draft
+    promote_parser = sub.add_parser("promote-draft", help="Promote a draft pack to content_packs/")
+    promote_parser.add_argument("draft_path", help="Path to draft pack directory")
+    promote_parser.add_argument("--target", "-t", help="Target directory (default: content_packs/)")
+    promote_parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing pack")
+    promote_parser.set_defaults(func=promote_draft_cmd)
+
+    # list-systems
+    list_systems_parser = sub.add_parser("list-systems", help="List available system configs")
+    list_systems_parser.set_defaults(func=list_systems_cmd)
 
     return parser
 

@@ -11,13 +11,16 @@ src/
   context/        (packet builder)
   setup/          (session zero pipeline, scenario loader, calibration)
   eval/           (replay harness, metrics, snapshots)
-  cli/            (main CLI, guided flow)
-  content/        (v1: pack loader, lore indexer, retriever, scene cache)
-  prompts/        (versioned prompt files)
-  schemas/        (JSON schemas for all LLM inputs/outputs)
+  cli/            (main CLI, guided flow, ingest flow)
+  content/        (pack loader, chunker, lore indexer, retriever, scene cache, session manager, vector store)
+  ingest/         (PDF ingest pipeline: extract, structure, segment, classify, enrich, assemble, validate, systems)
+  prompts/        (versioned prompt files: turn pipeline + ingest pipeline)
+  schemas/        (JSON schemas for all LLM inputs/outputs: turn pipeline + ingest pipeline)
 scenarios/        (scenario YAML files)
-content_packs/    (v1: authored world sourcebooks)
+content_packs/    (authored world sourcebooks)
 tests/
+  unit/           (per-module tests including ingest stages)
+  integration/    (end-to-end pipeline tests)
 ```
 
 ---
@@ -156,7 +159,7 @@ Note: `scope` field added for Layer 3-forward compatibility. Values: `campaign` 
 
 ---
 
-## v1 Data Types (planned: content packs and sessions)
+## v1 Data Types (implemented: content packs and sessions)
 
 ### ContentPackManifest
 ```yaml
@@ -307,7 +310,7 @@ workers...
 
 ---
 
-## v1 Module Interfaces (planned)
+## v1 Module Interfaces (implemented)
 
 ### PackLoader
 - `loadPack(packPath)` -> ContentPackManifest
@@ -467,7 +470,7 @@ CREATE INDEX idx_relationships_a ON relationships (a_id);
 CREATE INDEX idx_relationships_b ON relationships (b_id);
 ```
 
-## v1 SQLite Schema Additions (planned)
+## v1 SQLite Schema Additions (implemented)
 
 ### New tables
 
@@ -563,7 +566,7 @@ ALTER TABLE relationships ADD COLUMN pack_id TEXT;
 
 ---
 
-## Scenario ↔ Content Pack integration
+## Scenario ↔ Content Pack integration (implemented)
 
 Scenarios reference content packs. The scenario loader resolves packs and indexes them at campaign init.
 
@@ -593,7 +596,7 @@ At campaign init:
 
 ---
 
-## Content pack authoring spec
+## Content pack authoring spec (implemented)
 
 ### Directory structure
 
@@ -665,7 +668,7 @@ The context builder, validator, and resolver all work with fully-qualified IDs i
 
 ---
 
-## Indexing pipeline spec
+## Indexing pipeline spec (implemented)
 
 At pack install / campaign init:
 
@@ -688,7 +691,7 @@ Default recommendation: Voyage for API-based, nomic-embed-text for self-hosted.
 
 ---
 
-## Retrieval strategy spec
+## Retrieval strategy spec (implemented)
 
 ### Three-stage hybrid retrieval
 
@@ -756,6 +759,566 @@ In v3 (shared worlds), `history` expands to include cross-campaign world history
 
 ---
 
+## PDF Ingest Pipeline (implemented)
+
+### Overview
+
+8-stage pipeline converting PDF sourcebooks into content packs. Each stage writes checkpoint metadata (`stage_meta.json`) enabling resume from any stage.
+
+```
+PDF → Extract → Structure → Segment → Classify → Enrich → Assemble → Validate → [Systems]
+                                                                                      ↓
+                                                                              Content Pack
+```
+
+### Pipeline stages
+
+| # | Stage | Module | Purpose | LLM? |
+|---|-------|--------|---------|------|
+| 1 | Extract | `ingest/extract.py` | PDF text extraction with OCR fallback | No |
+| 2 | Structure | `ingest/structure.py` | Document hierarchy and chapter intent detection | Fallback |
+| 3 | Segment | `ingest/segment.py` | Split into RAG-optimized chunks | Fallback |
+| 4 | Classify | `ingest/classify.py` | Content type + route classification | Verification |
+| 5 | Enrich | `ingest/enrich.py` | Entity extraction, frontmatter, tags | Yes (Sonnet + Haiku) |
+| 6 | Assemble | `ingest/assemble.py` | Build pack directory structure | No |
+| 7 | Validate | `ingest/validate.py` | Structural, installation, retrieval checks | No |
+| S1-S3 | Systems | `ingest/systems_extract.py`, `systems_assemble.py`, `systems_validate.py` | Game mechanics extraction | Yes |
+
+### Stage 1: Extract (PDFExtractor)
+
+- **Library**: PyMuPDF (fitz) with optional Tesseract OCR fallback
+- **Features**: multi-column layout detection, header/footer stripping (samples ~10% of pages), image extraction, configurable page ranges
+- **Outputs**: `pages/page_*.md`, `page_map.json`, `stage_meta.json`
+
+### Stage 2: Structure (StructureDetector)
+
+Four detection methods in priority order:
+1. Font-size analysis from PDF metadata
+2. Table of Contents parsing (regex: `Title...PageNum`)
+3. Text heuristics (ALL-CAPS, markdown headers, numbered patterns)
+4. LLM fallback (Haiku) for ambiguous documents
+
+Chapter intent classification (9 types): SETTING, FACTIONS, MECHANICS, CHARACTERS, NARRATIVE, REFERENCE, META, EQUIPMENT, BESTIARY.
+
+**Outputs**: `structure.json`, `chapters/*.md`, `stage_meta.json`
+
+### Stage 3: Segment (ContentSegmenter)
+
+Configurable chunk sizes: 150-2000 words, target 600. Segmentation strategies (in order):
+1. Header-boundary splitting (H2/H3)
+2. Size enforcement (merge small, split large)
+3. Paragraph-boundary splitting (fallback)
+4. LLM splitting (for mixed content)
+
+Filters META intent sections (copyright, TOC, credits).
+
+**Outputs**: `segment_manifest.json`, `segments/*.md`, `stage_meta.json`
+
+### Stage 4: Classify (ContentClassifier)
+
+Two-axis classification:
+- **Content type** (10 types): LOCATION, NPC, FACTION, CULTURE, ITEM, EVENT, HISTORY, RULES, TABLE, GENERAL
+- **Route**: LORE, SYSTEMS, or BOTH
+
+Rule-based first (22 mechanical indicator patterns: dice notation, DC, HP, modifiers, thresholds, clocks, escalation). Chapter intent biases route decision. Low-confidence (<0.7) segments verified via LLM in batches of 10.
+
+**Outputs**: updated `segment_manifest.json`, `stage_meta.json`
+
+### Stage 5: Enrich (LoreEnricher)
+
+Processes lore-routed segments through 4 sub-stages:
+- **5a**: Entity extraction (Sonnet, batches of 15, deduplication by entity ID)
+- **5b**: Per-segment enrichment with YAML frontmatter (related entities, tags, source tracking)
+- **5c**: Size validation (warns on oversized files)
+- **5d**: Batch tag generation (Haiku)
+
+**Outputs**: `enriched/{type}/*.md`, `entity_registry.json`, `stage_meta.json`
+
+### Stage 6: Assemble (PackAssembler)
+
+Organizes enriched files into pack directory structure:
+```
+{pack_id}/
+  pack.yaml           # Manifest (id, name, version, description, layer, author, tags)
+  locations/
+  npcs/
+  factions/
+  culture/
+  items/
+```
+
+### Stage 7: Validate (PackValidator)
+
+Three-phase validation:
+1. **Structural**: pack.yaml existence, YAML validity, manifest fields, markdown formatting
+2. **Installation test**: in-memory DB instantiation via PackLoader/Chunker/LoreIndexer
+3. **Retrieval spot-checks**: FTS5 queries against indexed content
+
+Returns `ValidationReport` with errors, warnings, and stats.
+
+### Stages S1-S3: Systems Extraction (optional)
+
+**S1 Extract**: 7 sub-extractors on systems-routed segments:
+- Resolution (dice, outcome bands, modifiers)
+- Clocks (types, thresholds, triggers)
+- Entity stats (NPC blocks, threat levels)
+- Conditions (status effects, states)
+- Calibration (difficulty presets)
+- Action types (available actions, costs)
+- Escalation (profiles, trigger chains)
+
+Combines heuristic patterns + LLM extraction, written to `{key}.yaml`.
+
+**S2 Assemble**: Merges into engine configs (`scenario_fragment.yaml`, `entity_templates.yaml`, `calibration_preset.yaml`, `conditions_config.yaml`, `resolution_mapping.yaml`).
+
+**S3 Validate**: Validates configs against entity registry and engine schema.
+
+### Ingest data models
+
+Defined in `src/ingest/models.py`:
+
+```python
+PageEntry              # Single extracted page
+ExtractionResult       # Stage 1 output
+ChapterIntent          # 9-valued enum (SETTING, FACTIONS, MECHANICS, ...)
+SectionNode            # Hierarchical document tree node
+DocumentStructure      # Stage 2 output
+ContentType            # 10-valued enum (LOCATION, NPC, FACTION, ...)
+Route                  # Routing enum (LORE, SYSTEMS, BOTH)
+SegmentEntry           # Individual segment with metadata
+SegmentManifest        # Collection of segments with statistics
+EntityEntry            # Named entity with type, aliases, relationships
+EntityRegistry         # Global entity index built during enrichment
+SystemsExtractionManifest  # Extracted mechanical data
+IngestConfig           # Full pipeline configuration
+```
+
+### Ingest prompt templates
+
+12 versioned prompt templates in `src/prompts/`:
+
+| Template | Model | Purpose |
+|----------|-------|---------|
+| `structure_v0.txt` | Haiku | Document structure detection fallback |
+| `segment_v0.txt` | Haiku | LLM-assisted segmentation |
+| `classify_v0.txt` | Haiku | Segment classification verification |
+| `enrich_entities_v0.txt` | Sonnet | Entity extraction from segments |
+| `enrich_segment_v0.txt` | Sonnet | Per-segment enrichment |
+| `enrich_tags_v0.txt` | Haiku | Batch tag generation |
+| `systems_resolution_v0.txt` | Sonnet | Resolution mechanics extraction |
+| `systems_clocks_v0.txt` | Sonnet | Clock system extraction |
+| `systems_entity_stats_v0.txt` | Sonnet | Entity stat block extraction |
+| `systems_conditions_v0.txt` | Sonnet | Status effect extraction |
+| `systems_calibration_v0.txt` | Sonnet | Difficulty preset extraction |
+| `systems_action_types_v0.txt` | Sonnet | Action type extraction |
+
+### Ingest JSON schemas
+
+12 schemas in `src/schemas/`:
+- `segment_output.schema.json` — Segmentation output
+- `structure_output.schema.json` — Hierarchical section list
+- `classify_output.schema.json` — Classification results (batch)
+- `enrich_entities_output.schema.json` — Entity extraction
+- `enrich_segment_output.schema.json` — Segment enrichment
+- `enrich_tags_output.schema.json` — Tag generation
+- `systems_resolution_output.schema.json` — Resolution mechanics
+- `systems_clocks_output.schema.json` — Clock definitions
+- `systems_entity_stats_output.schema.json` — Entity stat blocks
+- `systems_conditions_output.schema.json` — Status effects
+- `systems_calibration_output.schema.json` — Difficulty presets
+- `systems_action_types_output.schema.json` — Action types
+
+### Ingest CLI flow
+
+Interactive guided pipeline via `freeform-rpg pack-ingest`:
+1. Dependency check (pymupdf, optional pytesseract)
+2. API key prompt/retrieval
+3. PDF file selection
+4. Pack metadata (id, name, version, layer, author, description)
+5. Options (OCR, image extraction, systems extraction)
+6. Output directory selection
+7. Confirmation summary
+8. Pipeline execution with per-stage spinners and progress
+9. Validation results display
+10. Install offer for completed pack
+
+LLM configuration: Sonnet for quality-critical stages (entity extraction, enrichment), Haiku for cheap stages (structure, classification, tagging).
+
+---
+
+## Systems Extraction Philosophy
+
+The systems extraction pipeline (stages S1-S3) extracts game-mechanical data from PDFs. This section documents the architectural philosophy and guidelines for contributors.
+
+### LLM-Primary Architecture
+
+**Core principle**: LLM is the primary extractor. Heuristics pre-filter content to reduce context size and cost, NOT to extract specific patterns.
+
+```
+Raw PDF Pages
+    ↓
+Stage 1: Structural Pre-filter (Heuristics)
+    - Detect pages with tables, rating scales, stat blocks
+    - Identify mechanical vs narrative content by STRUCTURE
+    - NO hardcoded game terminology
+    ↓
+Stage 2: LLM Extraction (Primary)
+    - Send filtered mechanical pages to LLM
+    - Generic schema: "extract game mechanics you find"
+    - LLM understands semantically, returns structured data
+    ↓
+Stage 3: System Detection (Optional, Modular)
+    - If system family detected (WoD, d20, PbtA, etc.)
+    - Load system-specific post-processing config
+    - Enhance/validate extracted data
+    ↓
+Output: Generic mechanical data + optional system-specific enrichment
+```
+
+### What Heuristics Should Do
+
+**DO**: Detect structural patterns that indicate mechanical content:
+- Multi-column tables with numbers
+- Bulleted lists with rating scales (•, ••, •••)
+- Section headers followed by stat-like terms
+- Penalty ladders (lists of states with modifiers)
+- Dice notation anywhere (XdY patterns)
+
+**DON'T**: Look for specific game terminology:
+- "Strength, Dexterity, Constitution" (D&D attributes)
+- "Bruised, Hurt, Wounded" (WoD health levels)
+- "Correspondence, Entropy, Forces" (Mage spheres)
+- "Revolver, Pistol, Rifle" (specific weapon names)
+
+### Adding New Extractors
+
+When adding extraction patterns to `systems_extract.py`:
+
+1. **Ask**: "Would this pattern work for a completely different TTRPG?"
+2. **If no**: Refactor to detect structure, not content
+3. **Example transformation**:
+   - ❌ `r"bruised|hurt|wounded|mauled|crippled"` (WoD-specific)
+   - ✅ `r"^\s*\w+\s*:\s*-?\d+\s*penalty"` (detects penalty ladder structure)
+
+### Known Technical Debt
+
+The current implementation has some hardcoded patterns that need refactoring. See `docs/BACKLOG.md` → "Ingest Pipeline — Technical Debt" for the full tracked list.
+
+Summary of issues:
+- `_extract_equipment()` — hardcoded weapon names
+- `_extract_health()` — WoD health level names
+- `sphere_extract.py` — hardcoded Mage sphere names
+- `systems_refine.py` — only refines 2 of 9 extractors
+
+### System-Specific Post-Processing (Future)
+
+When a game system is detected or specified, the pipeline can apply system-specific validation and enrichment. This is separate from extraction:
+
+```yaml
+# Future: src/ingest/system_configs/wod.yaml
+system_family: wod
+validates:
+  - attributes use 1-5 dot scale
+  - abilities use 1-5 dot scale
+  - special traits can go to 10
+enriches:
+  - map detected health track to WoD health levels
+  - identify Disciplines/Spheres from ranked ability patterns
+```
+
+---
+
+## System Extraction Configuration (implemented)
+
+The pipeline now supports system-specific extraction configuration via YAML files in `systems/`. This provides reusable patterns for known game systems while maintaining generic structural detection as the baseline.
+
+### Directory Structure
+
+```
+systems/
+  _base.yaml                    # Generic TTRPG patterns (always loaded)
+  world_of_darkness.yaml        # WoD family (Vampire, Werewolf, Mage)
+  pbta.yaml                     # Powered by the Apocalypse (future)
+  osr.yaml                      # Old School Revival (future)
+
+content_packs/
+  mage_traditions/
+    pack.yaml                   # system: world_of_darkness
+    extraction.yaml             # OPTIONAL: Pack-specific overrides
+```
+
+### Inheritance Chain
+
+Configs are merged in order: `_base.yaml → system.yaml → pack/extraction.yaml`
+
+```
+_base.yaml (generic structure detection)
+    ↓
+world_of_darkness.yaml (WoD-specific patterns)
+    ↓
+pack/extraction.yaml (pack-specific tweaks)
+```
+
+### System Config Schema
+
+```yaml
+# systems/world_of_darkness.yaml
+id: world_of_darkness
+name: "World of Darkness"
+inherits: _base               # Config to inherit from
+
+# Runtime resolution (used by game engine)
+resolution:
+  method: dice_pool           # dice_pool | sum_bands | target_number
+  die_type: 10
+  difficulty_range: [3, 10]
+  difficulty_default: 6
+  ones_cancel_successes: true
+  botch_on_ones: true
+  pool_outcome_thresholds:
+    botch: 0
+    failure: 0
+    mixed: 1
+    success: 2
+    critical: 4
+
+# Stat schema for this system
+stat_schema:
+  attributes:
+    physical: [strength, dexterity, stamina]
+    social: [charisma, manipulation, appearance]
+    mental: [perception, intelligence, wits]
+  abilities:
+    talents: [alertness, athletics, awareness, ...]
+    skills: [crafts, drive, etiquette, ...]
+    knowledges: [academics, computer, finance, ...]
+  special_traits:
+    willpower: {min: 1, max: 10}
+
+# Extraction configuration (used by ingest pipeline)
+extraction:
+  # Indicators that a page has mechanical content
+  mechanical_indicators:
+    - pattern: "●+"
+      meaning: rating_dots
+      confidence: 0.9
+    - pattern: "^(Strength|Dexterity|Stamina|...)"
+      meaning: attribute_name
+      confidence: 0.95
+    - pattern: "(Bruised|Hurt|Injured|...)"
+      meaning: health_track
+      confidence: 0.95
+
+  # Section detection for hierarchical content
+  section_patterns:
+    spheres:
+      header_pattern: "^(Correspondence|Entropy|Forces|...)$"
+      content_type: ranked_ability
+      rating_type: dots
+    disciplines:
+      header_pattern: "^(Animalism|Auspex|Celerity|...)$"
+      content_type: ranked_ability
+      rating_type: dots
+
+  # How to interpret rating scales
+  rating_scales:
+    dots:
+      symbol: "●"
+      empty_symbol: "○"
+      max: 5
+      descriptions:
+        1: "Poor"
+        5: "Outstanding"
+    difficulty:
+      range: [3, 10]
+      default: 6
+
+  # Health track configuration
+  health:
+    track_type: levels
+    levels:
+      - {name: "Bruised", penalty: 0}
+      - {name: "Hurt", penalty: -1}
+      - {name: "Injured", penalty: -1}
+      - {name: "Wounded", penalty: -2}
+      - {name: "Mauled", penalty: -2}
+      - {name: "Crippled", penalty: -5}
+      - {name: "Incapacitated", penalty: null}
+    damage_types: [bashing, lethal, aggravated]
+
+  # GM Guidance detection
+  gm_guidance:
+    chapter_indicators:
+      - "Storytelling"
+      - "Chronicle"
+      - "Running the Game"
+    content_patterns:
+      - pattern: "(Storyteller|ST)\\s+(should|can|might)"
+        meaning: gm_technique
+        confidence: 0.9
+    categories: [pacing, scene_types, tone, player_agency, npc_portrayal]
+```
+
+### Pack Override Example
+
+```yaml
+# content_packs/mage_traditions/extraction.yaml
+extends: world_of_darkness    # Inherit from this system
+
+extraction:
+  section_patterns:
+    # Add Mage-specific sections
+    paradigm:
+      header_pattern: "^Paradigm$"
+      content_type: philosophical_framework
+    foci:
+      header_pattern: "^(Unique )?Foci$"
+      content_type: equipment_list
+    rotes:
+      header_pattern: "^Rotes$"
+      content_type: spell_list
+```
+
+### Using System Configs
+
+**CLI flag:**
+```bash
+freeform-rpg pack-ingest --system-hint world_of_darkness input.pdf
+```
+
+**Pack manifest:**
+```yaml
+# pack.yaml
+id: mage_traditions
+name: "Traditions Sourcebook"
+system: world_of_darkness     # Links to systems/world_of_darkness.yaml
+```
+
+**Programmatic:**
+```python
+from src.ingest.systems_config import load_extraction_config
+
+# Load with system hint
+config = load_extraction_config(system_hint="world_of_darkness")
+
+# Load from pack (reads pack.yaml's system field)
+config = load_extraction_config(pack_path=Path("content_packs/mage_traditions"))
+```
+
+### ExtractionConfig Data Model
+
+```python
+@dataclass
+class ExtractionConfig:
+    id: str                           # Config ID (e.g., "world_of_darkness")
+    name: str                         # Human-readable name
+    inherits: Optional[str]           # Parent config to inherit from
+    extraction: ExtractionHints       # Extraction patterns and hints
+    sources: list[str]                # Config files that were merged
+
+@dataclass
+class ExtractionHints:
+    mechanical_indicators: list[MechanicalIndicator]
+    section_patterns: dict[str, SectionPattern]
+    rating_scales: dict[str, RatingScale]
+    stat_blocks: StatBlockHints
+    health: HealthConfig
+    gm_guidance: GuidanceConfig
+```
+
+### GM Guidance Extraction
+
+The pipeline extracts storytelling advice from sourcebooks, categorizing it as:
+
+1. **Universal** — Applicable to any RPG (candidates for core prompt refinement)
+2. **Genre-specific** — Tied to this game/setting (stays in pack's `storytelling/` directory)
+
+**Output structure:**
+```
+draft/pack_id/
+  storytelling/
+    pacing.md            # Pacing advice extracted
+    tone.md              # Tone/mood guidance
+    scene_types.md       # Scene archetype advice
+    npc_portrayal.md     # NPC portrayal techniques
+  gm_guidance_review.md  # Universal candidates for manual review
+```
+
+**Review workflow:**
+1. Pipeline extracts GM guidance chunks
+2. Classifier tags each as universal or genre-specific
+3. `gm_guidance_review.md` lists universal candidates
+4. Human reviews and optionally adds to core prompts (`narrator_v0.txt`, etc.)
+
+### Draft Output Mode
+
+When using `--draft` flag, output goes to `draft/{pack_id}/` with review markers:
+
+```bash
+freeform-rpg pack-ingest --draft --system-hint world_of_darkness input.pdf
+```
+
+**Draft structure:**
+```
+draft/mage_traditions/
+  pack.yaml
+  REVIEW_NEEDED.md          # Items requiring manual review
+  DRAFT_README.md           # Instructions for review
+  locations/
+  npcs/
+  factions/
+  culture/
+  storytelling/             # GM guidance content
+  gm_guidance_review.md     # Universal candidates
+```
+
+**Promotion:**
+```bash
+freeform-rpg promote-draft draft/mage_traditions
+# → Copies to content_packs/mage_traditions/ (excluding review markers)
+```
+
+### Confidence Scoring
+
+Each extraction includes confidence metadata:
+
+```yaml
+# In systems/extract/health.yaml
+health_levels:
+  - name: "Bruised"
+    dice_penalty: 0
+  - name: "Hurt"
+    dice_penalty: -1
+_extraction_metadata:
+  confidence: 0.85              # 0.0-1.0
+  config_patterns_matched: 7    # How many config patterns hit
+```
+
+The `EXTRACTION_REPORT.md` summarizes confidence across extractors:
+
+```markdown
+## Extractor Results
+
+| Extractor | Confidence | Fields |
+|-----------|------------|--------|
+| resolution | 78% | 5 |
+| health | 85% | 3 |
+| magic | 45% (low) | 2 |
+```
+
+### Available System Configs
+
+List available system configs:
+```bash
+freeform-rpg list-systems
+```
+
+Current configs:
+- `_base` — Generic TTRPG structural patterns (always applied)
+- `world_of_darkness` — WoD family (Vampire, Werewolf, Mage, etc.)
+
+---
+
 ## v0 Validator rules (implemented)
 
 - Presence check: referenced entities must exist and be in scene if required.
@@ -777,10 +1340,24 @@ In v3 (shared worlds), `history` expands to include cross-campaign world history
 
 ## Prompt templates (spec)
 
+### Turn pipeline prompts
 - `interpreter_vX.txt`: inputs {context_packet, player_input} -> InterpreterOutput JSON.
 - `planner_vX.txt`: inputs {context_packet, validator_output} -> PlannerOutput JSON.
-- `narrator_vX.txt`: inputs {context_packet, engine_events, planner_output, blocked_actions} -> NarratorOutput JSON.
-- v1: narrator prompt gains `{{lore_context}}` section for scene lore injection.
+- `narrator_vX.txt`: inputs {context_packet, engine_events, planner_output, blocked_actions} -> NarratorOutput JSON. Includes `{{lore_context}}` section for scene lore injection.
+
+### Ingest pipeline prompts
+- `structure_vX.txt`: document structure detection fallback (Haiku).
+- `segment_vX.txt`: LLM-assisted content segmentation (Haiku).
+- `classify_vX.txt`: segment classification verification (Haiku).
+- `enrich_entities_vX.txt`: entity extraction from segments (Sonnet).
+- `enrich_segment_vX.txt`: per-segment enrichment with frontmatter (Sonnet).
+- `enrich_tags_vX.txt`: batch tag generation (Haiku).
+- `systems_resolution_vX.txt`: resolution mechanics extraction (Sonnet).
+- `systems_clocks_vX.txt`: clock system extraction (Sonnet).
+- `systems_entity_stats_vX.txt`: entity stat block extraction (Sonnet).
+- `systems_conditions_vX.txt`: status effect extraction (Sonnet).
+- `systems_calibration_vX.txt`: difficulty preset extraction (Sonnet).
+- `systems_action_types_vX.txt`: action type extraction (Sonnet).
 
 ## Replay harness spec
 
@@ -794,19 +1371,41 @@ In v3 (shared worlds), `history` expands to include cross-campaign world history
 - `invalid_action_acceptance` = invalid actions accepted / total invalid actions.
 - `clarification_rate` = clarification turns / total turns.
 - `length_stats` = min, avg, max of narrator output length.
-- v1: `lore_relevance_rate` = relevant chunks / total chunks retrieved per scene.
-- v1: `lore_cache_hit_rate` = turns using cached lore / total turns.
+- `lore_relevance_rate` = relevant chunks / total chunks retrieved per scene.
+- `lore_cache_hit_rate` = turns using cached lore / total turns.
 
 ## Testing plan
 
-- Unit tests: validator rules, context builder selection, resolver clock updates. (implemented)
-- Integration tests: golden transcripts through full pipeline. (implemented)
-- Regression tests: replay harness with pinned prompt versions. (implemented)
-- v1: content pack loading and validation tests.
-- v1: indexing pipeline tests (chunking, metadata extraction, FTS5 insertion).
-- v1: retrieval accuracy tests (known-good queries against test pack).
-- v1: scene lore cache lifecycle tests.
-- v1: session start/end lifecycle tests.
+### v0 (implemented)
+- Unit tests: validator rules, context builder selection, resolver clock updates.
+- Integration tests: golden transcripts through full pipeline.
+- Regression tests: replay harness with pinned prompt versions.
+
+### v1 content packs (implemented)
+- Content pack loading and validation tests.
+- Indexing pipeline tests (chunking, metadata extraction, FTS5 insertion).
+- Retrieval accuracy tests (known-good queries against test pack).
+- Scene lore cache lifecycle tests.
+- Session start/end lifecycle tests.
+
+### v1 ingest pipeline (implemented)
+13 unit test files + 1 integration test covering all 8 stages:
+- `test_ingest_pipeline.py` — Config, stage constants, from_stage clearing, resume logic.
+- `test_ingest_extract.py` — PDF extraction, header/footer stripping (mocked fitz).
+- `test_ingest_structure.py` — Font detection, text heuristics, TOC parsing, intent classification.
+- `test_ingest_segment.py` — Header-boundary splitting, size enforcement, LLM splitting fallback.
+- `test_ingest_classify.py` — Location/NPC/faction/rules classification, routing, mechanical patterns.
+- `test_ingest_enrich.py` — Entity extraction, frontmatter generation, tag generation.
+- `test_ingest_assemble.py` — Pack directory creation, manifest writing.
+- `test_ingest_validate.py` — Structural validation, installation test.
+- `test_ingest_models.py` — Model instantiation, enum conversions.
+- `test_ingest_utils.py` — Slugify, word count, page range parsing, markdown I/O.
+- `test_ingest_systems_extract.py` — Systems extraction sub-extractors.
+- `test_ingest_systems_assemble.py` — Systems config assembly.
+- `test_ingest_systems_validate.py` — Systems config validation.
+- `tests/integration/test_ingest_pipeline.py` — Full pipeline end-to-end.
+
+Test patterns: mocked fitz for PDF testing, parametrized classification tests, tmp_path fixtures, output file validation.
 
 ## LLM provider (v0)
 

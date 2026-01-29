@@ -1,0 +1,323 @@
+# systems/world_of_darkness.yaml
+# World of Darkness family (Vampire, Werewolf, Mage, etc.)
+# Used for both extraction hints AND runtime resolution.
+
+id: world_of_darkness
+name: "World of Darkness"
+inherits: _base
+
+# Runtime resolution configuration
+resolution:
+  method: dice_pool
+  die_type: 10
+  difficulty_range: [3, 10]
+  difficulty_default: 6
+  success_threshold: 1
+  ones_cancel_successes: true
+  botch_on_ones: true
+  threshold_past_9: true
+  pool_outcome_thresholds:
+    botch: 0      # No successes and at least one 1
+    failure: 0    # No successes
+    mixed: 1      # 1 success
+    success: 2    # 2-3 successes
+    critical: 4   # 4+ successes
+
+# Stat schema for WoD systems
+stat_schema:
+  attributes:
+    physical:
+      - strength
+      - dexterity
+      - stamina
+    social:
+      - charisma
+      - manipulation
+      - appearance
+    mental:
+      - perception
+      - intelligence
+      - wits
+  abilities:
+    talents:
+      - alertness
+      - athletics
+      - awareness
+      - brawl
+      - empathy
+      - expression
+      - intimidation
+      - leadership
+      - streetwise
+      - subterfuge
+    skills:
+      - animal_ken
+      - crafts
+      - drive
+      - etiquette
+      - firearms
+      - larceny
+      - melee
+      - performance
+      - stealth
+      - survival
+    knowledges:
+      - academics
+      - computer
+      - finance
+      - investigation
+      - law
+      - medicine
+      - occult
+      - politics
+      - science
+      - technology
+  special_traits:
+    willpower:
+      min: 1
+      max: 10
+    # Game-specific traits (quintessence, blood pool, rage, gnosis)
+    # are added by game-specific configs or pack overrides
+
+# Difficulty settings
+difficulty:
+  default: 6
+  auto_success_if_pool_gte_difficulty: false
+  retry_penalty: 1
+
+# Willpower spending
+willpower:
+  enabled: true
+  resource_name: willpower
+  auto_successes_per_spend: 1
+  max_per_turn: 1
+
+# Extraction configuration - WoD-specific patterns
+extraction:
+  # Indicators that a page has mechanical content
+  mechanical_indicators:
+    # Dot ratings (WoD signature)
+    - pattern: "●+"
+      meaning: rating_dots
+      confidence: 0.9
+
+    - pattern: "○+"
+      meaning: empty_dots
+      confidence: 0.8
+
+    # WoD attribute names (9 core attributes)
+    - pattern: "^(Strength|Dexterity|Stamina|Charisma|Manipulation|Appearance|Perception|Intelligence|Wits)\\b"
+      meaning: attribute_name
+      confidence: 0.95
+
+    # WoD health track
+    - pattern: "(Bruised|Hurt|Injured|Wounded|Mauled|Crippled|Incapacitated)"
+      meaning: health_track
+      confidence: 0.95
+
+    # Difficulty notation
+    - pattern: "\\b[Dd]ifficulty\\s*(\\d|[3-9]|10)\\b"
+      meaning: difficulty_rating
+      confidence: 0.9
+
+    # Dice pool notation
+    - pattern: "\\b(roll|dice pool|pool)\\s*(of)?\\s*\\d+"
+      meaning: dice_pool_reference
+      confidence: 0.8
+
+    # Blood/vitae/quintessence pool
+    - pattern: "\\b(blood pool|vitae|quintessence|gnosis|rage)\\s*[:\\d]"
+      meaning: resource_pool
+      confidence: 0.85
+
+    # Damage types
+    - pattern: "\\b(bashing|lethal|aggravated)\\s*(damage)?"
+      meaning: damage_type
+      confidence: 0.9
+
+    # Soak notation
+    - pattern: "\\b(soak|stamina)\\s*(roll|pool|dice)"
+      meaning: soak_reference
+      confidence: 0.85
+
+  # Section detection for hierarchical content
+  section_patterns:
+    # Vampire: Disciplines
+    disciplines:
+      header_pattern: "^(Animalism|Auspex|Celerity|Chimerstry|Dementation|Dominate|Fortitude|Melpominee|Mytherceria|Necromancy|Obeah|Obfuscate|Obtenebration|Potence|Presence|Protean|Quietus|Serpentis|Spiritus|Temporis|Thanatosis|Thaumaturgy|Valeren|Vicissitude)$"
+      content_type: ranked_ability
+      rating_type: dots
+
+    # Mage: Spheres
+    spheres:
+      header_pattern: "^(Correspondence|Data|Dimensional Science|Entropy|Forces|Life|Matter|Mind|Prime|Spirit|Time)$"
+      content_type: ranked_ability
+      rating_type: dots
+
+    # Werewolf: Gifts
+    gifts:
+      header_pattern: "^(Breed|Auspice|Tribe)\\s+Gifts?$"
+      content_type: ranked_ability
+      rating_type: dots
+
+    # Backgrounds
+    backgrounds:
+      header_pattern: "^(Allies|Contacts|Fame|Generation|Herd|Influence|Mentor|Resources|Retainers|Status|Avatar|Arcane|Destiny|Dream|Library|Node|Past Lives|Sanctum|Wonder)$"
+      content_type: background
+      rating_type: dots
+
+    # Merits and Flaws
+    merits_flaws:
+      header_pattern: "^(Merits|Flaws|Merits and Flaws|Merits & Flaws)$"
+      content_type: advantage_list
+      rating_type: points
+
+    # Virtues
+    virtues:
+      header_pattern: "^(Conscience|Self-Control|Courage|Conviction|Instinct)$"
+      content_type: virtue
+      rating_type: dots
+
+    # Abilities (Talents, Skills, Knowledges)
+    abilities:
+      header_pattern: "^(Talents|Skills|Knowledges)$"
+      content_type: ability_category
+      rating_type: dots
+
+  # How to interpret rating scales
+  rating_scales:
+    dots:
+      symbol: "●"
+      empty_symbol: "○"
+      max: 5
+      descriptions:
+        1: "Poor"
+        2: "Average"
+        3: "Good"
+        4: "Exceptional"
+        5: "Outstanding"
+
+    specialty_dots:
+      symbol: "●"
+      max: 10
+      applies_to:
+        - arete
+        - willpower
+        - blood_pool
+        - quintessence
+        - rage
+        - gnosis
+
+    difficulty:
+      range: [3, 10]
+      default: 6
+      descriptions:
+        3: "Routine"
+        4: "Simple"
+        5: "Straightforward"
+        6: "Standard"
+        7: "Challenging"
+        8: "Difficult"
+        9: "Extremely Difficult"
+        10: "Nearly Impossible"
+
+  # Stat block structure hints
+  stat_blocks:
+    npc_format: |
+      Name
+      Clan/Tradition/Tribe/Kith
+      Nature/Demeanor
+      Attributes: Physical X/X/X, Social X/X/X, Mental X/X/X
+      Abilities: [list]
+      Disciplines/Spheres/Gifts: [list with ratings]
+      Backgrounds: [list]
+      Virtues: Conscience X, Self-Control X, Courage X
+      Willpower: X
+      Blood Pool/Quintessence/Rage: X
+
+    # Markers that indicate stat block content
+    markers:
+      - "^Nature:"
+      - "^Demeanor:"
+      - "^Clan:"
+      - "^Tradition:"
+      - "^Tribe:"
+      - "^Concept:"
+      - "^Generation:"
+      - "^Haven:"
+      - "^Sire:"
+      - "^Mentor:"
+      - "^Willpower:"
+      - "^Blood Pool:"
+      - "^Quintessence:"
+      - "^Paradox:"
+      - "^Rage:"
+      - "^Gnosis:"
+
+  # Health track extraction
+  health:
+    track_type: levels
+    levels:
+      - name: "Bruised"
+        penalty: 0
+      - name: "Hurt"
+        penalty: -1
+      - name: "Injured"
+        penalty: -1
+      - name: "Wounded"
+        penalty: -2
+      - name: "Mauled"
+        penalty: -2
+      - name: "Crippled"
+        penalty: -5
+      - name: "Incapacitated"
+        penalty: null  # Cannot act
+    damage_types:
+      - bashing
+      - lethal
+      - aggravated
+
+  # WoD-specific GM Guidance patterns
+  gm_guidance:
+    # Additional chapter indicators for WoD books
+    chapter_indicators:
+      - "Storytelling"
+      - "Chronicle"
+      - "Drama"
+      - "Running the Game"
+      - "The Storyteller"
+      - "Antagonists"
+      - "Templates"
+
+    content_patterns:
+      # WoD-specific storyteller language
+      - pattern: "(Storyteller|ST)\\s+(should|can|might|may)"
+        meaning: gm_technique
+        confidence: 0.9
+
+      # Chronicle/story structure
+      - pattern: "\\b(chronicle|story|saga|prelude)\\s+(hook|arc|structure)"
+        meaning: campaign_structure
+        confidence: 0.8
+
+      # Mood/theme language (WoD emphasizes this)
+      - pattern: "\\b(gothic|punk|horror|personal|tragedy|redemption)\\b"
+        meaning: tone_guidance
+        confidence: 0.75
+
+      # NPC/antagonist portrayal
+      - pattern: "\\b(portray|roleplay|depict)\\s+(the\\s+)?(npc|antagonist|elder|prince|archon)"
+        meaning: npc_portrayal
+        confidence: 0.8
+
+    categories:
+      - pacing
+      - scene_types
+      - tone
+      - player_agency
+      - npc_portrayal
+      - escalation
+      - session_structure
+      - horror_techniques
+      - personal_drama
+      - political_intrigue

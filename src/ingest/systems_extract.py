@@ -10,6 +10,11 @@ sub-extractors that target specific mechanical patterns:
   6. Clocks (progress trackers, thresholds, triggers)
   7. Calibration (difficulty tuning, preset values)
   8. Action types (available actions, costs, risks)
+
+Extraction can be enhanced with system-specific configuration loaded from
+systems/{system}.yaml files. These configs provide patterns for detecting
+system-specific content while maintaining generic structural detection as
+the baseline.
 """
 
 import json
@@ -18,7 +23,13 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from .models import Route, SegmentEntry, SegmentManifest, SystemsExtractionManifest
+from .models import (
+    ExtractionConfig,
+    Route,
+    SegmentEntry,
+    SegmentManifest,
+    SystemsExtractionManifest,
+)
 from .utils import ensure_dir, write_stage_meta
 
 logger = logging.getLogger(__name__)
@@ -78,17 +89,35 @@ EXTRACTOR_KEYS = [
 
 
 class SystemsExtractor:
-    """Extracts mechanical data from systems-routed segments."""
+    """Extracts mechanical data from systems-routed segments.
 
-    def __init__(self, llm_gateway=None, prompt_registry=None):
+    Supports optional ExtractionConfig for system-specific pattern enhancement.
+    When config is provided, uses system patterns in addition to generic structural
+    detection. This allows better extraction for known systems (WoD, PbtA, OSR)
+    while maintaining fallback behavior for unknown systems.
+    """
+
+    def __init__(
+        self,
+        llm_gateway=None,
+        prompt_registry=None,
+        extraction_config: Optional[ExtractionConfig] = None,
+    ):
         self.gateway = llm_gateway
         self.registry = prompt_registry
+        self.config = extraction_config
+        self._compiled_patterns = None
+
+        if self.config:
+            from .systems_config import compile_patterns
+            self._compiled_patterns = compile_patterns(self.config)
 
     def extract(
         self,
         manifest: SegmentManifest,
         output_dir: str | Path,
         raw_pages_dir: str | Path | None = None,
+        extraction_config: Optional[ExtractionConfig] = None,
     ) -> SystemsExtractionManifest:
         """Run all sub-extractors on systems-routed segments.
 
@@ -98,10 +127,17 @@ class SystemsExtractor:
             raw_pages_dir: Optional path to raw extracted pages (01_extract/pages).
                           If provided, uses raw pages for extraction instead of
                           summarized segments (recommended for mechanical data).
+            extraction_config: Optional config override (uses self.config if not provided).
 
         Returns:
             SystemsExtractionManifest with extracted data.
         """
+        # Allow per-call config override
+        if extraction_config:
+            self.config = extraction_config
+            from .systems_config import compile_patterns
+            self._compiled_patterns = compile_patterns(self.config)
+
         output_dir = Path(output_dir)
         ensure_dir(output_dir)
 
@@ -132,10 +168,28 @@ class SystemsExtractor:
             source_segments=[s.id for s in systems_segments],
         )
 
+        # Track extraction metadata (confidence, config-matched patterns)
+        extraction_report = {
+            "config_used": self.config.id if self.config else "_base",
+            "config_sources": self.config.sources if self.config else [],
+            "extractors": {},
+        }
+
         # Run each sub-extractor
         for key in EXTRACTOR_KEYS:
             extraction = self._run_sub_extractor(key, systems_text, systems_segments)
             if extraction:
+                # Add confidence metadata
+                confidence = self._calculate_confidence(key, extraction, systems_text)
+                extraction["_extraction_metadata"] = {
+                    "confidence": confidence,
+                    "config_patterns_matched": self._count_config_matches(key, systems_text),
+                }
+                extraction_report["extractors"][key] = {
+                    "confidence": confidence,
+                    "fields_extracted": len([k for k in extraction.keys() if not k.startswith("_")]),
+                }
+
                 result.extractions[key] = extraction
                 # Write individual extraction file
                 (output_dir / f"{key}.yaml").write_text(
@@ -151,6 +205,11 @@ class SystemsExtractor:
         }
         (output_dir / "extraction_manifest.json").write_text(
             json.dumps(manifest_data, indent=2, ensure_ascii=False)
+        )
+
+        # Write extraction report
+        (output_dir / "extraction_report.json").write_text(
+            json.dumps(extraction_report, indent=2, ensure_ascii=False)
         )
 
         # Optionally run LLM refinement
@@ -192,9 +251,20 @@ class SystemsExtractor:
         systems_text: str,
         segments: list[SegmentEntry],
     ) -> Optional[dict]:
-        """Run a single sub-extractor."""
+        """Run a single sub-extractor.
+
+        Order of operations:
+        1. Heuristic extraction (generic structural patterns)
+        2. Config pattern enhancement (system-specific patterns if config provided)
+        3. LLM extraction (deeper semantic analysis if gateway available)
+        4. Merge all results
+        """
         # First try heuristic extraction
         heuristic_result = self._heuristic_extract(key, systems_text)
+
+        # Apply config pattern enhancements
+        if self.config:
+            heuristic_result = self._apply_config_patterns(key, systems_text, heuristic_result)
 
         # Then use LLM for deeper extraction
         if self.gateway and self.registry:
@@ -1318,3 +1388,140 @@ class SystemsExtractor:
             return ""
 
         return "\n\n---\n\n".join(pages_content)
+
+    def _calculate_confidence(self, extractor_key: str, extraction: dict, text: str) -> float:
+        """Calculate confidence score for an extraction.
+
+        Factors:
+        - Number of fields extracted (more = higher confidence)
+        - Config pattern matches (if config provided)
+        - Presence of key indicators for this extractor type
+        """
+        if not extraction:
+            return 0.0
+
+        # Base confidence from field count
+        field_count = len([k for k in extraction.keys() if not k.startswith("_")])
+        base_confidence = min(0.3 + (field_count * 0.1), 0.7)
+
+        # Boost from config pattern matches
+        config_boost = 0.0
+        if self._compiled_patterns and self.config:
+            match_count = self._count_config_matches(extractor_key, text)
+            config_boost = min(match_count * 0.05, 0.2)
+
+        # Extractor-specific key indicators
+        key_indicator_boost = 0.0
+        key_indicators = {
+            "resolution": ["method", "die_type", "default_difficulty"],
+            "stat_schema": ["attributes", "abilities"],
+            "health": ["health_levels", "health_track_type"],
+            "equipment": ["melee_weapons", "ranged_weapons", "armor"],
+            "magic": ["magic_system"],
+            "conditions": ["conditions"],
+            "clocks": ["clocks"],
+            "calibration": ["presets"],
+            "action_types": ["action_types"],
+        }
+        indicators = key_indicators.get(extractor_key, [])
+        for indicator in indicators:
+            if indicator in extraction:
+                key_indicator_boost += 0.1
+
+        total_confidence = min(base_confidence + config_boost + key_indicator_boost, 1.0)
+        return round(total_confidence, 2)
+
+    def _count_config_matches(self, extractor_key: str, text: str) -> int:
+        """Count how many config patterns matched in the text.
+
+        Uses the compiled patterns from the extraction config to find
+        system-specific indicators in the source text.
+        """
+        if not self._compiled_patterns:
+            return 0
+
+        match_count = 0
+
+        # Check mechanical indicators
+        for indicator in self._compiled_patterns.get("mechanical", []):
+            pattern = indicator["pattern"]
+            matches = pattern.findall(text)
+            if matches:
+                match_count += len(matches)
+
+        # Check section patterns relevant to this extractor
+        extractor_sections = {
+            "resolution": [],  # Resolution uses mechanical indicators
+            "stat_schema": ["abilities"],
+            "health": [],  # Health uses mechanical indicators
+            "equipment": ["equipment"],
+            "magic": ["spheres", "disciplines", "gifts"],
+            "conditions": [],
+            "clocks": [],
+            "calibration": [],
+            "action_types": [],
+        }
+        relevant_sections = extractor_sections.get(extractor_key, [])
+        for section_name in relevant_sections:
+            section_data = self._compiled_patterns.get("sections", {}).get(section_name)
+            if section_data:
+                pattern = section_data["pattern"]
+                matches = pattern.findall(text)
+                if matches:
+                    match_count += len(matches)
+
+        return match_count
+
+    def _apply_config_patterns(self, extractor_key: str, text: str, base_result: dict) -> dict:
+        """Enhance extraction results using config patterns.
+
+        This method applies system-specific patterns from the config to
+        improve extraction accuracy. Called after heuristic extraction
+        to add system-specific enhancements.
+        """
+        if not self.config or not self._compiled_patterns:
+            return base_result
+
+        result = dict(base_result) if base_result else {}
+
+        # Apply section pattern matches
+        sections = self._compiled_patterns.get("sections", {})
+
+        if extractor_key == "magic":
+            # Look for sphere/discipline patterns
+            for section_name in ["spheres", "disciplines", "gifts"]:
+                if section_name in sections:
+                    section_data = sections[section_name]
+                    matches = section_data["pattern"].findall(text)
+                    if matches:
+                        if "magic_system" not in result:
+                            result["magic_system"] = {}
+                        if "spell_schools" not in result["magic_system"]:
+                            result["magic_system"]["spell_schools"] = []
+                        existing_names = {s["name"].lower() for s in result["magic_system"]["spell_schools"]}
+                        for match in matches:
+                            if match.lower() not in existing_names:
+                                result["magic_system"]["spell_schools"].append({
+                                    "name": match,
+                                    "source": f"config:{section_name}",
+                                })
+                                existing_names.add(match.lower())
+
+        if extractor_key == "health" and self.config.extraction.health.levels:
+            # Use configured health levels as reference
+            config_levels = self.config.extraction.health.levels
+            if config_levels and "health_levels" not in result:
+                # Check if any configured level names appear in text
+                found_levels = []
+                for level in config_levels:
+                    level_name = level.get("name", "")
+                    if level_name and re.search(rf"\b{re.escape(level_name)}\b", text, re.IGNORECASE):
+                        found_levels.append({
+                            "name": level_name,
+                            "dice_penalty": level.get("penalty", 0),
+                            "source": "config:health.levels",
+                        })
+                if len(found_levels) >= 3:  # Require multiple matches
+                    result["health_levels"] = found_levels
+
+        return result

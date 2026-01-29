@@ -17,7 +17,7 @@ from typing import Optional
 
 from .models import (
     ChapterIntent, ContentType, DocumentStructure, EntityEntry,
-    EntityRegistry, ExtractionResult, IngestConfig, PageEntry,
+    EntityRegistry, ExtractionConfig, ExtractionResult, IngestConfig, PageEntry,
     Route, SectionNode, SegmentEntry, SegmentManifest,
     SystemsExtractionManifest,
 )
@@ -52,6 +52,7 @@ class IngestPipeline:
         sonnet_gateway=None,
         haiku_gateway=None,
         prompt_registry=None,
+        system_hint: Optional[str] = None,
     ):
         """
         Args:
@@ -59,13 +60,40 @@ class IngestPipeline:
             sonnet_gateway: LLM gateway for quality-critical stages (enrichment, entities).
             haiku_gateway: LLM gateway for cheap stages (classify, structure, tags).
             prompt_registry: Prompt registry for loading templates.
+            system_hint: Optional system ID (e.g., "world_of_darkness") to use for
+                extraction. If provided, loads system-specific patterns from
+                systems/{system_hint}.yaml.
         """
         self.config = config
         self.sonnet = sonnet_gateway
         self.haiku = haiku_gateway or sonnet_gateway
         self.registry = prompt_registry
+        self.system_hint = system_hint
+        self._extraction_config: Optional[ExtractionConfig] = None
         self._timings: dict[str, float] = {}
         self._progress_fn = None  # Set by InstrumentedPipeline for spinner updates
+
+        # Load extraction config if system hint provided
+        if system_hint:
+            self._load_extraction_config()
+
+    def _load_extraction_config(self) -> None:
+        """Load extraction config from system hint."""
+        from .systems_config import load_extraction_config
+
+        self._extraction_config = load_extraction_config(
+            pack_path=None,
+            system_hint=self.system_hint,
+        )
+        logger.info(
+            "Loaded extraction config: %s (sources: %s)",
+            self._extraction_config.id,
+            ", ".join(self._extraction_config.sources),
+        )
+
+    def get_extraction_config(self) -> Optional[ExtractionConfig]:
+        """Get the loaded extraction config."""
+        return self._extraction_config
 
     def run(
         self,
@@ -128,6 +156,10 @@ class IngestPipeline:
             loader=self._load_segment_manifest,
         )
 
+        # Stage 4.5: GM Guidance Extraction (run inline, doesn't need its own stage)
+        guidance_dir = work_dir / "04_guidance"
+        guidance_result = self._extract_gm_guidance(manifest, guidance_dir)
+
         # Stage 5: Lore Enrichment + Assembly
         lore_dir = work_dir / "05_lore"
         enriched_files, entity_registry = self._run_stage(
@@ -141,6 +173,7 @@ class IngestPipeline:
         pack_dir = self._run_stage(
             "assemble", assemble_dir, resume,
             self._stage_assemble, enriched_files, assemble_dir, entity_registry,
+            guidance_dir,
             loader=self._load_pack_dir,
         )
 
@@ -172,10 +205,17 @@ class IngestPipeline:
                 systems_report.valid if systems_report else None
             ),
             "timings": self._timings,
+            "extraction_config": {
+                "id": self._extraction_config.id if self._extraction_config else "_base",
+                "sources": self._extraction_config.sources if self._extraction_config else [],
+            },
         }
         (work_dir / "pipeline_summary.json").write_text(
             json.dumps(summary, indent=2, ensure_ascii=False)
         )
+
+        # Write extraction report if config was used
+        self._write_extraction_report(work_dir)
 
         logger.info("Pipeline complete. Pack at: %s", pack_dir)
         return summary
@@ -524,11 +564,55 @@ class IngestPipeline:
         )
         return enricher.enrich(manifest=manifest, output_dir=output_dir)
 
+    def _extract_gm_guidance(
+        self,
+        manifest: SegmentManifest,
+        output_dir: Path,
+    ) -> Optional[Path]:
+        """Extract GM guidance from segments (runs inline, not as a formal stage).
+
+        Returns:
+            Path to guidance output directory, or None if no guidance found.
+        """
+        from .gm_guidance_extract import GuidanceExtractor
+
+        # Check if already done
+        if (output_dir / "stage_meta.json").exists():
+            meta = read_stage_meta(output_dir)
+            if meta and meta.get("status") == "complete":
+                logger.info("GM guidance extraction already complete, skipping")
+                return output_dir
+
+        ensure_dir(output_dir)
+
+        extractor = GuidanceExtractor(
+            llm_gateway=self.haiku,
+            prompt_registry=self.registry,
+            extraction_config=self._extraction_config,
+        )
+        result = extractor.extract(
+            manifest=manifest,
+            output_dir=output_dir,
+        )
+
+        if result.chunks:
+            logger.info(
+                "Extracted %d GM guidance chunks (%d universal, %d genre-specific)",
+                len(result.chunks),
+                len(result.universal_candidates),
+                len(result.genre_specific),
+            )
+            return output_dir
+
+        logger.info("No GM guidance chunks extracted")
+        return None
+
     def _stage_assemble(
         self,
         enriched_files: list[dict],
         output_dir: Path,
         entity_registry: Optional[EntityRegistry] = None,
+        guidance_dir: Optional[Path] = None,
     ) -> Path:
         """Stage 6: Content pack assembly."""
         from .assemble import PackAssembler
@@ -539,6 +623,7 @@ class IngestPipeline:
             config=self.config,
             output_dir=output_dir,
             entity_registry=entity_registry,
+            guidance_dir=guidance_dir,
         )
 
     def _stage_validate(self, pack_dir: Path, output_dir: Path):
@@ -570,6 +655,7 @@ class IngestPipeline:
         extractor = SystemsExtractor(
             llm_gateway=self.haiku,
             prompt_registry=self.registry,
+            extraction_config=self._extraction_config,
         )
         extraction = extractor.extract(
             manifest=manifest,
@@ -592,3 +678,66 @@ class IngestPipeline:
             entity_registry=entity_registry,
             output_dir=output_dir,
         )
+
+    def _write_extraction_report(self, work_dir: Path) -> None:
+        """Write EXTRACTION_REPORT.md summarizing extraction results and config usage."""
+        systems_dir = work_dir / "08_systems" / "extract"
+        report_path = systems_dir / "extraction_report.json"
+
+        if not report_path.exists():
+            return
+
+        report_data = json.loads(report_path.read_text())
+
+        # Build markdown report
+        lines = [
+            "# Extraction Report",
+            "",
+            f"**Config Used:** {report_data.get('config_used', '_base')}",
+            "",
+        ]
+
+        sources = report_data.get("config_sources", [])
+        if sources:
+            lines.append("**Config Sources:**")
+            for src in sources:
+                lines.append(f"- `{src}`")
+            lines.append("")
+
+        extractors = report_data.get("extractors", {})
+        if extractors:
+            lines.append("## Extractor Results")
+            lines.append("")
+            lines.append("| Extractor | Confidence | Fields |")
+            lines.append("|-----------|------------|--------|")
+            for name, data in extractors.items():
+                conf = data.get("confidence", 0.0)
+                conf_display = f"{conf:.0%}"
+                if conf >= 0.7:
+                    conf_display = f"{conf_display}"
+                elif conf >= 0.5:
+                    conf_display = f"{conf_display}"
+                else:
+                    conf_display = f"{conf_display} (low)"
+                fields = data.get("fields_extracted", 0)
+                lines.append(f"| {name} | {conf_display} | {fields} |")
+            lines.append("")
+
+        # Identify low-confidence extractions for review
+        low_conf = [
+            name for name, data in extractors.items()
+            if data.get("confidence", 0.0) < 0.5
+        ]
+        if low_conf:
+            lines.append("## Needs Review")
+            lines.append("")
+            lines.append("The following extractors had low confidence and may need manual review:")
+            lines.append("")
+            for name in low_conf:
+                lines.append(f"- **{name}**: Check `{name}.yaml` for accuracy")
+            lines.append("")
+
+        # Write the markdown report
+        md_report_path = work_dir / "EXTRACTION_REPORT.md"
+        md_report_path.write_text("\n".join(lines))
+        logger.info("Wrote extraction report: %s", md_report_path)
