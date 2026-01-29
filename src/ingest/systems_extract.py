@@ -514,195 +514,321 @@ class SystemsExtractor:
         return result if result else None
 
     def _extract_health(self, text: str) -> Optional[dict]:
-        """Extract health and damage system."""
+        """Extract health and damage system - GENERIC structural detection.
+
+        Detects health/damage systems by STRUCTURE, not game-specific terminology:
+        - Lists with incrementing penalties (0, -1, -2, etc.)
+        - Tables with health levels and modifiers
+        - Named states followed by numeric penalties
+        - Damage type patterns (multiple damage categories)
+
+        The LLM refinement layer will contextualize and label results.
+        """
         result = {}
         text_lower = text.lower()
 
-        # Detect health track type
-        if re.search(r"health\s*level|bruised|hurt|injured|wounded|mauled|crippled|incapacitated", text_lower):
+        # === DETECT HEALTH TRACK TYPE BY STRUCTURE ===
+        # Look for structural indicators, not specific terms
+        if re.search(r"health\s*(?:level|track|box)", text_lower):
             result["health_track_type"] = "levels"
         elif re.search(r"hit\s*points?|hp\b|damage\s*points?", text_lower):
             result["health_track_type"] = "hit_points"
-        elif re.search(r"stress\s*(?:box|track)", text_lower):
+        elif re.search(r"stress\s*(?:box|track)|condition\s*track", text_lower):
             result["health_track_type"] = "stress_boxes"
 
-        # Health levels (WoD style)
+        # === DETECT PENALTY LADDERS (GENERIC) ===
+        # Pattern: List of states with incrementing negative modifiers
+        # E.g., "State Name: -1 penalty" or "State Name (-2)"
         health_levels = []
-        level_patterns = [
-            (r"bruised", 0, "No penalty"),
-            (r"hurt", -1, "Minor injury"),
-            (r"injured", -1, "Movement halved"),
-            (r"wounded", -2, "Cannot run"),
-            (r"mauled", -2, "Hobble only"),
-            (r"crippled", -5, "Crawl only"),
-            (r"incapacitated", None, "No actions possible"),
-        ]
-        for name, penalty, default_desc in level_patterns:
-            if re.search(rf"\b{name}\b", text_lower):
-                level = {"name": name.title()}
-                if penalty is not None:
-                    level["dice_penalty"] = penalty
-                # Try to find actual penalty
-                pen_match = re.search(rf"{name}[^.]*?(-\d+)", text_lower)
-                if pen_match:
-                    level["dice_penalty"] = int(pen_match.group(1))
-                health_levels.append(level)
 
+        # Pattern 1: "Name: -N" or "Name (-N)" format
+        penalty_pattern = re.compile(
+            r"^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*[:(\[]\s*(-\d+)\s*[)\]]?\s*(?:penalty|dice|modifier)?",
+            re.MULTILINE
+        )
+        for m in penalty_pattern.finditer(text):
+            name = m.group(1).strip()
+            penalty = int(m.group(2))
+            if _is_valid_term(name, min_len=3):
+                health_levels.append({
+                    "name": name,
+                    "dice_penalty": penalty
+                })
+
+        # Pattern 2: Detect table-like structure with Name and Penalty columns
+        # Look for lines: "Name    -N" or "Name    0" (tab/space separated)
+        table_penalty_pattern = re.compile(
+            r"^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s{2,}(0|-\d+)\b",
+            re.MULTILINE
+        )
+        for m in table_penalty_pattern.finditer(text):
+            name = m.group(1).strip()
+            penalty = int(m.group(2))
+            if _is_valid_term(name, min_len=3):
+                # Avoid duplicates
+                if not any(h["name"].lower() == name.lower() for h in health_levels):
+                    health_levels.append({
+                        "name": name,
+                        "dice_penalty": penalty
+                    })
+
+        # Pattern 3: Detect incrementing penalty sequences
+        # Look for multiple lines with increasing penalties
+        penalty_seq_pattern = re.compile(
+            r"([A-Z][a-z]+)\s*[^-\d]*(-\d+|0)\s*(?:penalty|dice)?",
+            re.IGNORECASE
+        )
+        penalties_found = []
+        for m in penalty_seq_pattern.finditer(text):
+            name = m.group(1).strip()
+            try:
+                penalty = int(m.group(2))
+                if _is_valid_term(name, min_len=4):
+                    penalties_found.append((name, penalty))
+            except ValueError:
+                continue
+
+        # Check if we have an incrementing sequence (indicates health track)
+        if len(penalties_found) >= 3:
+            # Sort by penalty value
+            sorted_penalties = sorted(set(p[1] for p in penalties_found))
+            # Check for incrementing pattern (0, -1, -2, etc.)
+            if len(sorted_penalties) >= 3 and sorted_penalties[0] >= -1:
+                for name, penalty in penalties_found:
+                    if not any(h["name"].lower() == name.lower() for h in health_levels):
+                        health_levels.append({
+                            "name": name.title(),
+                            "dice_penalty": penalty
+                        })
+
+        # Sort health levels by penalty (least to most severe)
         if health_levels:
+            health_levels = sorted(health_levels, key=lambda x: x.get("dice_penalty", 0), reverse=True)
             result["health_levels"] = health_levels
 
-        # Damage types
+        # === DETECT DAMAGE TYPES (GENERIC) ===
+        # Look for damage categories (multiple types mentioned together)
         damage_types = []
-        if re.search(r"\bbashing\b", text_lower):
-            damage_types.append({
-                "name": "bashing",
-                "description": "Non-lethal damage from blunt impacts"
-            })
-        if re.search(r"\blethal\b", text_lower):
-            damage_types.append({
-                "name": "lethal",
-                "description": "Deadly damage from weapons"
-            })
-        if re.search(r"\baggravated\b", text_lower):
-            damage_types.append({
-                "name": "aggravated",
-                "description": "Supernatural damage, difficult to heal"
-            })
+
+        # Pattern: "[Type] damage" mentioned multiple times suggests damage type system
+        damage_type_pattern = re.compile(
+            r"\b(\w+)\s+damage\b",
+            re.IGNORECASE
+        )
+        damage_candidates = {}
+        for m in damage_type_pattern.finditer(text):
+            dtype = m.group(1).lower()
+            # Filter out common non-types
+            if dtype not in ("no", "the", "any", "all", "some", "more", "less", "take", "deal", "do"):
+                damage_candidates[dtype] = damage_candidates.get(dtype, 0) + 1
+
+        # Include types mentioned at least twice (indicates it's a category)
+        for dtype, count in damage_candidates.items():
+            if count >= 2 and _is_valid_term(dtype, min_len=4):
+                damage_types.append({
+                    "name": dtype,
+                    "mentions": count
+                })
+
+        # Sort by mentions and take top entries
         if damage_types:
+            damage_types = sorted(damage_types, key=lambda x: -x["mentions"])[:5]
+            for dt in damage_types:
+                del dt["mentions"]
             result["damage_types"] = damage_types
 
-        # Soak
-        if re.search(r"\bsoak\b", text_lower):
-            soak_stat = "stamina"
-            stat_match = re.search(r"soak.*?(stamina|constitution|toughness)", text_lower)
-            if stat_match:
-                soak_stat = stat_match.group(1)
-            result["soak"] = {
-                "enabled": True,
-                "stat_used": soak_stat
-            }
+        # === DETECT SOAK/RESISTANCE MECHANIC ===
+        # Generic pattern: roll something to reduce damage
+        soak_patterns = [
+            r"\b(soak)\b.*?(?:roll|dice)",
+            r"(?:roll|dice).*?\b(soak)\b",
+            r"\b(resistance)\s+roll",
+            r"(?:reduce|absorb)\s+damage.*?(?:roll|dice)",
+            r"(?:stamina|constitution|toughness)\s+(?:to\s+)?(?:reduce|absorb|resist)",
+        ]
+        for pattern in soak_patterns:
+            m = re.search(pattern, text_lower)
+            if m:
+                # Try to find what stat is used
+                stat_match = re.search(
+                    r"(stamina|constitution|toughness|endurance|fortitude|body)\s+(?:to\s+)?(?:soak|reduce|absorb|resist)",
+                    text_lower
+                )
+                result["soak"] = {
+                    "enabled": True,
+                    "stat_used": stat_match.group(1) if stat_match else "unknown"
+                }
+                break
 
         return result if result else None
 
     def _extract_equipment(self, text: str) -> Optional[dict]:
-        """Extract weapon and armor tables."""
-        result = {}
-        lines = text.split('\n')
+        """Extract weapon and armor tables - GENERIC structural detection.
 
-        # === RANGED WEAPONS ===
-        # Format: Weapon Name\nDamage\nRange\nRate\nClip\nConceal
+        Detects equipment by STRUCTURE, not specific item names:
+        - Tables with columns like Damage, Range, Rate, Armor Rating
+        - Lists of items followed by numeric stats
+        - Items with "Stat + N" damage formulas
+
+        The LLM refinement layer will contextualize and categorize results.
+        """
+        result = {}
+
+        # === RANGED WEAPONS (structural detection) ===
         ranged = []
 
-        # Match weapon names that appear at start of line
-        # Format in PDF: "Revolver, Lt. ( .38 Special)" or "Pistol, Hvy. (Colt .45)" etc.
-        ranged_weapon_patterns = [
-            r"^Revolver[,\s].*$",
-            r"^Pistol[,\s].*$",
-            r"^Rifle\s*\(.*$",
-            r"^Shotgun\s*\(.*$",
-            r"^SMG[,\s].*$",
-            r"^Assault Rifle.*$",
-            r"^Crossbow\s*$",
-            r"^Compound Bow.*$",
-            r"^Shuriken\s*$",
-            r"^Taser\s*$",
-            r"^X-5 Protector.*$",
-        ]
-        ranged_pattern = re.compile(
-            r"(" + "|".join(ranged_weapon_patterns) + r")",
-            re.IGNORECASE | re.MULTILINE
+        # Pattern: Capitalized name on its own line, followed by numeric stats
+        # Detect: Name line → multiple numeric values (damage, range, rate, etc.)
+        equipment_entry_pattern = re.compile(
+            r"^([A-Z][a-zA-Z\s,.\-()]+)\s*$",  # Name line (capitalized, may have punctuation)
+            re.MULTILINE
         )
 
-        for m in ranged_pattern.finditer(text):
+        for m in equipment_entry_pattern.finditer(text):
             name = m.group(1).strip()
-            # Skip if this is a header row
-            if name.lower() in ['type', 'damage', 'range', 'rate', 'clip', 'conceal']:
+            # Skip if this looks like a header or section title
+            if len(name) > 50 or any(k in name.lower() for k in ["chapter", "section", "table", "equipment", "class", "tier"]):
                 continue
+            # Skip if name is a common header term or armor indicator
+            if name.lower() in ["type", "damage", "range", "rate", "clip", "conceal", "weapon", "armor",
+                                "health", "track", "penalty", "rating", "protection"]:
+                continue
+            # Skip if name contains newlines (matched across lines incorrectly)
+            if '\n' in name:
+                continue
+
             pos = m.end()
-            # Get next 5 non-empty lines for stats
-            remaining = text[pos:pos+200].strip().split('\n')
-            stats = [l.strip() for l in remaining if l.strip()][:5]
-            if len(stats) >= 4:
-                try:
-                    # First stat is damage (number or "X (or special)")
-                    damage = stats[0].split()[0] if stats[0] else "?"
-                    range_val = stats[1].split()[0] if stats[1] else "?"
-                    rate = stats[2].split()[0] if stats[2] else "?"
-                    clip = stats[3] if stats[3] else "?"
-                    # Validate that damage looks like a number
-                    if damage.isdigit() or damage.startswith(('1','2','3','4','5','6','7','8','9')):
-                        ranged.append({
-                            "name": name,
-                            "damage": damage,
-                            "range": range_val,
-                            "rate": rate,
-                            "clip": clip,
-                            "damage_type": "bashing" if "taser" in name.lower() else "lethal"
-                        })
-                except (IndexError, ValueError):
-                    pass
+            # Get next 5-6 lines for potential stats
+            remaining = text[pos:pos+300].strip().split('\n')
+            stats = [l.strip() for l in remaining if l.strip()][:6]
+
+            # Check if following lines contain numeric stats (indicates equipment entry)
+            numeric_stats = []
+            for stat in stats[:5]:
+                # Skip if this line looks like a "Stat + N" melee damage formula
+                if re.match(r"^[A-Z][a-z]+\s*\+\s*\d+", stat):
+                    break  # This is melee weapon territory, stop
+                # Extract first token from each line
+                tokens = stat.split()
+                if tokens:
+                    first = tokens[0]
+                    # Check if it looks like a stat value (number, dice notation, or "N/A")
+                    if (first.isdigit() or
+                        re.match(r"^\d+[dD]\d+", first) or
+                        re.match(r"^\d+[-–]\d+$", first) or
+                        first.lower() in ["n/a", "na", "-", "—"]):
+                        numeric_stats.append(first)
+                    else:
+                        # Non-numeric line breaks the equipment stat block
+                        break
+
+            # If we have at least 3 numeric stats after a name, it's likely ranged equipment
+            if len(numeric_stats) >= 3:
+                entry = {
+                    "name": name,
+                    "raw_stats": numeric_stats[:5]
+                }
+                # Try to identify damage (usually first or second stat)
+                for i, stat in enumerate(numeric_stats[:2]):
+                    if stat.isdigit():
+                        entry["damage"] = stat
+                        break
+                ranged.append(entry)
 
         if ranged:
             result["ranged_weapons"] = ranged
 
-        # === MELEE WEAPONS ===
-        # Format: Weapon Name\nStrength + X [?|L]\nDifficulty\nConceal
+        # === MELEE WEAPONS (structural detection) ===
         melee = []
-        melee_pattern = re.compile(
-            r"^(Sap|Club|Knife|Saber|Katana|Axe|Butterfly Knife|Nunchaku|Tonfa|Sai|Fighting Chain|Stake|Staff|Sword)\s*$",
-            re.IGNORECASE | re.MULTILINE
+
+        # Pattern: "Stat + N" damage formula (common in many systems)
+        # Looks for: Name\nStat + N (e.g., "Great Axe\nStrength + 3")
+        # Note: Use [ ] instead of \s for spaces to avoid matching newlines in name
+        stat_plus_pattern = re.compile(
+            r"^([A-Z][a-zA-Z ]+)\n"  # Name on its own line (letters/spaces, no newlines)
+            r"([A-Z][a-z]+)\s*\+\s*(\d+)",  # Stat + N damage on next line
+            re.MULTILINE
         )
 
-        for m in melee_pattern.finditer(text):
+        for m in stat_plus_pattern.finditer(text):
             name = m.group(1).strip()
-            pos = m.end()
-            # Get next line for damage
-            remaining = text[pos:pos+100].strip().split('\n')
-            if remaining:
-                damage_line = remaining[0].strip()
-                # Look for "Strength + X" pattern
-                dmg_match = re.search(r"Strength\s*\+\s*(\d+)", damage_line, re.IGNORECASE)
-                if dmg_match:
-                    damage = f"Strength + {dmg_match.group(1)}"
-                    damage_type = "bashing" if "?" in damage_line else "lethal" if "L" in damage_line else "varies"
-                    melee.append({
-                        "name": name.title(),
-                        "damage": damage,
-                        "damage_type": damage_type
-                    })
+            stat = m.group(2).strip()
+            modifier = m.group(3)
+            if _is_valid_term(name, min_len=3) and len(name) < 40:
+                # Check following text for damage type indicator
+                pos = m.end()
+                following = text[pos:pos+50].lower()
+                damage_type = "unknown"
+                if "lethal" in following or "\nl" in following[:15]:
+                    damage_type = "lethal"
+                elif "bashing" in following or "\nb" in following[:15]:
+                    damage_type = "bashing"
+
+                melee.append({
+                    "name": name,
+                    "damage": f"{stat} + {modifier}",
+                    "damage_type": damage_type
+                })
 
         if melee:
             result["melee_weapons"] = melee
 
-        # === ARMOR ===
-        # Format: Class X (description)\nRating\nPenalty
+        # === ARMOR (structural detection) ===
         armor = []
-        armor_pattern = re.compile(
-            r"^Class\s+(One|Two|Three|Four|Five)\s*\(([^)]+)\)\s*$",
-            re.IGNORECASE | re.MULTILINE
+
+        # Pattern: Armor entries with protection rating and penalty
+        # Look for entries with both a protection value and a penalty value
+        armor_entry_pattern = re.compile(
+            r"^([A-Z][a-zA-Z\s]+)\s*$"  # Name line
+            r"\s*(\d+)\s*$"              # Rating line
+            r"\s*(-?\d+)\s*$",           # Penalty line
+            re.MULTILINE
         )
 
-        class_to_num = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+        for m in armor_entry_pattern.finditer(text):
+            name = m.group(1).strip()
+            rating = int(m.group(2))
+            penalty = int(m.group(3))
+            if _is_valid_term(name, min_len=3) and len(name) < 50:
+                armor.append({
+                    "name": name,
+                    "rating": rating,
+                    "penalty": penalty
+                })
 
-        for m in armor_pattern.finditer(text):
-            class_word = m.group(1).lower()
+        # Alternative pattern: "Class X (description)" or similar tiered armor
+        tiered_armor_pattern = re.compile(
+            r"(?:class|tier|type|level)\s*(\w+)\s*\(([^)]+)\)",
+            re.IGNORECASE
+        )
+        tier_map = {
+            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+            "i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5,
+            "1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
+            "light": 1, "medium": 2, "heavy": 3,
+        }
+
+        for m in tiered_armor_pattern.finditer(text):
+            tier_word = m.group(1).lower()
             description = m.group(2).strip()
-            pos = m.end()
-            # Get next 2 lines for rating and penalty
-            remaining = text[pos:pos+50].strip().split('\n')
-            stats = [l.strip() for l in remaining if l.strip()][:2]
-            if len(stats) >= 2:
-                try:
-                    rating = int(stats[0])
-                    penalty = int(stats[1])
+            tier = tier_map.get(tier_word, 0)
+            if tier > 0:
+                # Look for rating/penalty in following text
+                pos = m.end()
+                following = text[pos:pos+100]
+                nums = re.findall(r"(-?\d+)", following)
+                if len(nums) >= 2:
                     armor.append({
                         "name": description,
-                        "class": class_to_num.get(class_word, 0),
-                        "rating": rating,
-                        "penalty": penalty
+                        "tier": tier,
+                        "rating": int(nums[0]),
+                        "penalty": int(nums[1])
                     })
-                except (ValueError, IndexError):
-                    pass
+                else:
+                    armor.append({
+                        "name": description,
+                        "tier": tier
+                    })
 
         if armor:
             result["armor"] = armor
