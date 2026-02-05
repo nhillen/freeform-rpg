@@ -74,6 +74,9 @@ The player's character can only interact with what they perceive:
 ## Action Types
 Common action types: talk, ask, examine, search, investigate, move, go, attack, fight, sneak, steal, hack, persuade, intimidate, deceive, help, wait, use
 
+## System-Specific Action Types
+If `system_summary` is present in the context packet, the active resolution system may define additional action types or modify how existing ones work. For example, a dice pool system maps each action to specific character stats (attribute + ability). When `system_summary` describes a non-default system, keep your action type selection consistent with the standard types above — the engine handles the mapping to system-specific mechanics internally.
+
 ## Duration Estimation
 For each proposed action, estimate `estimated_minutes` — how long this action takes in fictional time. This helps the engine track scene time progression and gives the narrator pacing context for NPC actions.
 

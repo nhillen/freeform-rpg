@@ -155,7 +155,9 @@ class ContextBuilder:
             "active_situations": self._get_active_situations(),
             "failure_streak": self._compute_failure_streak(campaign_id),
             # Lore context from content packs (empty when no packs loaded)
-            "lore_context": lore_context if (options.include_lore and lore_context) else {}
+            "lore_context": lore_context if (options.include_lore and lore_context) else {},
+            # System resolution summary for LLM prompts
+            "system_summary": self._build_system_summary(campaign),
         }
 
         return context_packet
@@ -247,6 +249,13 @@ class ContextBuilder:
             "scene": scene_summary,
             "threads": thread_summary
         }
+
+    def _build_system_summary(self, campaign: dict) -> dict:
+        """Build system resolution summary for LLM context."""
+        from ..core.system_config import load_system_config
+        system_json = campaign.get("system", {})
+        system_config = load_system_config(system_json)
+        return system_config.system_summary()
 
     def _get_player_relationships(self) -> list[dict]:
         """Get player's relationships, enriched with entity names."""

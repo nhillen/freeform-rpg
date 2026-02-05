@@ -1,0 +1,216 @@
+id: magetheascension_test
+name: Magetheascension - Test Scenario
+description: Auto-generated test scenario for Magetheascension content pack
+genre: exploration
+estimated_length: 1-2 hours
+content_packs:
+- magetheascension
+default_system: noir_standard
+calibration:
+  tone:
+    gritty_vs_cinematic: 0.5
+    dark_vs_light: 0.5
+    moral_complexity: 0.5
+    slow_burn_vs_action: 0.5
+  themes:
+    primary:
+    - exploration
+    secondary:
+    - discovery
+  risk:
+    lethality: moderate
+    failure_mode: consequential
+    permanence: meaningful
+    plot_armor: moderate
+  boundaries:
+    lines: []
+    veils: []
+system:
+  clock_rules:
+    enabled: true
+    clocks_enabled:
+    - heat
+    - time
+    - harm
+    - ascension_war
+genre_rules:
+  setting: The world of Magetheascension
+  technology: As described in source material
+  society: As described in source material
+  tone: Exploratory
+  what_works:
+  - Investigation
+  - Dialogue
+  - Exploration
+  what_doesnt:
+  - Breaking lore
+  - Anachronisms
+clocks:
+- id: heat
+  name: Alert
+  value: 0
+  max: 8
+  triggers:
+    '4': Suspicion grows
+    '8': Full alert
+  tags:
+  - pressure
+- id: time
+  name: Time
+  value: 8
+  max: 12
+  triggers:
+    '4': Running low on time
+    '0': Time's up
+  tags:
+  - pressure
+- id: harm
+  name: Harm
+  value: 0
+  max: 4
+  triggers:
+    '2': Wounded
+    '4': Critical condition
+  tags:
+  - player
+- id: ascension_war
+  name: Ascension War
+  value: 0
+  max: 6
+  triggers:
+    '3': Ascension War intensifies
+    '6': Ascension War peaks
+  tags:
+  - thematic
+entities:
+- id: player
+  type: pc
+  name: Test Explorer
+  attrs:
+    background: An explorer investigating the world of Magetheascension
+    skills:
+    - acknowledgments
+    - akashic-views
+    - alternative_science
+    - anti-copyright
+    - awakened
+  tags:
+  - player
+- id: calcutta
+  type: location
+  name: Calcutta
+  attrs:
+    description: The center of the Euthanatos Tradition on Earth.
+    atmosphere: Dense with history and significance
+  tags:
+  - location
+- id: marabouts
+  type: location
+  name: Marabouts
+  attrs:
+    description: Chantry houses of the Euthanatos Tradition established all over the
+      world.
+    atmosphere: Dense with history and significance
+  tags:
+  - location
+- id: doissetep
+  type: location
+  name: Doissetep
+  attrs:
+    description: A location whose fall was one of the recent catastrophic events affecting
+      the Order of Hermes.
+    atmosphere: Dense with history and significance
+  tags:
+  - location
+- id: dragon
+  type: npc
+  name: Dragon
+  attrs:
+    role: Notable Figure
+    description: A mystical entity from whom the first Akashics learned their skill
+      in Do, along with Phoenix.
+    threat_level: low
+  tags:
+  - npc
+- id: phoenix
+  type: npc
+  name: Phoenix
+  attrs:
+    role: Notable Figure
+    description: A mystical entity from whom the first Akashics learned their skill
+      in Do, along with Dragon.
+    threat_level: low
+  tags:
+  - npc
+- id: thoth
+  type: npc
+  name: Thoth
+  attrs:
+    role: Notable Figure
+    description: The Egyptian god of wisdom, later called Hermes Trismegistus by the
+      Greeks. Order historians point to two Archmages as the inspiration behind this
+      deity.
+    threat_level: low
+  tags:
+  - npc
+facts:
+- id: fact_npc_0_location
+  subject_id: dragon
+  predicate: located_at
+  object: calcutta
+  visibility: known
+  tags:
+  - location
+- id: fact_npc_1_location
+  subject_id: phoenix
+  predicate: located_at
+  object: marabouts
+  visibility: known
+  tags:
+  - location
+- id: fact_npc_2_location
+  subject_id: thoth
+  predicate: located_at
+  object: doissetep
+  visibility: known
+  tags:
+  - location
+relationships: []
+threads:
+- id: explore_thread
+  title: Explore the World of Magetheascension
+  status: active
+  stakes:
+    success: Discover the secrets of this world
+    failure: Remain ignorant of hidden truths
+  related_entity_ids:
+  - the_traditions
+  tags:
+  - exploration
+- id: conflict_thread
+  title: The The Traditions Conflict
+  status: active
+  stakes:
+    success: Navigate the conflict successfully
+    failure: Get caught in the crossfire
+  related_entity_ids:
+  - the_traditions
+  - akashic_brotherhood
+  tags:
+  - conflict
+starting_scene:
+  location_id: calcutta
+  present_entity_ids:
+  - player
+  - dragon
+  time:
+    hour: 12
+    minute: 0
+    period: day
+    weather: clear
+  constraints: {}
+opening_text: 'You find yourself contemplating Calcutta. The world of Magetheascension
+  stretches before you, full of mysteries waiting to be uncovered.
+
+
+  What do you do?'

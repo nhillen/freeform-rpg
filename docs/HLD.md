@@ -3,10 +3,14 @@
 ## System context
 
 ```
-Content Packs (authored world sourcebooks)
-     ↓ [indexed at campaign init]
-Lore Index (ChromaDB + FTS5)
-     ↓ [queried at session/scene boundaries]
+PDF Sourcebooks ──→ Ingest Pipeline (8 stages) ──→ Content Pack
+                                                        │
+Hand-authored markdown ─────────────────────────────────┘
+                                                        │
+                                              Content Packs (authored world sourcebooks)
+                                                        ↓ [indexed at campaign init]
+                                              Lore Index (FTS5 + optional ChromaDB)
+                                                        ↓ [queried at session/scene boundaries]
 Player <-> UI <-> Turn Orchestrator <-> (State Store, Context Builder, Lore Retriever, LLM Gateway, Validator/Resolver) <-> Prompt Registry
 ```
 
@@ -47,12 +51,24 @@ Content packs are immutable sourcebooks. Scenarios seed campaign state from pack
 - **Evaluation Tracker**: per-turn metrics, player feedback, quality signals.
 - **Setup Pipeline**: session zero, scenario loading, calibration, character creation.
 
-### Planned (v1 — content packs and sessions)
+### Existing (v1 — content packs and sessions — complete)
 - **Content Pack Loader**: parses markdown + YAML frontmatter directory structure into indexed chunks.
-- **Lore Indexer**: chunks content by section, extracts metadata, builds FTS5 + vector index (ChromaDB).
-- **Lore Retriever**: hybrid query (metadata filter → semantic ranking → budget cap). Queries two corpora: authored lore (from packs) and play history (from campaign events/summaries).
+- **Lore Indexer**: chunks content by section, extracts metadata, builds FTS5 + optional vector index (ChromaDB).
+- **Lore Retriever**: hybrid query (manifest lookup → FTS5 keyword → entity-ref matching → optional vector semantic → budget cap). Queries two corpora: authored lore (from packs) and play history (from campaign events/summaries). Entity lore manifest enables cache-aware retrieval.
 - **Scene Lore Cache**: materializes retrieved lore at scene boundaries. Structured sections: atmosphere, NPC briefings, discoverable content, thread connections.
 - **Session Manager**: session start/end lifecycle, lore caching, "previously on" summary generation.
+
+### Existing (v1 — PDF ingest pipeline — complete)
+- **Ingest Pipeline**: 8-stage orchestrator converting PDF sourcebooks into content packs with stage-level checkpointing and resume support.
+- **PDF Extractor**: text extraction via PyMuPDF with OCR fallback, multi-column layout handling, header/footer stripping.
+- **Structure Detector**: document hierarchy detection via font analysis, TOC parsing, text heuristics, and LLM fallback. Classifies chapter intent (setting, factions, mechanics, etc.).
+- **Content Segmenter**: splits sections into RAG-optimized chunks (configurable size, target 600 words) via header-boundary, paragraph, or LLM-assisted splitting.
+- **Content Classifier**: two-axis classification (10 content types × 3 routes: lore/systems/both) using rule-based patterns + LLM verification.
+- **Lore Enricher**: LLM-powered entity extraction, per-segment YAML frontmatter enrichment, batch tag generation.
+- **Pack Assembler**: organizes enriched files into standard pack directory structure with manifest.
+- **Pack Validator**: three-phase validation (structural, installation test, retrieval spot-checks).
+- **Systems Extractor**: 7 sub-extractors for game mechanics (resolution, clocks, entity stats, conditions, calibration, action types, escalation) with config assembly and validation.
+- **Ingest CLI Flow**: interactive guided flow (`pack-ingest` command) with dependency checks, metadata prompts, progress spinners, and post-pipeline install offer.
 
 ### Future (v3 — shared worlds)
 - **World State Store**: shared canonical state separate from campaign state.
@@ -70,7 +86,7 @@ Content packs are immutable sourcebooks. Scenarios seed campaign state from pack
 6. Narrator LLM: prose outcome, established facts, introduced items/NPCs, scene transitions.
 7. Commit: write events, apply state diff, persist narrator introductions, update summaries.
 
-## Lore retrieval lifecycle (v1 — planned)
+## Lore retrieval lifecycle (v1 — implemented)
 
 Mirrors GM prep: heavy at boundaries, silent during play.
 
@@ -122,12 +138,14 @@ Query construction uses structured signals (not just raw player input):
 - campaigns(id, name, created_at, updated_at, calibration_json, system_json, genre_rules_json, current_turn)
 - summaries(id, scope, scope_id, text, turn_no_range)
 
-### Planned (v1 — Layer 3-forward fields noted)
-- **sessions**(id, campaign_id, started_at, ended_at, turn_range_start, turn_range_end, session_lore_json, summary, world_events_pending)
-- **content_packs**(id, name, version, genre, layer, depends_on_json, path, license_json, installed_at)
-- **pack_chunks**(id, pack_id, file_path, section_path, chunk_text, metadata_json, embedding_id)
-- **scene_lore**(id, campaign_id, scene_id, session_id, lore_json, retrieved_at)
+### Implemented (v1 — Layer 3-forward fields noted)
+- **sessions**(id, campaign_id, started_at, ended_at, turn_range_start, turn_range_end, recap_text, lore_cache_json)
+- **content_packs**(id, name, description, version, layer, path, installed_at, chunk_count, metadata_json)
+- **pack_chunks**(id, pack_id, file_path, section_title, content, chunk_type, entity_refs_json, tags_json, metadata_json, token_estimate)
+- **pack_chunks_fts**(chunk_id, section_title, body, chunk_type, tags) — FTS5 virtual table with Porter stemmer
+- **scene_lore**(id, campaign_id, scene_id, session_id, lore_json, created_at, chunk_ids_json)
 - Existing tables gain: `origin` (pack/campaign/world), `pack_id`, `pack_entity_id` fields
+- Campaigns gain: `pack_ids_json`, `lore_manifest_json` columns
 
 ### Layer 3-forward schema decisions (applied now)
 - All state tables carry `origin` and optional `pack_id` fields
@@ -138,10 +156,10 @@ Query construction uses structured signals (not just raw player input):
 
 ## Context packet builder
 
-- Inputs: scene, present entities, active threads, clocks, recent facts, inventory, **scene lore cache (v1)**.
+- Inputs: scene, present entities, active threads, clocks, recent facts, inventory, scene lore cache.
 - Selection: prioritize present entities, recent events, thread-relevant facts, tagged items.
 - Enrichment: NPC agendas, investigation progress, failure streaks, pending threats, active situations.
-- Lore injection (v1): materialized scene lore added as dedicated sections in context packet.
+- Lore injection: materialized scene lore added as dedicated sections in context packet.
 - Caps: token or byte cap with deterministic ordering and truncation.
 - Output: JSON packet with clear sections for the prompts.
 
@@ -150,7 +168,7 @@ Query construction uses structured signals (not just raw player input):
 - Prompts stored as files with ids and versions.
 - Campaign pins interpreter/planner/narrator versions.
 - Replay harness can override pins without altering state.
-- v1: narrator prompt gains `{{lore_context}}` template section for scene lore.
+- Narrator prompt includes `{{lore_context}}` template section for scene lore injection.
 
 ## Flexibility and inspiration
 
@@ -165,11 +183,12 @@ Query construction uses structured signals (not just raw player input):
 - Every pass output stored in events table.
 - Metrics: contradictions, invalid action acceptance, clarification rate, response length.
 - Flagging tool records issues for later prompt tuning.
-- v1: lore retrieval metrics — chunks retrieved per scene, relevance scores, cache hit rates.
+- Lore retrieval metrics: chunks retrieved per scene, relevance scores, cache hit rates.
 
 ## Deployment assumptions
 
 - Local dev mode first; CLI-first for fast iteration with optional thin web UI later.
 - SQLite for persistence; logs stored on disk.
-- ChromaDB embedded (no server) for vector store.
+- ChromaDB embedded (optional, no server) for vector store. FTS5 always available as fallback.
 - Content packs stored as local directories; distribution mechanism TBD.
+- PDF ingest pipeline requires optional dependencies: pymupdf (+ pytesseract for OCR).

@@ -11,6 +11,7 @@ from typing import Optional, Tuple
 
 from ..db.state_store import StateStore
 from .clock_config import ClockConfig, load_clock_config
+from .system_config import SystemConfig, load_system_config
 
 
 @dataclass
@@ -19,9 +20,15 @@ class RollResult:
     dice: str
     raw_values: list[int]
     total: int
-    outcome: str  # 'failure', 'mixed', 'success', 'critical'
+    outcome: str  # 'failure', 'mixed', 'success', 'critical', 'botch'
     margin: int  # How far above/below threshold
     action: str = ""  # What action this roll was for
+    # Dice pool fields (default 0/"" for 2d6 rolls)
+    successes: int = 0
+    ones: int = 0
+    difficulty: int = 0
+    pool_size: int = 0
+    stat_pair: str = ""  # e.g. "dexterity+stealth"
 
 
 @dataclass
@@ -43,7 +50,13 @@ class ResolverOutput:
                     "total": r.total,
                     "outcome": r.outcome,
                     "margin": r.margin,
-                    "action": r.action
+                    "action": r.action,
+                    **({"successes": r.successes,
+                        "ones": r.ones,
+                        "difficulty": r.difficulty,
+                        "pool_size": r.pool_size,
+                        "stat_pair": r.stat_pair,
+                        } if r.pool_size > 0 else {}),
                 }
                 for r in self.rolls
             ],
@@ -153,6 +166,9 @@ class Resolver:
         # Load clock configuration
         clock_config = load_clock_config(context_packet.get("system", {}))
 
+        # Load system configuration (resolution mechanics)
+        system_config = load_system_config(context_packet.get("system", {}))
+
         # Apply costs first (they happen regardless of outcome)
         costs = validator_output.get("costs", {})
         if clock_config.enabled:
@@ -188,7 +204,8 @@ class Resolver:
                 planner_output,
                 risk_settings,
                 resolve_options,
-                clock_config
+                clock_config,
+                system_config
             )
             engine_events.extend(action_events)
             rolls.extend(action_rolls)
@@ -249,9 +266,13 @@ class Resolver:
         planner_output: dict,
         risk_settings: dict,
         options: dict,
-        clock_config: Optional[ClockConfig] = None
+        clock_config: Optional[ClockConfig] = None,
+        system_config: Optional["SystemConfig"] = None
     ) -> Tuple[list[dict], list[RollResult], dict]:
         """Resolve a single action."""
+        if system_config is None:
+            system_config = load_system_config(context_packet.get("system", {}))
+
         events = []
         rolls = []
         diff = {
@@ -270,11 +291,17 @@ class Resolver:
 
         # Determine if roll is needed (risk_flags passed via options)
         risk_flags = options.get("risk_flags")
-        needs_roll = self._needs_roll(action_type, context_packet, risk_flags)
+        needs_roll = self._needs_roll(action_type, context_packet, risk_flags, system_config)
 
         if needs_roll:
-            # Perform roll
-            roll_result = self._roll(options.get("force_roll"))
+            # Perform roll using system-appropriate method
+            entity_stats = self._get_entity_stats(context_packet)
+            roll_result = self._roll_for_system(
+                system_config, action_type, entity_stats,
+                forced_roll=options.get("force_roll"),
+                forced_pool=options.get("force_pool"),
+                difficulty_override=options.get("difficulty_override"),
+            )
             roll_result.action = action_type
             rolls.append(roll_result)
 
@@ -360,13 +387,18 @@ class Resolver:
             )
             events.extend(clear_events)
 
-        else:  # failure
+        else:  # failure or botch
+            is_botch = outcome == "botch"
+
             # Compute severity tier for this failure
             severity_tier = self._compute_severity_tier(
                 risk_flags or [], context_packet, clock_config
             )
+            # Botch forces minimum severity tier 2
+            if is_botch:
+                severity_tier = max(severity_tier, 2)
 
-            events.append({
+            failure_event = {
                 "type": "action_failed",
                 "details": {
                     "action": action_type,
@@ -375,10 +407,26 @@ class Resolver:
                     "consequence": self._generate_consequence(action_type, context_packet, risk_settings),
                     "failure_state": self._describe_failure_state(action_type, target_id, context_packet),
                     "estimated_minutes": estimated_minutes,
-                    "severity_tier": severity_tier
+                    "severity_tier": severity_tier,
+                    "botch": is_botch,
                 },
                 "tags": ["player_action", "failure"]
-            })
+            }
+            if is_botch:
+                failure_event["tags"].append("botch")
+            events.append(failure_event)
+
+            # Emit botch-specific engine event
+            if is_botch:
+                events.append({
+                    "type": "action_botched",
+                    "details": {
+                        "action": action_type,
+                        "target_id": target_id,
+                        "narrative_hint": f"Catastrophic failure on {action_type} — everything goes wrong",
+                    },
+                    "tags": ["player_action", "botch", "critical_failure"]
+                })
 
             # Apply severity-tiered failure effects
             action_diff = self._apply_failure_effects(
@@ -389,7 +437,7 @@ class Resolver:
 
             # Create situation fact for tier 1+ failures
             if severity_tier >= 1:
-                condition = self._map_action_to_condition(action_type)
+                condition = self._map_action_to_condition(action_type, system_config)
                 if condition:
                     severity_label = "hard" if severity_tier >= 2 else "soft"
                     situation_events = self._create_situation_fact(
@@ -400,16 +448,20 @@ class Resolver:
 
         return events, rolls, diff
 
-    def _needs_roll(self, action_type: str, context_packet: dict, risk_flags: list = None) -> bool:
+    def _needs_roll(self, action_type: str, context_packet: dict,
+                    risk_flags: list = None, system_config: Optional["SystemConfig"] = None) -> bool:
         """Determine if an action needs a roll."""
-        # Safe actions that don't need rolls (in normal circumstances)
-        safe_actions = {
-            "look", "examine", "observe", "listen", "wait",
-            "think", "remember", "talk", "ask", "say",
-            "search", "investigate", "read", "check", "assess",
-            "use", "take", "grab", "pickup", "drop", "give", "put",
-            "open", "close", "move", "go", "enter", "exit", "walk",
-        }
+        # Use system config overrides if provided and non-empty
+        if system_config and system_config.safe_actions:
+            safe_actions = system_config.safe_actions
+        else:
+            safe_actions = {
+                "look", "examine", "observe", "listen", "wait",
+                "think", "remember", "talk", "ask", "say",
+                "search", "investigate", "read", "check", "assess",
+                "use", "take", "grab", "pickup", "drop", "give", "put",
+                "open", "close", "move", "go", "enter", "exit", "walk",
+            }
 
         # Risk flags from interpreter override safe classification
         if risk_flags and action_type.lower() in safe_actions:
@@ -421,12 +473,15 @@ class Resolver:
             return False
 
         # Risky actions need rolls
-        risky_actions = {
-            "attack", "fight", "combat", "shoot", "steal",
-            "hack", "sneak", "climb", "jump", "chase",
-            "persuade", "intimidate", "deceive", "negotiate",
-            "provoke",
-        }
+        if system_config and system_config.risky_actions:
+            risky_actions = system_config.risky_actions
+        else:
+            risky_actions = {
+                "attack", "fight", "combat", "shoot", "steal",
+                "hack", "sneak", "climb", "jump", "chase",
+                "persuade", "intimidate", "deceive", "negotiate",
+                "provoke",
+            }
 
         if action_type.lower() in risky_actions:
             return True
@@ -475,7 +530,7 @@ class Resolver:
         }
         return states.get(action_type.lower(), f"Player's {action_type} on {target_id} failed")
 
-    def _roll(self, forced_total: Optional[int] = None) -> RollResult:
+    def _roll_2d6(self, forced_total: Optional[int] = None) -> RollResult:
         """Perform a 2d6 roll."""
         if forced_total is not None:
             # For testing - distribute forced total across dice
@@ -508,6 +563,116 @@ class Resolver:
             outcome=outcome,
             margin=margin
         )
+
+    # Backwards-compatible alias
+    _roll = _roll_2d6
+
+    def _roll_dice_pool(
+        self,
+        system_config: "SystemConfig",
+        action_type: str,
+        entity_stats: dict,
+        forced_result: Optional[list[int]] = None,
+        difficulty_override: Optional[int] = None
+    ) -> RollResult:
+        """Perform a dice pool roll (Nd10, count successes >= difficulty).
+
+        Args:
+            system_config: Active system configuration
+            action_type: The action being resolved
+            entity_stats: Dict of stat_name -> value from player entity
+            forced_result: Pre-determined dice values for testing
+            difficulty_override: Override default difficulty
+        """
+        res = system_config.resolution
+        diff = difficulty_override or system_config.difficulty.default
+
+        # Look up stat pair for this action
+        attr_name, ability_name = system_config.get_stat_pair(action_type)
+        attr_val = entity_stats.get(attr_name, 0)
+        ability_val = entity_stats.get(ability_name, 0)
+        pool_size = max(1, attr_val + ability_val)
+
+        # Roll the pool
+        if forced_result is not None:
+            raw_values = list(forced_result)
+            pool_size = len(raw_values)
+        else:
+            raw_values = [random.randint(1, res.die_type) for _ in range(pool_size)]
+
+        # Count successes and ones
+        successes = sum(1 for v in raw_values if v >= diff)
+        ones = sum(1 for v in raw_values if v == 1)
+
+        # Ones cancel successes
+        net_successes = successes
+        if res.ones_cancel_successes:
+            net_successes = max(0, successes - ones)
+
+        # Threshold past 9: difficulty > 9 eats successes
+        if res.threshold_past_9 and diff > 9:
+            penalty = diff - 9
+            net_successes = max(0, net_successes - penalty)
+
+        # Determine outcome from thresholds
+        thresholds = res.pool_outcome_thresholds
+        if net_successes <= 0 and ones > 0 and res.botch_on_ones and successes == 0:
+            outcome = "botch"
+        elif net_successes <= 0:
+            outcome = "failure"
+        elif net_successes >= thresholds.get("critical", 4):
+            outcome = "critical"
+        elif net_successes >= thresholds.get("success", 2):
+            outcome = "success"
+        elif net_successes >= thresholds.get("mixed", 1):
+            outcome = "mixed"
+        else:
+            outcome = "failure"
+
+        stat_pair_str = f"{attr_name}+{ability_name}"
+
+        return RollResult(
+            dice=f"{pool_size}d{res.die_type}",
+            raw_values=raw_values,
+            total=sum(raw_values),
+            outcome=outcome,
+            margin=net_successes,
+            successes=net_successes,
+            ones=ones,
+            difficulty=diff,
+            pool_size=pool_size,
+            stat_pair=stat_pair_str,
+        )
+
+    def _roll_for_system(
+        self,
+        system_config: "SystemConfig",
+        action_type: str,
+        entity_stats: dict,
+        forced_roll: Optional[int] = None,
+        forced_pool: Optional[list[int]] = None,
+        difficulty_override: Optional[int] = None
+    ) -> RollResult:
+        """Dispatch to the correct roll method based on system config."""
+        if system_config.is_dice_pool():
+            return self._roll_dice_pool(
+                system_config, action_type, entity_stats,
+                forced_result=forced_pool,
+                difficulty_override=difficulty_override,
+            )
+        return self._roll_2d6(forced_total=forced_roll)
+
+    def _get_entity_stats(self, context_packet: dict) -> dict:
+        """Extract player entity stats from context packet.
+
+        Returns a flat dict of stat_name -> value from attrs.stats.
+        """
+        for entity in context_packet.get("entities", []):
+            if entity.get("id") == "player" or "player" in entity.get("tags", []):
+                stats = entity.get("attrs", {}).get("stats", {})
+                if isinstance(stats, dict):
+                    return stats
+        return {}
 
     def _apply_success_effects(
         self,
@@ -790,12 +955,22 @@ class Resolver:
 
         return events, diff
 
-    def _map_action_to_condition(self, action_type: str) -> Optional[str]:
+    def _map_action_to_condition(self, action_type: str,
+                                 system_config: Optional["SystemConfig"] = None) -> Optional[str]:
         """Return the situation condition that results from failing this action type."""
+        if system_config and system_config.condition_map:
+            result = system_config.condition_map.get(action_type.lower())
+            if result is not None:
+                return result
         return self.CONDITION_MAP.get(action_type.lower())
 
-    def _get_clear_conditions(self, condition: str) -> list[str]:
+    def _get_clear_conditions(self, condition: str,
+                              system_config: Optional["SystemConfig"] = None) -> list[str]:
         """Return what success types clear this condition."""
+        if system_config and system_config.clear_map:
+            result = system_config.clear_map.get(condition)
+            if result is not None:
+                return result
         return self.CLEAR_MAP.get(condition, [])
 
     def _create_situation_fact(

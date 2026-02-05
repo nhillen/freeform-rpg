@@ -4,35 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Freeform RPG Engine - a virtual Game Master that runs tabletop-style RPG sessions. AI-driven narrative with strong continuity mechanics, real consequences, and GM-like pacing. The experience should feel like a prepared GM running a game night, not a chatbot — with session structure, scene-based pacing, and deep world knowledge drawn from content packs.
+Freeform RPG Engine - a virtual Game Master that runs tabletop-style RPG sessions. AI-driven narrative with strong continuity mechanics, real consequences, and GM-like pacing. Content packs provide sourcebook-scale world knowledge via RAG retrieval.
 
-Genre-flexible (v0 targets a cyberpunk noir case, 2-4 hours gameplay). Python 3, SQLite backend. Content packs provide large-scale world-building (sourcebook-equivalent) via RAG retrieval.
-
-## Development Status
-
-**v0 core: complete.** All pipeline stages implemented and working. No stubs or TODOs.
-
-- Full 7-stage turn pipeline (Interpreter → Validator → Planner → Resolver → Narrator → Commit)
-- SQLite state store with append-only event log
-- 2d6 dice mechanics with consequence escalation and failure streaks
-- Clock system (Heat, Time, Harm, Cred, Rep) with configurable triggers
-- NPC escalation profiles and threat resolution
-- Narrator-declared facts, items, NPCs, scene transitions
-- Interactive CLI with guided setup, REPL, debug panel
-- Evaluation framework with A/B testing harness
-- Content pack system (RAG-based world sourcebooks via FTS5 + optional ChromaDB)
-- Session lifecycle management
-- Entity lore manifest (pre-computed entity→chunk mapping at scenario load)
-- Cache-aware lore retrieval (skip re-fetch on revisits)
-- One complete scenario (Dead Drop) + one setting sourcebook (Undercity Sourcebook)
+**Status**: v0 + v1 complete. See `docs/PRD.md` for detailed scope and roadmap.
 
 ## Commands
 
 ```bash
-# Run the guided flow (handles API key, scenario, game setup)
+# Run the guided flow (recommended)
 freeform-rpg
 
-# Or manual setup
+# Manual setup
 freeform-rpg --db game.db --campaign default init-db
 freeform-rpg --db game.db --campaign default new-game --scenario dead_drop
 freeform-rpg --db game.db --campaign default play
@@ -40,6 +22,7 @@ freeform-rpg --db game.db --campaign default play
 # Content packs
 freeform-rpg --db game.db install-pack content_packs/undercity_sourcebook
 freeform-rpg --db game.db list-packs
+freeform-rpg pack-ingest              # PDF → content pack (interactive)
 
 # Dev tools
 freeform-rpg --db game.db --campaign default show-event --turn 1 --field final_text
@@ -50,79 +33,76 @@ pytest
 pytest --cov=src
 ```
 
+See `docs/USAGE.md` for full CLI reference.
+
 ## Architecture
 
-**Multi-pass LLM Pipeline per turn:**
-```
-Player Input → Interpreter → Validator → Planner → Resolver → Narrator → Commit
-```
+**Turn pipeline**: `Player Input → Interpreter → Validator → Planner → Resolver → Narrator → Commit`
 
-- **Interpreter**: Maps player intent to proposed actions
-- **Validator**: Enforces presence/location/inventory/contradiction rules, calculates costs
-- **Planner**: Outlines narrative beats and tension moves
-- **Resolver**: Executes actions, updates clocks, emits engine events
-- **Narrator**: Produces final prose from validated context only
-
-**Content hierarchy:**
+**Content hierarchy**:
 ```
-Content Pack (the world — large, static, authored sourcebook)
-  └── Scenario (an adventure — entities, clocks, threads, mechanical state)
-        └── Session (one game night of play)
-              └── Scene (a location/situation)
+Content Pack (sourcebook-scale world content)
+  └── Scenario (an adventure)
+        └── Session (one game night)
+              └── Scene (location/situation)
                     └── Turn (one player action)
 ```
 
-**State Model**: Append-only event log pattern. All state mutations go through `state_diff` structures. Events table is immutable audit trail. Content packs are always immutable — campaign play creates overlay state, never modifies pack content.
+See `docs/HLD.md` for full architecture details.
 
-**Key Directories:**
-- `src/core/` - Turn orchestration pipeline (orchestrator, validator, resolver)
+### Key Directories
+
+- `src/core/` - Turn orchestration (orchestrator, validator, resolver)
 - `src/db/` - SQLite state store and schema
-- `src/context/` - Context packet builder (what gets sent to LLM)
-- `src/llm/` - LLM provider gateway and prompt registry
-- `src/prompts/` - Versioned prompt templates (interpreter_v0.txt, etc.)
-- `src/schemas/` - JSON schemas for all LLM inputs/outputs
-- `src/setup/` - Session zero pipeline, scenario loader, calibration
-- `src/eval/` - Replay harness, evaluation metrics, snapshots
-- `src/content/` - Content pack loader, chunker, lore indexer, RAG retriever, scene cache
+- `src/context/` - Context packet builder
+- `src/llm/` - LLM gateway and prompt registry
+- `src/prompts/` - Versioned prompt templates
+- `src/schemas/` - JSON schemas for LLM I/O
+- `src/setup/` - Session zero, scenario loader, calibration
+- `src/eval/` - Replay harness, metrics
+- `src/content/` - Content pack loader, RAG retriever, lore indexer
+- `src/ingest/` - PDF ingest pipeline (8 stages)
 - `scenarios/` - Scenario YAML files
-- `content_packs/` - Authored world sourcebooks for RAG retrieval
-- `docs/` - HLD, PRD, TDD, and GM reference materials
-
-## Core Data Model
-
-SQLite tables: `entities`, `facts`, `scene`, `threads`, `clocks`, `inventory`, `relationships`, `events`, `campaigns`, `summaries`. Schema in `src/db/schema.sql`.
-
-**v1 tables (schema_v1.sql):** `sessions`, `content_packs`, `pack_chunks`, `pack_chunks_fts` (FTS5), `scene_lore`. Provenance columns (`origin`, `pack_id`) added to entities, facts, threads, clocks, relationships. Campaign-level `pack_ids_json` and `lore_manifest_json` columns.
-
-**Clocks**: Heat, Time, Cred, Harm, Rep - each with value/max and trigger thresholds.
+- `content_packs/` - Authored world sourcebooks
 
 ## Design Constraints
 
+These constraints guide code generation and reviews:
+
 1. **LLM is narrator only** - Engine is authoritative; LLM narrates from validated facts
 2. **Conservative defaults** - No hallucinated facts, default to safe/believable outcomes
-3. **One-question max** - At most 1 clarification question per turn to avoid stalling
+3. **One-question max** - At most 1 clarification question per turn
 4. **Immutable state** - No destructive mutations; all changes via event log append
 5. **Structured outputs** - All LLM responses must conform to JSON schemas
-6. **Content pack immutability** - Campaign play never modifies pack content; all play-generated state is overlay
-7. **Provenance tracking** - All entities, facts, and events track their origin (pack, campaign, or world)
-8. **Namespaced IDs** - Entity IDs include pack/campaign namespace to prevent collisions across shared content
+6. **Content pack immutability** - Campaign play never modifies pack content
+7. **Provenance tracking** - All entities/facts track origin (pack, campaign, world)
+8. **Namespaced IDs** - Entity IDs include pack/campaign namespace
 
-## Layer 3-Forward Design (future: shared evolving worlds)
+See `docs/PRD.md` → "Design principles" and `docs/HLD.md` → "Layer 3-forward schema decisions" for rationale.
 
-These constraints apply now to avoid costly retrofits when multi-campaign shared worlds are built:
+## Ingest Pipeline Philosophy
 
-- **Origin fields on all state**: entities, facts, events carry `origin` (pack/campaign/world) and optional `pack_id`
-- **Event scope tagging**: engine events carry `scope` (campaign/world_affecting) for future world ticker consumption
-- **Fact visibility is extensible**: don't hardcode to known/world — future values include `canonical` (shared world truth)
-- **Sessions are first-class**: session records group turns and store materialized lore caches
-- **Pack entities are seeded copies**: scenarios copy pack entities into campaign state with back-references, allowing divergence
+The PDF ingest pipeline uses **LLM-primary extraction**:
+
+- **Heuristics pre-filter by STRUCTURE** (tables, rating scales, stat blocks) — not game-specific content
+- **LLM extracts semantically** from filtered pages
+- **No hardcoded game terminology** — patterns should work for any TTRPG
+
+When adding extraction patterns to `src/ingest/systems_extract.py`:
+- ✅ Detect structure: "table with numbers", "bulleted list with ratings"
+- ❌ Don't detect content: "Strength, Dexterity" or "Bruised, Hurt, Wounded"
+
+See `docs/TDD.md` → "Systems Extraction Philosophy" for full guidelines.
+See `docs/BACKLOG.md` → "Ingest Pipeline — Technical Debt" for cleanup tasks.
 
 ## Documentation
 
-- `docs/PRD.md` - Product requirements, vision, and roadmap
+- `docs/PRD.md` - Product requirements, vision, roadmap
 - `docs/HLD.md` - High-level architecture and data flow
-- `docs/TDD.md` - Technical implementation details
-- `docs/SESSION_ZERO_DESIGN.md` - Game setup and calibration system
-- `docs/PERCEPTION_DESIGN.md` - Perception and information visibility model
+- `docs/TDD.md` - Technical implementation details, data types, schemas
 - `docs/USAGE.md` - CLI commands and how to play
-- `docs/gm_reference/` - GM guidance for mechanics design (clocks, NPCs, scenes, etc.)
+- `docs/BACKLOG.md` - Open issues, technical debt, planned improvements
+- `docs/SESSION_ZERO_DESIGN.md` - Game setup and calibration
+- `docs/PERCEPTION_DESIGN.md` - Perception and visibility model
+- `docs/SYSTEM_ADAPTER_DESIGN.md` - Multi-system dice resolution
+- `docs/gm_reference/` - GM guidance for mechanics design

@@ -43,6 +43,10 @@ htmlcov/
 # Database files
 *.db
 
+# Ingest pipeline
+docs/pdf_ingest/
+ingest_output/
+
 # OS
 .DS_Store
 Thumbs.db

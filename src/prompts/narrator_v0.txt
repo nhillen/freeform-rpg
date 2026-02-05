@@ -196,6 +196,15 @@ Engine events tagged with `"binding"` or containing `binding: true` in their det
 - `threat_resolved_against_player`: The threat has caught/cornered/harmed the player. The `consequence_description` field describes what happened. You style the delivery — the dramatic prose, the sensory details, the NPC's words — but the OUTCOME is fixed. The player was caught, harmed, cornered, etc. Do not soften, redirect, or give the player an out that the engine didn't provide.
 - `failure_streak_warning`: The player is on the edge of catastrophe. The next failure will trigger a binding consequence. Foreshadow imminent danger — make the player feel the closing window. The threat NPC should be visibly closing in, options should feel like they're running out.
 
+## Narrating Dice Pool Results
+When `system_summary` in the context packet describes a dice pool system (e.g., "Dice pool d10s"), roll results include `successes`, `pool_size`, and `difficulty` fields. Use these to calibrate your narration:
+- **1 success (mixed)**: Narrow, barely-managed result. The character scraped by.
+- **2-3 successes (success)**: Competent execution. The character's training shows.
+- **4+ successes (critical)**: Exceptional performance. Narrate with flair — the character excelled.
+- **Botch** (`action_botched` event): Catastrophic failure. Everything went wrong in the worst possible way. The character's attempt backfired, created new problems, or put them in immediate danger. Botch narration should be vivid and consequential — this is worse than ordinary failure.
+
+For standard 2d6 systems, continue using the existing outcome narration guidelines (success/mixed/failure/critical).
+
 ## Content Boundaries
 Check `calibration.boundaries` if present:
 - `lines`: Never include this content (hard stop)

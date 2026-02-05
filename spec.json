@@ -1,0 +1,143 @@
+{
+  "id": "vibe-check-mode",
+  "name": "Vibe Check Mode",
+  "version": "1.0",
+  "status": "draft",
+  "description": "A minimal play mode for testing content pack quality without scenario setup. Lets you give scene prompts and see how the narrator uses your ingested lore.",
+
+  "goals": [
+    "Provide fast feedback loop for content pack iteration",
+    "Use production code paths (Orchestrator.run_turn) to ensure realistic testing",
+    "Skip scenario scaffolding (no clocks, threads, NPCs, etc.)",
+    "Show what lore was retrieved so you can see if ingest quality is working",
+    "Log all turns normally for later review"
+  ],
+
+  "non_goals": [
+    "Full game mechanics (clocks, threads, dice rolls)",
+    "Character creation or Session Zero",
+    "Scenario state persistence across sessions",
+    "Comparison mode between packs (user decision)"
+  ],
+
+  "user_workflow": [
+    "1. Ingest PDF → `pack-ingest`",
+    "2. Test quality → `freeform-rpg vibe-check --pack ./ingest_output/pack/`",
+    "3. Give scene prompt: 'Set a scene in a Cult of Ecstasy nightclub where someone just died'",
+    "4. See narrator output + what lore chunks were retrieved",
+    "5. Continue with follow-up actions as desired",
+    "6. If vibe is off → tweak ingest, re-run, repeat"
+  ],
+
+  "cli_interface": {
+    "command": "vibe-check",
+    "args": [
+      {
+        "name": "--pack",
+        "required": true,
+        "description": "Path to content pack directory (can be draft or installed)"
+      },
+      {
+        "name": "--verbose",
+        "required": false,
+        "default": true,
+        "description": "Show retrieved lore chunks (on by default for vibe-check)"
+      },
+      {
+        "name": "--db",
+        "required": false,
+        "default": ":memory:",
+        "description": "Database path (defaults to in-memory for isolation)"
+      }
+    ],
+    "example_usage": [
+      "freeform-rpg vibe-check --pack ./ingest_output_test/pack/",
+      "freeform-rpg vibe-check --pack content_packs/mage_ascension/"
+    ]
+  },
+
+  "implementation": {
+    "new_file": "src/cli/vibe_check.py",
+    "cli_integration": "src/cli/main.py",
+
+    "approach": {
+      "description": "Create minimal bootstrap that loads pack and starts REPL using real Orchestrator",
+      "steps": [
+        "Create in-memory (or temp) database",
+        "Install the specified content pack",
+        "Create a minimal 'vibe_check' campaign with no scenario",
+        "Set up a placeholder scene with just 'player' present",
+        "Prompt user for scene setup text",
+        "Run that through production Orchestrator.run_turn()",
+        "Display output + retrieved lore chunks",
+        "Continue REPL loop until quit"
+      ]
+    },
+
+    "key_reuse": {
+      "orchestrator": "src/core/orchestrator.py - Orchestrator.run_turn() unchanged",
+      "retriever": "src/content/retriever.py - LoreRetriever for lore fetching",
+      "scene_cache": "src/content/scene_cache.py - SceneLoreCacheManager",
+      "pack_loader": "src/content/pack_loader.py - PackLoader for loading pack",
+      "indexer": "src/content/indexer.py - LoreIndexer for indexing into temp DB",
+      "display": "src/cli/main.py - Reuse _format_debug_panel(), _format_rolls()"
+    },
+
+    "minimal_bootstrap": {
+      "campaign": {
+        "id": "vibe_check",
+        "name": "Vibe Check Session",
+        "pack_ids": ["<loaded_pack_id>"]
+      },
+      "scene": {
+        "location_id": "vibe_check_scene",
+        "present_entity_ids": ["player"],
+        "time": {"hour": 20, "minute": 0, "period": "night"}
+      },
+      "player_entity": {
+        "id": "player",
+        "type": "pc",
+        "name": "Protagonist",
+        "attrs": {}
+      }
+    },
+
+    "lore_display": {
+      "description": "After each turn, show what lore was retrieved",
+      "format": [
+        "─── lore retrieved ───",
+        "  [chunk_type] title (tokens)",
+        "  [faction] Cult of Ecstasy (245 tokens)",
+        "  [location] The Hollow Club (180 tokens)",
+        "  Total: 425 tokens from 2 chunks",
+        "──────────────────────"
+      ],
+      "source": "Access via scene_cache or retriever directly"
+    }
+  },
+
+  "testing": {
+    "unit_tests": [
+      "test_vibe_check_creates_minimal_state",
+      "test_vibe_check_loads_pack",
+      "test_vibe_check_uses_production_orchestrator"
+    ],
+    "manual_test": "Run vibe-check with undercity_sourcebook, give scene prompts, verify lore retrieval"
+  },
+
+  "acceptance_criteria": [
+    "Can run `vibe-check --pack <path>` and get interactive prompt",
+    "First input is scene setup (e.g., 'murder mystery at nightclub')",
+    "Subsequent inputs are player actions",
+    "All turns go through production Orchestrator.run_turn()",
+    "Retrieved lore chunks are displayed after each turn",
+    "Turns are logged to database for later review",
+    "Can continue multiple exchanges until user quits"
+  ],
+
+  "estimated_scope": {
+    "files_to_create": 1,
+    "files_to_modify": 1,
+    "complexity": "medium"
+  }
+}

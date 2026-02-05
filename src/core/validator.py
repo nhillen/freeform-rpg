@@ -11,6 +11,7 @@ from typing import Optional
 from ..db.state_store import StateStore
 from ..context.builder import ContextBuilder
 from .clock_config import ClockConfig, load_clock_config
+from .system_config import SystemConfig, load_system_config
 
 
 @dataclass
@@ -78,6 +79,7 @@ class Validator:
             ValidatorOutput with allowed/blocked actions and costs
         """
         clock_config = load_clock_config(context_packet.get("system", {}))
+        system_config = load_system_config(context_packet.get("system", {}))
 
         allowed_actions = []
         blocked_actions = []
@@ -99,7 +101,8 @@ class Validator:
             result = self._validate_action(
                 action,
                 context_packet,
-                flagged_entities
+                flagged_entities,
+                system_config
             )
 
             if result.allowed:
@@ -183,7 +186,8 @@ class Validator:
         self,
         action: dict,
         context_packet: dict,
-        flagged_entities: set
+        flagged_entities: set,
+        system_config: Optional["SystemConfig"] = None
     ) -> ValidationResult:
         """Validate a single action."""
         action_type = action.get("action", "").lower()
@@ -259,7 +263,7 @@ class Validator:
                     )
 
         # Check 3: Inventory requirements (for actions that need items)
-        inventory_required = self._get_inventory_requirements(action_type)
+        inventory_required = self._get_inventory_requirements(action_type, system_config)
         if inventory_required:
             inventory = {i["item_id"]: i["qty"] for i in context_packet.get("inventory", [])}
             for item_id, qty_needed in inventory_required.items():
@@ -317,8 +321,16 @@ class Validator:
         }
         return action_type.lower() in environment_actions
 
-    def _get_inventory_requirements(self, action_type: str) -> dict:
-        """Get inventory items required for an action type."""
+    def _get_inventory_requirements(self, action_type: str,
+                                     system_config: Optional["SystemConfig"] = None) -> dict:
+        """Get inventory items required for an action type.
+
+        Checks system config overrides first, then falls back to hardcoded defaults.
+        """
+        if system_config and system_config.inventory_requirements:
+            result = system_config.inventory_requirements.get(action_type)
+            if result is not None:
+                return result
         requirements = {
             "shoot": {"weapon": 1, "ammo": 1},
             "unlock": {"lockpick": 1},

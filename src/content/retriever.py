@@ -155,7 +155,10 @@ class LoreRetriever:
 
         # Stage 2a: FTS5 keyword search (across all declared packs)
         if lore_query.keywords:
-            fts_query = " OR ".join(lore_query.keywords)
+            fts_query = " OR ".join(
+                '"{}"'.format(kw.replace('"', '""'))
+                for kw in lore_query.keywords
+            )
             chunk_type = lore_query.chunk_types[0] if lore_query.chunk_types else None
             search_packs = lore_query.pack_ids if lore_query.pack_ids else [None]
 

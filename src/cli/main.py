@@ -48,6 +48,7 @@ from src.content.retriever import LoreRetriever
 from src.content.scene_cache import SceneLoreCacheManager
 from src.content.session_manager import SessionManager
 from src.content.vector_store import create_vector_store
+from src.cli.vibe_check import vibe_check_cmd
 
 
 def _load_json(value):
@@ -1398,6 +1399,26 @@ def build_parser():
     pack_test_parser.add_argument("--no-scenario", action="store_true", help="Skip scenario generation")
     pack_test_parser.add_argument("--scenario-dir", default="scenarios", help="Where to save test scenario")
     pack_test_parser.set_defaults(func=pack_test_cmd)
+
+    # vibe-check
+    vibe_check_parser = sub.add_parser(
+        "vibe-check",
+        help="Test content pack quality with scene prompts (no scenario setup)"
+    )
+    vibe_check_parser.add_argument("--pack", required=True, help="Path to content pack directory")
+    vibe_check_parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        default=True,
+        help="Show retrieved lore chunks (on by default)"
+    )
+    vibe_check_parser.add_argument(
+        "--no-verbose",
+        action="store_false",
+        dest="verbose",
+        help="Hide retrieved lore chunks"
+    )
+    vibe_check_parser.set_defaults(func=vibe_check_cmd)
 
     # run-turn
     run_turn_parser = sub.add_parser("run-turn", help="Execute a single turn")

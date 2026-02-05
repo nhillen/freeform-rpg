@@ -13,6 +13,11 @@ dependencies = [
 rag = [
     "chromadb>=0.4.0",
 ]
+ingest = [
+    "pymupdf>=1.24",
+    "pytesseract>=0.3",
+    "Pillow>=10.0",
+]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",

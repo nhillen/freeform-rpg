@@ -47,15 +47,31 @@ Single playable case in a compact setting. Cyberpunk noir, 2-4 hours gameplay.
 - Evaluation framework with A/B testing harness.
 - One complete scenario (Dead Drop).
 
-## v1 scope: Content packs and session lifecycle
+## v1 scope: Content packs and session lifecycle (COMPLETE)
 
 **Content pack system:**
 - Authored content packs in markdown + YAML frontmatter format.
-- Directory structure: locations, NPCs, factions, culture, history, technology.
+- Directory structure: locations, NPCs, factions, culture, items.
 - Pack manifest with metadata, version, genre, dependencies, layer designation.
 - Indexing pipeline: parse, chunk by section, extract metadata, build FTS5 + vector index.
-- Hybrid retrieval: structured metadata filter → semantic ranking → token budget cap.
-- ChromaDB for vector store (embedded, no server, persists to disk).
+- Hybrid retrieval: entity lore manifest lookup → FTS5 keyword search → entity-ref matching → optional vector semantic search → token budget cap.
+- ChromaDB for optional vector store (embedded, no server, persists to disk). Graceful degradation to FTS5-only when unavailable.
+- Entity lore manifest: pre-computed entity→chunk mapping at scenario load for cache-aware retrieval.
+- One complete setting sourcebook (Undercity Sourcebook).
+
+**PDF ingest pipeline:**
+- 8-stage automated pipeline converting PDF sourcebooks into content packs.
+- Stages: Extract → Structure → Segment → Classify → Enrich → Assemble → Validate → Systems.
+- PDF text extraction via PyMuPDF with OCR fallback (Tesseract).
+- Document structure detection: font-size analysis, TOC parsing, text heuristics, LLM fallback.
+- Content segmentation with configurable chunk sizes (150-2000 words, target 600).
+- Two-axis classification: content type (10 types) and route (lore vs. systems vs. both).
+- LLM-powered entity extraction, per-segment enrichment with YAML frontmatter, batch tag generation.
+- Pack assembly into standard directory structure with manifest.
+- Three-phase validation: structural, installation test, retrieval spot-checks.
+- Optional systems extraction: 7 sub-extractors for game mechanics (resolution, clocks, entity stats, conditions, calibration, action types, escalation).
+- Stage-level checkpointing with resume support.
+- Interactive CLI flow (`pack-ingest` command) with progress display.
 
 **Session lifecycle:**
 - Sessions as first-class records grouping turns within a campaign.
@@ -73,13 +89,14 @@ Single playable case in a compact setting. Cyberpunk noir, 2-4 hours gameplay.
 
 ## v2 scope: Multi-pack and licensed content
 
+- Multi-system resolution adapter: config-driven dice mechanics (dice pool, 2d6, configurable per scenario). First non-default system: Mage: The Ascension (dice pool d10s).
 - Multiple packs loaded simultaneously with layering/priority model.
 - Pack layers: core → setting → regional → adventure → homebrew (higher overrides lower).
 - Cross-pack entity references via namespaced IDs.
 - Unified index across all loaded packs with provenance metadata.
 - Pack conflict resolution (same entity defined in multiple packs).
 - Pack manifest with license metadata, publisher info, dependencies.
-- Content authoring tooling and validation.
+- Content authoring tooling and validation (PDF ingest pipeline delivered in v1; v2 extends to multi-pack authoring workflows).
 
 ## v3 scope: Shared evolving worlds
 
@@ -117,6 +134,7 @@ Single playable case in a compact setting. Cyberpunk noir, 2-4 hours gameplay.
 
 ### Content creator
 - As a content creator, I can author a world sourcebook as markdown files with structured metadata.
+- As a content creator, I can convert an existing PDF sourcebook into a content pack via the ingest pipeline.
 - As a content creator, I can package and distribute my world as a content pack.
 - As a content creator, I can define pack dependencies and layering so supplements build on base settings.
 
@@ -138,23 +156,25 @@ Single playable case in a compact setting. Cyberpunk noir, 2-4 hours gameplay.
 - Commit writes event record, applies state diff, updates summaries.
 - Orchestrator supports swapping prompts and optional passes without breaking state.
 
-## Functional requirements (v1 — content packs)
+## Functional requirements (v1 — content packs — complete)
 
 - Content pack loader parses markdown + YAML frontmatter directory structure.
-- Indexer chunks content by section, extracts metadata, builds searchable index.
-- Retriever supports hybrid query: metadata filter + semantic ranking + budget cap.
+- Indexer chunks content by section, extracts metadata, builds FTS5 + optional vector index.
+- Retriever supports hybrid query: manifest lookup + FTS5 keyword + entity-ref matching + optional vector semantic search + budget cap.
 - Context builder integrates retrieved lore into context packet at scene boundaries.
 - Session records track turn ranges, materialized lore cache, and end-of-session summaries.
 - Scenarios reference content packs; loader resolves and indexes at campaign init.
 - All entities and facts carry origin/provenance fields (pack, campaign, world).
 - Entity IDs are namespaced to prevent collisions across packs and campaigns.
 - Engine events carry scope tag (campaign, world_affecting) for future world ticker.
+- PDF ingest pipeline converts authored sourcebooks (PDF) into content packs via 8-stage LLM-assisted extraction.
+- Ingest pipeline validates output packs against structural, installation, and retrieval checks before use.
 
 ## Dev experience requirements
 
 - Show context packet per turn.
 - Show state diff per turn.
-- Show retrieved lore chunks per scene (v1).
+- Show retrieved lore chunks per scene.
 - Rerun last turn with prompt version X.
 - Rerun last N turns.
 - Flag output (too permissive, contradiction, boring, stalled).
@@ -163,7 +183,8 @@ Single playable case in a compact setting. Cyberpunk noir, 2-4 hours gameplay.
 ## Data model (high level)
 
 - entities, facts, scene, threads, clocks, inventory, relationships, events, campaigns, summaries.
-- (v1) sessions, content_packs, pack_chunks, scene_lore.
+- sessions, content_packs, pack_chunks, pack_chunks_fts (FTS5), scene_lore.
+- Provenance columns (origin, pack_id) on entities, facts, threads, clocks, relationships.
 
 ## Metrics and success criteria
 
@@ -172,16 +193,17 @@ Single playable case in a compact setting. Cyberpunk noir, 2-4 hours gameplay.
 - Clocks create rising tension without feeling gamey.
 - Voice remains consistent and scenes move forward.
 - Dev loop: single-turn replay under a few seconds, with usable diffs.
-- (v1) Retrieved lore is relevant to current scene >80% of the time.
-- (v1) Session start/end feel like natural game night boundaries.
+- Retrieved lore is relevant to current scene >80% of the time.
+- Session start/end feel like natural game night boundaries.
 
 ## Decisions
 
 - Initial LLM provider: Claude via gateway adapter.
 - UI form factor: CLI-first for fast iteration; thin web UI is optional later.
 - Content pack format: markdown + YAML frontmatter (human-authorable, version-controllable).
-- Vector store: ChromaDB (embedded, Python-native, no server dependency).
-- Authored content over procedural generation: content packs are hand-crafted sourcebooks, not AI-generated filler. The engine retrieves and narrates from authored material.
+- Content creation paths: hand-authored markdown (primary) or PDF ingest pipeline (automated extraction from existing sourcebooks).
+- Vector store: ChromaDB (optional, embedded, Python-native, no server dependency). FTS5 always available as fallback.
+- Authored content over procedural generation: content packs are hand-crafted sourcebooks, not AI-generated filler. The engine retrieves and narrates from authored material. The ingest pipeline extracts structure from existing authored works — it does not generate content.
 
 ## Risks and mitigations
 

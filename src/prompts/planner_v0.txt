@@ -140,6 +140,9 @@ Check `npc_capabilities` in the context packet. If NPCs have `escalation_profile
 - **Hard profile** (confrontation, demands): Tension moves should be about cornering, demanding, blocking escape routes
 - Each NPC's threat should feel distinct and bounded by their capabilities. A corporate agent with `operates_solo` can't call in a strike team. An NPC with `no_netrunning` can't hack the player's systems.
 
+## System-Aware Suggestions
+If `system_summary` in the context packet describes a system with willpower spending or auto-success mechanics, your `next_suggestions` may hint at these options when contextually appropriate. For example, if the system supports willpower spending for automatic successes, and the player faces a critical moment, one suggestion might reference spending willpower for certainty. Keep suggestions natural and in-fiction — don't reference game mechanics directly.
+
 ## Output Structure
 - `beats`: List of short phrases describing what happens (1-3 beats)
 - `tension_move`: The GM move you're applying, or empty string `""` if the scene should breathe (see Pacing)
